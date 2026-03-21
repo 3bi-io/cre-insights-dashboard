@@ -7,10 +7,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown, DollarSign, Mic, Link2, Sparkles, Calendar, Activity } from 'lucide-react';
+import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown, DollarSign, Mic, Link2, Sparkles, Calendar, Activity, Globe } from 'lucide-react';
 import { CopyApplyLinkButton } from './CopyApplyLinkButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { GeoExpandDialog } from '@/components/admin/GeoExpandDialog';
 
 interface JobTableProps {
   jobs: any[] | undefined;
@@ -33,7 +35,9 @@ const JobTable: React.FC<JobTableProps> = ({
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [updatingSponsorship, setUpdatingSponsorship] = useState<string | null>(null);
+  const [geoExpandJobId, setGeoExpandJobId] = useState<string | null>(null);
   const { toast } = useToast();
+  const { userRole } = useAuth();
 
   const handleSponsorshipToggle = async (jobId: string, currentValue: boolean) => {
     setUpdatingSponsorship(jobId);
@@ -477,6 +481,12 @@ const JobTable: React.FC<JobTableProps> = ({
                               <Trash2 className="w-4 h-4 mr-2" />
                               Delete Job
                             </DropdownMenuItem>
+                            {userRole === 'super_admin' && (
+                              <DropdownMenuItem onClick={() => setGeoExpandJobId(job.id)}>
+                                <Globe className="w-4 h-4 mr-2" />
+                                Geo Expand
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -488,6 +498,15 @@ const JobTable: React.FC<JobTableProps> = ({
           </Table>
         </div>
       </CardContent>
+
+      {geoExpandJobId && (
+        <GeoExpandDialog
+          open={!!geoExpandJobId}
+          onOpenChange={(open) => { if (!open) setGeoExpandJobId(null); }}
+          jobIds={[geoExpandJobId]}
+          onSuccess={() => onRefresh?.()}
+        />
+      )}
     </Card>
   );
 };

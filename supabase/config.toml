@@ -338,3 +338,6 @@ verify_jwt = false
 
 [functions.sms-webhook]
 verify_jwt = false
+
+[functions.job-geo-expand]
+verify_jwt = false

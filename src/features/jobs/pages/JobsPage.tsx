@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import JobsSearch from '@/components/jobs/JobsSearch';
-import { Upload, AlertCircle, RefreshCw, Download, Link2 } from 'lucide-react';
+import { Upload, AlertCircle, RefreshCw, Download, Link2, Globe } from 'lucide-react';
 import { PageLayout } from '@/features/shared';
 import CsvUpload from '@/components/CsvUpload';
 import { generateJobsPDF } from '@/utils/jobsPdfGenerator';
@@ -20,6 +20,7 @@ import {
 } from '../components';
 import { useJobs, useElevenLabsVoice } from '../hooks';
 import { ExportJobUrlsButton } from '@/components/admin/ExportJobUrlsButton';
+import { GeoExpandDialog } from '@/components/admin/GeoExpandDialog';
 
 type ViewMode = 'grid' | 'table';
 
@@ -28,6 +29,7 @@ const JobsPage = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
+  const [showGeoExpand, setShowGeoExpand] = useState(false);
   const { toast } = useToast();
   const { userRole } = useAuth();
   
@@ -136,6 +138,17 @@ const JobsPage = () => {
 
   const pageActions = (
     <>
+      {userRole === 'super_admin' && (
+        <Button
+          onClick={() => setShowGeoExpand(true)}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <Globe className="w-4 h-4" />
+          Geo Expand
+        </Button>
+      )}
+
       <ExportJobUrlsButton variant="outline" size="default" />
       
       <Button
@@ -278,6 +291,14 @@ const JobsPage = () => {
             onOpenChange={setShowAnalyticsDialog}
           />
         )}
+
+        {/* Geo Expand Dialog */}
+        <GeoExpandDialog
+          open={showGeoExpand}
+          onOpenChange={setShowGeoExpand}
+          jobIds={filteredJobs?.map((j: any) => j.id) || []}
+          onSuccess={() => refetch()}
+        />
       </div>
     </PageLayout>
   );

@@ -6,11 +6,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '@/components/ui/pagination';
-import { MapPin, Mail, Phone, Building, Eye, MoreHorizontal, Edit, Trash2, Truck } from 'lucide-react';
+import { MapPin, Mail, Phone, Building, Eye, MoreHorizontal, Edit, Trash2, Truck, Globe } from 'lucide-react';
 import { ATSConnectionDialog } from '@/features/ats/components/ATSConnectionDialog';
 import { useATSSystems } from '@/hooks/useATSConnections';
 import { ResponsiveTableWrapper, ResponsiveCardWrapper } from '@/components/ui/responsive-data-display';
 import { CompanyLogo } from '@/components/shared';
+import { useAuth } from '@/hooks/useAuth';
+import { GeoExpandDialog } from '@/components/admin/GeoExpandDialog';
 import type { Client, ConsolidatedClient } from '../types/client.types';
 
 interface ClientsTableProps {
@@ -37,6 +39,8 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
   const navigate = useNavigate();
   const { data: atsSystems } = useATSSystems();
   const [quickAddClient, setQuickAddClient] = useState<{ id: string; name: string } | null>(null);
+  const [geoExpandClientId, setGeoExpandClientId] = useState<string | null>(null);
+  const { userRole } = useAuth();
   const tenstreetSystem = atsSystems?.find(s => s.slug === 'tenstreet');
 
   const getStatusColor = (status: string) => {
@@ -193,6 +197,11 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                 <DropdownMenuItem onClick={() => handleEditClient(client.name)}>
                   <Edit className="w-4 h-4 mr-2" />Edit
                 </DropdownMenuItem>
+                {userRole === 'super_admin' && (
+                  <DropdownMenuItem onClick={() => setGeoExpandClientId(client.clientId)}>
+                    <Globe className="w-4 h-4 mr-2" />Geo Expand All Jobs
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => handleDeleteClient(client.name)} className="text-destructive">
                   <Trash2 className="w-4 h-4 mr-2" />Delete
                 </DropdownMenuItem>
@@ -371,6 +380,14 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
           clientName={quickAddClient?.name}
           connection={null}
           mode="create"
+        />
+      )}
+
+      {geoExpandClientId && (
+        <GeoExpandDialog
+          open={!!geoExpandClientId}
+          onOpenChange={(open) => { if (!open) setGeoExpandClientId(null); }}
+          clientId={geoExpandClientId}
         />
       )}
     </>
