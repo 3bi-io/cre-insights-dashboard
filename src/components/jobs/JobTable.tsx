@@ -498,6 +498,15 @@ const JobTable: React.FC<JobTableProps> = ({
           </Table>
         </div>
       </CardContent>
+
+      {geoExpandJobId && (
+        <GeoExpandDialog
+          open={!!geoExpandJobId}
+          onOpenChange={(open) => { if (!open) setGeoExpandJobId(null); }}
+          jobIds={[geoExpandJobId]}
+          onSuccess={() => onRefresh?.()}
+        />
+      )}
     </Card>
   );
 };
