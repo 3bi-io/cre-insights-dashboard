@@ -1,109 +1,107 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { PageLayout } from '@/features/shared';
-import { Plus, Truck, Download } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  ClientsSearch,
-  ClientsTable,
-  ClientsSummary,
-  ClientsLoading,
-  CreateClientDialog,
-  EditClientDialog,
-  BulkTenstreetAssignmentDialog
-} from '../components';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Building2 } from 'lucide-react';
 import { useClientsService } from '../hooks';
+import { useClientMetrics } from '../hooks/useClientMetrics';
+import { useClientApplications } from '../hooks/useClientApplications';
 import { useAuth } from '@/hooks/useAuth';
-import type { Client, ClientFilters } from '../types/client.types';
-import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import type { Client } from '../types/client.types';
+import type { ClientApplication } from '../hooks/useClientApplications';
 
-const ITEMS_PER_PAGE = 25;
+import ClientSidebar from '../components/ats/ClientSidebar';
+import ClientOverviewTab from '../components/ats/ClientOverviewTab';
+import ClientApplicantsTab from '../components/ats/ClientApplicantsTab';
+import ClientAnalyticsTab from '../components/ats/ClientAnalyticsTab';
+import ClientSettingsTab from '../components/ats/ClientSettingsTab';
+import ApplicantQuickView from '../components/ats/ApplicantQuickView';
+import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
+import CreateClientDialog from '../components/CreateClientDialog';
+import EditClientDialog from '../components/EditClientDialog';
 
 const ClientsPage = () => {
-  const [filters, setFilters] = useState<ClientFilters>({});
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedClientId = searchParams.get('clientId');
+  const activeTab = searchParams.get('tab') || 'overview';
+
+  const [sidebarSearch, setSidebarSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showBulkTenstreetDialog, setShowBulkTenstreetDialog] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  
+  const [selectedApplication, setSelectedApplication] = useState<ClientApplication | null>(null);
+
   const { userRole, organization } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const {
-    clients,
-    loading,
-    error,
-    createClient,
-    updateClient,
-    deleteClient,
-    isCreating,
-    isUpdating,
-    isDeleting,
-    refresh
-  } = useClientsService({
-    enabled: !!organization || userRole === 'super_admin'
-  });
+    clients, loading, error,
+    createClient, updateClient, deleteClient,
+    isCreating, isUpdating, isDeleting, refresh,
+  } = useClientsService({ enabled: !!organization || userRole === 'super_admin' });
 
-  // Filter clients based on current filters
-  const filteredClients = useMemo(() => {
-    if (!clients) return [];
-    
-    let filtered = clients;
+  const { clients: clientMetrics } = useClientMetrics();
+  const { data: applications = [], isLoading: appsLoading } = useClientApplications(selectedClientId);
 
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(client =>
-        client.name.toLowerCase().includes(searchLower) ||
-        client.company?.toLowerCase().includes(searchLower) ||
-        client.email?.toLowerCase().includes(searchLower)
-      );
+  const selectedClient = useMemo(
+    () => clients?.find(c => c.id === selectedClientId) || null,
+    [clients, selectedClientId]
+  );
+
+  // Auto-select first client if none selected
+  useEffect(() => {
+    if (!selectedClientId && clients && clients.length > 0 && !loading) {
+      setSearchParams(prev => {
+        prev.set('clientId', clients[0].id);
+        return prev;
+      }, { replace: true });
     }
+  }, [clients, selectedClientId, loading, setSearchParams]);
 
-    if (filters.status && filters.status !== 'all') {
-      filtered = filtered.filter(client => client.status === filters.status);
+  const handleSelectClient = useCallback((id: string) => {
+    setSearchParams(prev => {
+      prev.set('clientId', id);
+      return prev;
+    });
+  }, [setSearchParams]);
+
+  const handleTabChange = useCallback((tab: string) => {
+    setSearchParams(prev => {
+      prev.set('tab', tab);
+      return prev;
+    });
+  }, [setSearchParams]);
+
+  const handleStageChange = useCallback(async (applicationId: string, newStage: string) => {
+    const { error } = await supabase
+      .from('applications')
+      .update({ status: newStage, updated_at: new Date().toISOString() })
+      .eq('id', applicationId);
+
+    if (error) {
+      toast({ title: 'Error updating stage', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Stage updated' });
+      queryClient.invalidateQueries({ queryKey: ['client-applications'] });
     }
+  }, [toast, queryClient]);
 
-    if (filters.location) {
-      const locationLower = filters.location.toLowerCase();
-      filtered = filtered.filter(client =>
-        client.city?.toLowerCase().includes(locationLower) ||
-        client.state?.toLowerCase().includes(locationLower)
-      );
-    }
-
-    return filtered;
-  }, [clients, filters]);
-
-  // Pagination
-  const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
-  const paginatedClients = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredClients.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredClients, currentPage]);
-
-  // Reset page when filters change
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [filters]);
-
-  const handleExportCSV = () => {
-    const headers = ['Name', 'Company', 'Email', 'Phone', 'City', 'State', 'Status'];
-    const rows = filteredClients.map(c => [
-      c.name, c.company || '', c.email || '', c.phone || '',
-      c.city || '', c.state || '', c.status
-    ]);
-    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `clients-export-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleCreateSubmit = (data: any) => {
+    createClient(data);
+    setShowCreateDialog(false);
   };
 
-  const handleCreateClient = () => setShowCreateDialog(true);
-  const handleEditClient = (client: Client) => setEditingClient(client);
+  const handleEditSubmit = (id: string, data: any) => {
+    updateClient(id, data);
+    setEditingClient(null);
+  };
 
   const handleDeleteClick = (clientId: string) => {
     setClientToDelete(clientId);
@@ -116,124 +114,143 @@ const ClientsPage = () => {
     setClientToDelete(null);
   };
 
-  const handleCreateSubmit = (data: any) => {
-    createClient(data);
-    setShowCreateDialog(false);
-  };
-
-  const handleEditSubmit = (id: string, data: any) => {
-    updateClient(id, data);
-    setEditingClient(null);
-  };
-
-  if (loading) return <ClientsLoading />;
-
-  if (error) {
+  if (loading) {
     return (
-      <PageLayout title="Clients" description="Manage your client relationships and contact information">
-        <div className="p-6">
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold mb-4">Error Loading Clients</h1>
-            <p className="text-muted-foreground mb-4">
-              {error instanceof Error ? error.message : 'Unknown error'}
-            </p>
-            {!organization && userRole !== 'super_admin' && (
-              <p className="text-sm text-muted-foreground mt-2">
-                No organization found. Please contact your administrator.
-              </p>
-            )}
-            <button 
-              onClick={() => refresh()}
-              className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
-            >
-              Try Again
-            </button>
+      <PageLayout title="Clients" description="Applicant Tracking System">
+        <div className="flex h-[calc(100vh-120px)]">
+          <div className="w-72 border-r p-3 space-y-3">
+            {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+          </div>
+          <div className="flex-1 p-6 space-y-4">
+            <Skeleton className="h-10 w-48" />
+            <div className="grid grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-24" />)}
+            </div>
           </div>
         </div>
       </PageLayout>
     );
   }
 
-  const headerActions = (
-    <div className="flex items-center gap-2 flex-wrap">
-      <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-2">
-        <Download className="w-4 h-4" />
-        <span className="hidden sm:inline">Export</span>
-      </Button>
-      {!!organization?.id && (
-        <Button variant="outline" size="sm" onClick={() => setShowBulkTenstreetDialog(true)} className="gap-2">
-          <Truck className="w-4 h-4" />
-          <span className="hidden sm:inline">Bulk Tenstreet</span>
-        </Button>
-      )}
-      <Button size="sm" onClick={handleCreateClient} className="gap-2">
-        <Plus className="w-4 h-4" />
-        Add Client
-      </Button>
-    </div>
-  );
+  if (error) {
+    return (
+      <PageLayout title="Clients" description="Applicant Tracking System">
+        <div className="p-6 text-center py-12">
+          <h1 className="text-2xl font-bold mb-4">Error Loading Clients</h1>
+          <p className="text-muted-foreground mb-4">
+            {error instanceof Error ? error.message : 'Unknown error'}
+          </p>
+          <button onClick={() => refresh()} className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">
+            Try Again
+          </button>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
-    <PageLayout 
-      title="Clients" 
-      description="Manage your client relationships and contact information"
-      actions={headerActions}
-    >
-      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
-        <ClientsSearch 
-          clientsCount={filteredClients.length}
-          onFiltersChange={setFilters}
-          filters={filters}
-        />
-        
-        <ClientsSummary clients={filteredClients} />
-        
-        <ClientsTable 
-          clients={paginatedClients}
-          organizationId={organization?.id}
-          onEditClient={handleEditClient}
-          onDeleteClient={handleDeleteClick}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredClients.length}
-          onPageChange={setCurrentPage}
+    <PageLayout title="Clients" description="Applicant Tracking System">
+      <div className="flex h-[calc(100vh-120px)]">
+        {/* Left Panel - Client Sidebar */}
+        <ClientSidebar
+          clients={clients || []}
+          clientMetrics={clientMetrics}
+          selectedClientId={selectedClientId}
+          onSelectClient={handleSelectClient}
+          onAddClient={() => setShowCreateDialog(true)}
+          searchQuery={sidebarSearch}
+          onSearchChange={setSidebarSearch}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
         />
 
-        <ConfirmationDialog
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-          title="Delete Client"
-          description="Are you sure you want to delete this client?"
-          confirmLabel="Delete"
-          variant="destructive"
-          onConfirm={handleConfirmDelete}
-          isLoading={isDeleting}
-        />
+        {/* Right Panel - Client Detail */}
+        <div className="flex-1 overflow-y-auto">
+          {selectedClient ? (
+            <div className="p-4 sm:p-6">
+              <Tabs value={activeTab} onValueChange={handleTabChange}>
+                <TabsList className="mb-6">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="applicants">Applicants</TabsTrigger>
+                  <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                  <TabsTrigger value="settings">Settings</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="overview">
+                  <ClientOverviewTab
+                    client={selectedClient}
+                    applications={applications}
+                    onEditClient={() => setEditingClient(selectedClient)}
+                  />
+                </TabsContent>
+
+                <TabsContent value="applicants">
+                  {appsLoading ? (
+                    <div className="space-y-3">
+                      {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+                    </div>
+                  ) : (
+                    <ClientApplicantsTab
+                      applications={applications}
+                      onApplicationClick={setSelectedApplication}
+                      onStageChange={handleStageChange}
+                    />
+                  )}
+                </TabsContent>
+
+                <TabsContent value="analytics">
+                  <ClientAnalyticsTab applications={applications} />
+                </TabsContent>
+
+                <TabsContent value="settings">
+                  <ClientSettingsTab client={selectedClient} />
+                </TabsContent>
+              </Tabs>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <Building2 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-1">Select a Client</h3>
+                <p className="text-sm text-muted-foreground">Choose a client from the sidebar to view details</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* Quick View Drawer */}
+      <ApplicantQuickView
+        application={selectedApplication}
+        open={!!selectedApplication}
+        onOpenChange={open => !open && setSelectedApplication(null)}
+        onStageChange={handleStageChange}
+      />
+
+      {/* Dialogs */}
       <CreateClientDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         onSubmit={handleCreateSubmit}
         isLoading={isCreating}
       />
-
       <EditClientDialog
         open={!!editingClient}
-        onOpenChange={(open) => !open && setEditingClient(null)}
+        onOpenChange={open => !open && setEditingClient(null)}
         onSubmit={handleEditSubmit}
         client={editingClient}
         isLoading={isUpdating}
       />
-
-      {organization?.id && (
-        <BulkTenstreetAssignmentDialog
-          open={showBulkTenstreetDialog}
-          onOpenChange={setShowBulkTenstreetDialog}
-          organizationId={organization.id}
-          clients={clients || []}
-        />
-      )}
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Client"
+        description="Are you sure you want to delete this client?"
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
     </PageLayout>
   );
 };
