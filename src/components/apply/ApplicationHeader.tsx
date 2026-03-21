@@ -10,6 +10,7 @@ interface ApplicationHeaderProps {
   location?: string | null;
   source?: string | null;
   isLoading?: boolean;
+  isExpressMode?: boolean;
 }
 
 // Source display name mapping
@@ -61,7 +62,8 @@ export const ApplicationHeader = memo(({
   clientLogoUrl,
   location, 
   source,
-  isLoading = false 
+  isLoading = false,
+  isExpressMode = false,
 }: ApplicationHeaderProps) => {
   if (isLoading) {
     return <HeaderSkeleton />;
@@ -84,6 +86,15 @@ export const ApplicationHeader = memo(({
       <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2 px-4">
         {displayTitle}
       </h1>
+      
+      {isExpressMode && (
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+            ⚡ Quick Apply
+          </span>
+          <span className="text-xs text-muted-foreground">• Less than 1 minute</span>
+        </div>
+      )}
       
       {hasContext ? (
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-muted-foreground text-base sm:text-sm px-4">
