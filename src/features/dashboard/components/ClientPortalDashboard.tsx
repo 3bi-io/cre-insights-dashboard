@@ -2,20 +2,18 @@ import React, { useState } from 'react';
 import { PageLayout } from '@/features/shared';
 import { useClientPortalData } from '@/hooks/useClientPortalData';
 import { useClientPortalAnalytics } from '@/hooks/useClientPortalAnalytics';
-import {
-  ClientAnalyticsDateFilter,
-  ClientPipelineFunnel,
-  ClientSourceBreakdown,
-  ClientATSDeliveryStatus,
-  ClientSLAMetrics,
-  ClientTrendChart,
-} from '@/features/clients/components/analytics';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, Briefcase, Gauge, Clock, Building2, RefreshCw } from 'lucide-react';
+import { Building2, RefreshCw } from 'lucide-react';
 import type { DateRange } from '@/features/clients/types/clientAnalytics.types';
+import { ClientAnalyticsDateFilter } from '@/features/clients/components/analytics';
+import { KPIHeroCards } from './client-portal/KPIHeroCards';
+import { PipelineFunnel } from './client-portal/PipelineFunnel';
+import { AnalyticsChartsRow } from './client-portal/AnalyticsChartsRow';
+import { ATSDeliverySection } from './client-portal/ATSDeliverySection';
+import { RecentApplicantsTable } from './client-portal/RecentApplicantsTable';
+import { JobPerformanceSection } from './client-portal/JobPerformanceSection';
 
 interface ClientPortalDashboardProps {
   overrideClientId?: string;
@@ -26,23 +24,22 @@ export const ClientPortalDashboard: React.FC<ClientPortalDashboardProps> = ({ ov
   const [dateRange, setDateRange] = useState<DateRange>('30d');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
-  // Auto-select first client when loaded
-  // If overrideClientId is set (admin preview mode), use it directly
   const activeClientId = overrideClientId || selectedClientId || assignedClients?.[0]?.id || null;
-  const activeClient = overrideClientId 
+  const activeClient = overrideClientId
     ? { id: overrideClientId, name: '', logo_url: null, city: null, state: null, status: 'active' }
     : assignedClients?.find(c => c.id === activeClientId);
   const hasMultipleClients = !overrideClientId && (assignedClients?.length || 0) > 1;
 
-  // Pass null for organization since client-role users access via RLS directly
   const { data: analytics, isLoading: analyticsLoading, refetch } = useClientPortalAnalytics(activeClientId, dateRange);
 
-  // In override mode (admin preview), skip client assignment loading/checks
+  // Build sparkline data from trends
+  const sparklineData = analytics?.trends?.slice(-14).map(t => ({ date: t.date, count: t.applications })) || [];
+
   if (!overrideClientId && clientsLoading) {
     return (
       <PageLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       </PageLayout>
     );
@@ -66,7 +63,7 @@ export const ClientPortalDashboard: React.FC<ClientPortalDashboardProps> = ({ ov
 
   return (
     <Wrapper>
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -74,30 +71,25 @@ export const ClientPortalDashboard: React.FC<ClientPortalDashboardProps> = ({ ov
               <img
                 src={activeClient.logo_url}
                 alt={activeClient.name}
-                className="h-12 w-12 rounded-lg object-contain border bg-background"
+                className="h-14 w-14 rounded-xl object-contain border border-border bg-card p-1"
               />
             )}
             <div>
-              <h1 className="text-2xl font-bold">{activeClient?.name || 'Client Dashboard'}</h1>
+              <h1 className="text-2xl font-bold text-foreground">{activeClient?.name || 'Client Dashboard'}</h1>
               {activeClient?.city && activeClient?.state && (
                 <p className="text-sm text-muted-foreground">{activeClient.city}, {activeClient.state}</p>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {hasMultipleClients && (
-              <Select
-                value={activeClientId || ''}
-                onValueChange={(val) => setSelectedClientId(val)}
-              >
-                <SelectTrigger className="w-[200px]">
+              <Select value={activeClientId || ''} onValueChange={val => setSelectedClientId(val)}>
+                <SelectTrigger className="w-[200px] h-9">
                   <SelectValue placeholder="Select client" />
                 </SelectTrigger>
                 <SelectContent>
-                  {assignedClients.map(client => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name}
-                    </SelectItem>
+                  {assignedClients!.map(client => (
+                    <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -109,74 +101,43 @@ export const ClientPortalDashboard: React.FC<ClientPortalDashboardProps> = ({ ov
           </div>
         </div>
 
-        {/* KPI Cards */}
-        {analyticsLoading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <Card key={i}><CardContent className="pt-6"><Skeleton className="h-8 w-20" /></CardContent></Card>
-            ))}
-          </div>
-        ) : analytics ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Applications</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{analytics.totalApplications.toLocaleString()}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">ATS Delivery</CardTitle>
-                <Briefcase className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{analytics.atsDelivery.successRate}%</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Avg Readiness</CardTitle>
-                <Gauge className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{analytics.avgReadinessScore}/100</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Avg Response</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {analytics.sla.avgResponseHours > 0 ? `${analytics.sla.avgResponseHours}h` : 'N/A'}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        ) : null}
+        {/* Section 1: KPI Hero Cards */}
+        <KPIHeroCards analytics={analytics || null} isLoading={analyticsLoading} sparklineData={sparklineData} />
 
-        {/* Analytics Panels */}
+        {/* Section 2: Pipeline Funnel */}
         {analytics && (
-          <div className="space-y-4">
-            <ClientPipelineFunnel data={analytics.pipeline} />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <ClientSourceBreakdown data={analytics.sources} />
-              <ClientATSDeliveryStatus data={analytics.atsDelivery} />
-            </div>
-            <ClientSLAMetrics data={analytics.sla} />
-            <ClientTrendChart data={analytics.trends} />
-          </div>
+          <PipelineFunnel data={analytics.pipeline} totalApplications={analytics.totalApplications} />
         )}
 
+        {/* Section 3: Charts Row */}
+        {analytics && (
+          <AnalyticsChartsRow
+            trends={analytics.trends}
+            sources={analytics.sources}
+            totalApplications={analytics.totalApplications}
+          />
+        )}
+
+        {/* Section 4: ATS Delivery */}
+        {analytics && <ATSDeliverySection data={analytics.atsDelivery} />}
+
+        {/* Section 5: Recent Applicants */}
+        {activeClientId && (
+          <RecentApplicantsTable clientId={activeClientId} dateRange={dateRange} />
+        )}
+
+        {/* Section 6: Job Performance */}
+        {activeClientId && (
+          <JobPerformanceSection clientId={activeClientId} dateRange={dateRange} />
+        )}
+
+        {/* Empty state when no data at all */}
         {!analyticsLoading && !analytics && activeClientId && (
-          <Card>
+          <Card className="border-border/50">
             <CardContent className="py-12 text-center">
               <Building2 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No analytics data available yet.</p>
+              <p className="font-medium text-foreground">No analytics data available yet</p>
+              <p className="text-sm text-muted-foreground mt-1">Data will appear as applications come in for this client.</p>
             </CardContent>
           </Card>
         )}
