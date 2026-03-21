@@ -158,10 +158,10 @@ const JobsPageContent = () => {
           <JobsResultsCount filteredCount={jobs.length} totalCount={totalCount} />
 
           <DataLoadingStateHandler
-            data={jobs} isLoading={showListingsSkeleton} isError={!!error && !showListingsSkeleton} error={error}
+            data={jobs} isLoading={showListingsSkeleton} isError={false} error={error}
             emptyCheck={(data) => data.length === 0}
             emptyIcon={Building2} emptyTitle="No Jobs Found"
-            emptyDescription="Try adjusting your search criteria or check back later."
+            emptyDescription={error ? "We couldn't load jobs right now. Try adjusting your search or check back shortly." : "Try adjusting your search criteria or check back later."}
             dataLabel="jobs" className="mt-6"
             loadingComponent={<JobListingsGridSkeleton />}
           >

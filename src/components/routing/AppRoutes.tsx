@@ -171,7 +171,7 @@ const AppRoutes: React.FC = () => {
       {/* Public Routes */}
       <Route path="/" element={<PublicLayout />}>
         <Route index element={<RouteWrapper><LandingPage /></RouteWrapper>} />
-        <Route path="jobs" element={<RouteWrapper><JobsPage /></RouteWrapper>} />
+        <Route path="jobs" element={<JobsPage />} />
         <Route path="jobs/:id" element={<RouteWrapper><JobDetailsPage /></RouteWrapper>} />
         <Route path="clients" element={<PublicClientsPage />} />
         <Route path="companies" element={<Navigate to="/clients" replace />} />
