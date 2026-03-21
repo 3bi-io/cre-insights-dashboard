@@ -181,6 +181,6 @@ export const ClientPortalDashboard: React.FC<ClientPortalDashboardProps> = ({ ov
           </Card>
         )}
       </div>
-    </PageLayout>
+    </Wrapper>
   );
 };
