@@ -27,7 +27,7 @@ const Apply = () => {
   } = useApplyContext();
 
   const { isOutsideAmericas, country, countryCode } = useGeoBlocking();
-  const { isMetaTraffic } = useSourceDetection();
+  const { isSocialTraffic } = useSourceDetection();
 
   // Memoize SEO content to prevent unnecessary recalculations
   const seoContent = useMemo(() => {
@@ -77,7 +77,7 @@ const Apply = () => {
               location={location}
               source={source}
               isLoading={isLoading}
-              isExpressMode={isMetaTraffic && !isOutsideAmericas}
+              isExpressMode={isSocialTraffic && !isOutsideAmericas}
             />
             
             {/* Application Form — simulation mode for non-Americas users, express for Meta traffic */}
@@ -90,7 +90,7 @@ const Apply = () => {
                   jobListingId={jobListingId}
                   industryVertical={industryVertical}
                 />
-              ) : isMetaTraffic ? (
+              ) : isSocialTraffic ? (
                 <SocialExpressForm clientName={clientName} clientLogoUrl={clientLogoUrl} industryVertical={industryVertical} />
               ) : (
                 <ApplicationForm clientName={clientName} clientLogoUrl={clientLogoUrl} industryVertical={industryVertical} />
