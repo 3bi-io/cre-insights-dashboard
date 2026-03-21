@@ -237,9 +237,12 @@ export const Header: React.FC<HeaderProps> = ({
               </Link>
             ))}
             {showAuth && (
-              <div className="border-t mt-2 pt-2 px-4">
+              <div className="border-t mt-2 pt-2 px-4 space-y-2">
                 <Link to="/auth">
-                  <Button className="w-full min-h-[48px]">Sign In</Button>
+                  <Button variant="outline" className="w-full min-h-[48px]">Sign In</Button>
+                </Link>
+                <Link to="/auth?signup=true">
+                  <Button className="w-full min-h-[48px] rounded-full bg-primary text-primary-foreground">Get Started Free</Button>
                 </Link>
               </div>
             )}
