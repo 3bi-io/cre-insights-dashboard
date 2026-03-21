@@ -10,6 +10,7 @@ interface ApplicationHeaderProps {
   location?: string | null;
   source?: string | null;
   isLoading?: boolean;
+  isExpressMode?: boolean;
 }
 
 // Source display name mapping
