@@ -67,13 +67,14 @@ const JobTable: React.FC<JobTableProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800';
+        return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20';
       case 'paused':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-amber-500/15 text-amber-400 border-amber-500/20';
+      case 'expired':
       case 'completed':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-red-500/15 text-red-400 border-red-500/20';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-slate-500/15 text-slate-400 border-slate-500/20';
     }
   };
 
