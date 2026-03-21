@@ -481,6 +481,12 @@ const JobTable: React.FC<JobTableProps> = ({
                               <Trash2 className="w-4 h-4 mr-2" />
                               Delete Job
                             </DropdownMenuItem>
+                            {userRole === 'super_admin' && (
+                              <DropdownMenuItem onClick={() => setGeoExpandJobId(job.id)}>
+                                <Globe className="w-4 h-4 mr-2" />
+                                Geo Expand
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
