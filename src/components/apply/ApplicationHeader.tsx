@@ -62,7 +62,8 @@ export const ApplicationHeader = memo(({
   clientLogoUrl,
   location, 
   source,
-  isLoading = false 
+  isLoading = false,
+  isExpressMode = false,
 }: ApplicationHeaderProps) => {
   if (isLoading) {
     return <HeaderSkeleton />;
