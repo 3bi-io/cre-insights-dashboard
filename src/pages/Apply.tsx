@@ -77,7 +77,7 @@ const Apply = () => {
               location={location}
               source={source}
               isLoading={isLoading}
-              isExpressMode={isMetaTraffic && !isOutsideAmericas}
+              isExpressMode={isSocialTraffic && !isOutsideAmericas}
             />
             
             {/* Application Form — simulation mode for non-Americas users, express for Meta traffic */}
