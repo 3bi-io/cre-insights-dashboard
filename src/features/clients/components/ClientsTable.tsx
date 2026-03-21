@@ -197,6 +197,11 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                 <DropdownMenuItem onClick={() => handleEditClient(client.name)}>
                   <Edit className="w-4 h-4 mr-2" />Edit
                 </DropdownMenuItem>
+                {userRole === 'super_admin' && (
+                  <DropdownMenuItem onClick={() => setGeoExpandClientId(client.clientId)}>
+                    <Globe className="w-4 h-4 mr-2" />Geo Expand All Jobs
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => handleDeleteClient(client.name)} className="text-destructive">
                   <Trash2 className="w-4 h-4 mr-2" />Delete
                 </DropdownMenuItem>
