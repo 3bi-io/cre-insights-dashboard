@@ -77,9 +77,10 @@ const Apply = () => {
               location={location}
               source={source}
               isLoading={isLoading}
+              isExpressMode={isMetaTraffic && !isOutsideAmericas}
             />
             
-            {/* Application Form — simulation mode for non-Americas users */}
+            {/* Application Form — simulation mode for non-Americas users, express for Meta traffic */}
             <main>
               {isOutsideAmericas ? (
                 <SimulatedApplicationForm
@@ -89,6 +90,8 @@ const Apply = () => {
                   jobListingId={jobListingId}
                   industryVertical={industryVertical}
                 />
+              ) : isMetaTraffic ? (
+                <SocialExpressForm clientName={clientName} clientLogoUrl={clientLogoUrl} industryVertical={industryVertical} />
               ) : (
                 <ApplicationForm clientName={clientName} clientLogoUrl={clientLogoUrl} industryVertical={industryVertical} />
               )}
