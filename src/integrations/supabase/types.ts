@@ -9178,7 +9178,13 @@ export type Database = {
       validate_phone_number: { Args: { phone: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "recruiter" | "user" | "super_admin"
+      app_role:
+        | "admin"
+        | "moderator"
+        | "recruiter"
+        | "user"
+        | "super_admin"
+        | "client"
       screening_request_status:
         | "pending"
         | "sent"
@@ -9322,7 +9328,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "recruiter", "user", "super_admin"],
+      app_role: [
+        "admin",
+        "moderator",
+        "recruiter",
+        "user",
+        "super_admin",
+        "client",
+      ],
       screening_request_status: [
         "pending",
         "sent",
