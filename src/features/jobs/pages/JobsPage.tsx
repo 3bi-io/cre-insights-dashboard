@@ -291,6 +291,14 @@ const JobsPage = () => {
             onOpenChange={setShowAnalyticsDialog}
           />
         )}
+
+        {/* Geo Expand Dialog */}
+        <GeoExpandDialog
+          open={showGeoExpand}
+          onOpenChange={setShowGeoExpand}
+          jobIds={filteredJobs?.map((j: any) => j.id) || []}
+          onSuccess={() => refetch()}
+        />
       </div>
     </PageLayout>
   );
