@@ -431,4 +431,11 @@ export const HAYES_CLIENT_CONFIGS: Record<string, HayesClientConfig> = {
     feedUserCode: 'James-Burg-Trucking-Company-1770928232',
     feedBoard: 'AIRecruiter',
   },
+  're-garrison': {
+    clientId: 'be8b645e-d480-4c22-8e75-b09a7fc1db7a',
+    clientName: 'R.E. Garrison Trucking',
+    clientSlug: 're-garrison',
+    feedUserCode: 'RE-Garrison-Trucking-1760000000',
+    feedBoard: 'AIRecruiter',
+  },
 };
