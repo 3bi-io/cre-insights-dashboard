@@ -107,7 +107,7 @@ const HeroSection = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 lg:py-20"
+        className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 lg:py-28 text-center"
       >
         {/* Badge - compact, high contrast */}
         <motion.span
@@ -117,29 +117,30 @@ const HeroSection = () => {
           {heroContent.badge}
         </motion.span>
 
-        {/* Headline - impactful with gradient accent */}
+        {/* Headline - larger, centered, gradient accent */}
         <motion.h1
           variants={itemVariants}
-          className="text-[2rem] sm:text-5xl md:text-6xl lg:text-7xl font-playfair font-bold text-foreground mb-6 leading-[1.1] tracking-tight"
+          className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-playfair font-bold mb-6 leading-[1.05] tracking-tight"
         >
-          {heroContent.headline}
-          <span className="text-white">
+          <span className="text-white">{heroContent.headline}</span>
+          <span className="bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-transparent">
             {heroContent.headlineAccent}
           </span>
         </motion.h1>
 
-        {/* Subheadline - clear value prop above the fold */}
+        {/* Subheadline - white text with text-shadow, NO dark box */}
         <motion.p
           variants={itemVariants}
-          className="text-lg sm:text-xl md:text-2xl text-white font-medium mb-8 max-w-2xl leading-relaxed whitespace-pre-line bg-black/40 backdrop-blur-sm rounded-2xl px-6 py-4 shadow-xl"
+          className="text-lg sm:text-xl md:text-2xl text-white font-medium mb-10 max-w-2xl mx-auto leading-relaxed whitespace-pre-line"
+          style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 3px rgba(0,0,0,0.5)' }}
         >
           {heroContent.subheadline}
         </motion.p>
 
-        {/* CTA Buttons - primary action first, prominent */}
+        {/* CTA Buttons - centered */}
         <motion.div
           variants={itemVariants}
-          className="flex flex-col sm:flex-row gap-4 items-start mb-10"
+          className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-10"
         >
           <Link to="/jobs" className="w-full sm:w-auto">
             <Button
@@ -150,25 +151,24 @@ const HeroSection = () => {
               {heroContent.cta.primary}
             </Button>
           </Link>
-          <Link to="/auth" className="w-full sm:w-auto">
+          <Link to="/demo" className="w-full sm:w-auto">
             <Button
               variant="outline"
               size="lg"
-              className="w-full sm:w-auto min-h-[56px] px-10 py-5 text-lg font-bold border-2 border-primary bg-white text-primary hover:bg-primary/10 hover:scale-105 transition-all duration-300 shadow-lg"
+              className="w-full sm:w-auto min-h-[56px] px-10 py-5 text-lg font-bold border-2 border-white/40 bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm hover:scale-105 transition-all duration-300 shadow-lg"
             >
-              {heroContent.cta.secondary}
+              Book a Demo
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
         </motion.div>
 
-        {/* Trust signals - compact row */}
+        {/* Trust signals - centered */}
         <motion.div 
           variants={itemVariants} 
-          className="flex flex-col items-start gap-3"
+          className="flex flex-col items-center gap-3"
         >
-          {/* Dynamic company count */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
             <span className="inline-flex items-center text-sm lg:text-base text-black font-semibold bg-white rounded-full px-5 py-2 shadow-lg">
               <span className="w-2 h-2 bg-success rounded-full mr-2 animate-pulse" />
               {companyCount.toLocaleString()} Companies Hiring
@@ -179,19 +179,18 @@ const HeroSection = () => {
             </span>
           </div>
           
-          {/* Industry tags - always below company count */}
           <motion.div
             variants={tagContainerVariants}
             initial="hidden"
             animate="visible"
-            className="flex flex-nowrap sm:flex-wrap items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
+            className="flex flex-nowrap sm:flex-wrap items-center justify-center gap-2 overflow-x-auto scrollbar-hide pb-1"
           >
             {heroContent.industryTags?.map((tag, index) => (
               <motion.span
                 key={tag}
                 variants={tagVariants}
                 custom={index}
-                className="px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-black rounded-full border border-white hover:bg-black/80 transition-colors"
+                className="px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-white/15 backdrop-blur-sm rounded-full border border-white/30 hover:bg-white/25 transition-colors"
               >
                 {tag}
               </motion.span>

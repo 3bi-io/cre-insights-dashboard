@@ -17,7 +17,7 @@ export const publicNavigation: PublicNavItem[] = [
   },
   { 
     name: 'Employers', 
-    href: '/clients', 
+    href: '/employers', 
     icon: Building2,
     description: 'Explore hiring companies'
   },
