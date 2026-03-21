@@ -104,10 +104,14 @@ export const ClientPortalDashboard: React.FC<ClientPortalDashboardProps> = ({ ov
         {/* Section 1: KPI Hero Cards */}
         <KPIHeroCards analytics={analytics || null} isLoading={analyticsLoading} sparklineData={sparklineData} />
 
+        <div className="border-t border-border/30" />
+
         {/* Section 2: Pipeline Funnel */}
         {analytics && (
           <PipelineFunnel data={analytics.pipeline} totalApplications={analytics.totalApplications} />
         )}
+
+        <div className="border-t border-border/30" />
 
         {/* Section 3: Charts Row */}
         {analytics && (
@@ -118,13 +122,19 @@ export const ClientPortalDashboard: React.FC<ClientPortalDashboardProps> = ({ ov
           />
         )}
 
+        <div className="border-t border-border/30" />
+
         {/* Section 4: ATS Delivery */}
         {analytics && <ATSDeliverySection data={analytics.atsDelivery} />}
+
+        <div className="border-t border-border/30" />
 
         {/* Section 5: Recent Applicants */}
         {activeClientId && (
           <RecentApplicantsTable clientId={activeClientId} dateRange={dateRange} />
         )}
+
+        <div className="border-t border-border/30" />
 
         {/* Section 6: Job Performance */}
         {activeClientId && (
