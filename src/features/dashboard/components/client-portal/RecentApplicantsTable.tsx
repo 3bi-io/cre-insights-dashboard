@@ -15,13 +15,13 @@ interface RecentApplicantsTableProps {
 }
 
 const STAGE_BADGES: Record<string, { label: string; className: string }> = {
-  pending: { label: 'New', className: 'bg-slate-500/20 text-slate-300 border-slate-500/30' },
-  reviewed: { label: 'Reviewed', className: 'bg-blue-500/20 text-blue-300 border-blue-500/30' },
-  contacted: { label: 'Contacted', className: 'bg-violet-500/20 text-violet-300 border-violet-500/30' },
-  interviewed: { label: 'Interview', className: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-  offered: { label: 'Offer', className: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
-  hired: { label: 'Hired', className: 'bg-green-500/20 text-green-300 border-green-500/30' },
-  accepted: { label: 'Hired', className: 'bg-green-500/20 text-green-300 border-green-500/30' },
+  pending: { label: 'New', className: 'bg-slate-600/25 text-slate-200 border-slate-600/40' },
+  reviewed: { label: 'Reviewing', className: 'bg-blue-600/25 text-blue-200 border-blue-600/40' },
+  contacted: { label: 'Phone Screen', className: 'bg-violet-600/25 text-violet-200 border-violet-600/40' },
+  interviewed: { label: 'Interview', className: 'bg-amber-600/25 text-amber-200 border-amber-600/40' },
+  offered: { label: 'Offer', className: 'bg-emerald-600/25 text-emerald-200 border-emerald-600/40' },
+  hired: { label: 'Hired', className: 'bg-green-600/25 text-green-200 border-green-600/40' },
+  accepted: { label: 'Hired', className: 'bg-green-600/25 text-green-200 border-green-600/40' },
   rejected: { label: 'Rejected', className: 'bg-red-500/20 text-red-300 border-red-500/30' },
   withdrawn: { label: 'Withdrawn', className: 'bg-gray-500/20 text-gray-300 border-gray-500/30' },
 };

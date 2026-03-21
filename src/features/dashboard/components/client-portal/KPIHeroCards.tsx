@@ -67,16 +67,16 @@ export const KPIHeroCards: React.FC<KPIHeroCardsProps> = ({ analytics, isLoading
       extra: (
         <div className="mt-3">
           {sparklineData && sparklineData.length > 1 ? (
-            <div className="h-10">
+            <div className="h-12">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={sparklineData}>
                   <defs>
                     <linearGradient id="sparkBlue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#60a5fa" stopOpacity={0.5} />
+                      <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.05} />
                     </linearGradient>
                   </defs>
-                  <Area type="monotone" dataKey="count" stroke="#3b82f6" fill="url(#sparkBlue)" strokeWidth={1.5} dot={false} />
+                  <Area type="monotone" dataKey="count" stroke="#60a5fa" fill="url(#sparkBlue)" strokeWidth={2} dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
