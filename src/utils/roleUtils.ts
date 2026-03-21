@@ -12,6 +12,7 @@ export type AppRole = 'user' | 'viewer' | 'client' | 'recruiter' | 'moderator' |
 export const ROLE_HIERARCHY: Record<string, number> = {
   user: 1,
   viewer: 1,
+  client: 1.5,
   recruiter: 2,
   moderator: 3,
   admin: 4,
