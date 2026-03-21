@@ -27,6 +27,7 @@ const Apply = () => {
   } = useApplyContext();
 
   const { isOutsideAmericas, country, countryCode } = useGeoBlocking();
+  const { isMetaTraffic } = useSourceDetection();
 
   // Memoize SEO content to prevent unnecessary recalculations
   const seoContent = useMemo(() => {
