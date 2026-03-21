@@ -19,9 +19,9 @@ export const EMAIL_CONFIG = {
   
   // Reply-to addresses
   replyTo: {
-    support: "support@3bi.io",
-    hr: "hr@3bi.io",
-    admin: "admin@3bi.io"
+    support: "support@applyai.jobs",
+    hr: "support@applyai.jobs",
+    admin: "support@applyai.jobs"
   },
 
   // BCC recipients for email review (all emails will be copied here)

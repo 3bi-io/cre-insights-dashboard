@@ -134,7 +134,7 @@ const handler = wrapHandler(async (req: Request) => {
       
       const emailResponse = await resend.emails.send({
         from: getSender('contact'),
-        to: ['admin@3bi.io'], // Admin notification recipient
+        to: ['support@applyai.jobs'], // Admin notification recipient
         bcc: getReviewBcc(),
         subject: `New Contact Form: ${body.subject}`,
         html: generateAdminNotificationEmail(body),
