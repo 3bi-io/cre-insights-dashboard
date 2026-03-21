@@ -90,7 +90,7 @@ const Apply = () => {
                   jobListingId={jobListingId}
                   industryVertical={industryVertical}
                 />
-              ) : isMetaTraffic ? (
+              ) : isSocialTraffic ? (
                 <SocialExpressForm clientName={clientName} clientLogoUrl={clientLogoUrl} industryVertical={industryVertical} />
               ) : (
                 <ApplicationForm clientName={clientName} clientLogoUrl={clientLogoUrl} industryVertical={industryVertical} />
