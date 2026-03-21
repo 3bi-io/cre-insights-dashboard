@@ -84,9 +84,9 @@ const LandingPage = () => {
         <FAQSection />
       </Suspense>
 
-      {/* Industry Showcase Modal */}
-      <Suspense fallback={null}>
-        <IndustryShowcaseModal />
+      {/* Built for Your Industry - inline section */}
+      <Suspense fallback={<LoadingSkeleton variant="section" />}>
+        <IndustryShowcaseSection />
       </Suspense>
     </main>
   );
