@@ -129,6 +129,19 @@ export const getNavigationGroups = (options: {
     tenstreetNotificationCount = 0
   } = options;
 
+  // Client-role users get minimal nav (only Support alongside Dashboard from mainNavItems)
+  if (userRole === 'client') {
+    return [
+      {
+        group: "Settings",
+        icon: Settings,
+        items: [
+          { path: '/admin/support', label: 'Support', icon: HelpCircle }
+        ]
+      }
+    ];
+  }
+
   // Support both new userRole and legacy boolean flags
   const isSuperAdmin = options.isSuperAdmin ?? userRole === 'super_admin';
   const isAdmin = options.isAdmin ?? (userRole === 'admin' || userRole === 'super_admin');

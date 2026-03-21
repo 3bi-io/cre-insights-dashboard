@@ -130,6 +130,7 @@ export function getRoleOptions(includeSuperAdmin: boolean = false): Array<{
 }> {
   const options = [
     { value: 'user', label: 'User', description: 'Basic access to view dashboard' },
+    { value: 'client', label: 'Client', description: 'Client portal access to view analytics for assigned clients' },
     { value: 'recruiter', label: 'Recruiter', description: 'Manage applications, jobs, clients' },
     { value: 'moderator', label: 'Moderator', description: 'Manage content, analytics, AI tools' },
     { value: 'admin', label: 'Admin', description: 'Full organization management' },
