@@ -256,8 +256,10 @@ export default function AdminApplicationsPage() {
         <ApplicationsStats
           totalCount={applications.length}
           pendingCount={statusCounts.pending || 0}
-          inProgressCount={(statusCounts.reviewed || 0) + (statusCounts.interviewing || 0)}
+          reviewedCount={statusCounts.reviewed || 0}
+          inProgressCount={statusCounts.interviewing || 0}
           hiredCount={statusCounts.hired || 0}
+          rejectedCount={statusCounts.rejected || 0}
         />
 
         {/* Filters */}

@@ -11,10 +11,8 @@ export function isActivePath(
   targetPath: string,
   patterns?: string[]
 ): boolean {
-  // Exact match
   if (currentPath === targetPath) return true;
   
-  // Check additional patterns
   if (patterns) {
     return patterns.some(pattern => {
       if (pattern.endsWith('*')) {
@@ -24,7 +22,6 @@ export function isActivePath(
     });
   }
   
-  // Check if current path starts with target (for nested routes)
   if (targetPath !== '/' && currentPath.startsWith(targetPath + '/')) {
     return true;
   }
@@ -73,23 +70,25 @@ export function getDisplayName(
 }
 
 /**
- * Get role badge color classes
+ * Get role badge color classes - premium color scheme
  */
 export function getRoleBadgeColor(role: string | null): string {
   switch (role) {
     case 'super_admin':
-      return 'bg-primary/10 text-primary border-primary/20';
+      return 'bg-amber-500/15 text-amber-500 border-amber-500/30';
     case 'admin':
-      return 'bg-destructive/10 text-destructive border-destructive/20';
+      return 'bg-blue-500/15 text-blue-400 border-blue-500/30';
     case 'moderator':
-      return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
+      return 'bg-violet-500/15 text-violet-400 border-violet-500/30';
     case 'recruiter':
-      return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+      return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+    case 'client':
+      return 'bg-purple-500/15 text-purple-400 border-purple-500/30';
     case 'candidate':
-      return 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20';
+      return 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30';
     case 'viewer':
     case 'user':
-      return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20';
+      return 'bg-slate-500/15 text-slate-400 border-slate-500/30';
     default:
       return 'bg-muted text-muted-foreground border-muted';
   }
@@ -108,6 +107,8 @@ export function getRoleDisplayName(role: string | null): string {
       return 'Moderator';
     case 'recruiter':
       return 'Recruiter';
+    case 'client':
+      return 'Client';
     case 'viewer':
       return 'Viewer';
     case 'user':
@@ -116,6 +117,26 @@ export function getRoleDisplayName(role: string | null): string {
       return 'Candidate';
     default:
       return 'User';
+  }
+}
+
+/**
+ * Get role accent color for sidebar/UI elements
+ */
+export function getRoleAccentColor(role: string | null): string {
+  switch (role) {
+    case 'super_admin':
+      return 'text-amber-500';
+    case 'admin':
+      return 'text-blue-400';
+    case 'moderator':
+      return 'text-violet-400';
+    case 'recruiter':
+      return 'text-emerald-400';
+    case 'client':
+      return 'text-purple-400';
+    default:
+      return 'text-muted-foreground';
   }
 }
 

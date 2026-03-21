@@ -67,13 +67,14 @@ const JobTable: React.FC<JobTableProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800';
+        return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20';
       case 'paused':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-amber-500/15 text-amber-400 border-amber-500/20';
+      case 'expired':
       case 'completed':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-red-500/15 text-red-400 border-red-500/20';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-slate-500/15 text-slate-400 border-slate-500/20';
     }
   };
 
@@ -287,7 +288,7 @@ const JobTable: React.FC<JobTableProps> = ({
                 const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
                 
                 return (
-                  <TableRow key={job.id} className="hover:bg-muted/50">
+                  <TableRow key={job.id} className="hover:bg-muted/40 even:bg-muted/10">
                     <TableCell className="font-medium">
                       <div className="min-w-0">
                         <div className="font-medium text-foreground truncate">{displayTitle}</div>
@@ -304,9 +305,18 @@ const JobTable: React.FC<JobTableProps> = ({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-muted-foreground font-mono text-sm">
-                        {job.job_id || 'N/A'}
-                      </span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-muted-foreground font-mono text-xs cursor-help">
+                              {job.job_id ? `${job.job_id.slice(0, 8)}…` : 'N/A'}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="font-mono text-xs">{job.job_id || 'No ID'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
@@ -335,8 +345,8 @@ const JobTable: React.FC<JobTableProps> = ({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(job.status || 'active')}>
-                        {job.status || 'active'}
+                      <Badge variant="outline" className={getStatusColor(job.status || 'active')}>
+                        {(job.status || 'active').charAt(0).toUpperCase() + (job.status || 'active').slice(1)}
                       </Badge>
                     </TableCell>
                     <TableCell>
