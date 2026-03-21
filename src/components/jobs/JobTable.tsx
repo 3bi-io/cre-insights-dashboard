@@ -7,10 +7,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown, DollarSign, Mic, Link2, Sparkles, Calendar, Activity } from 'lucide-react';
+import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown, DollarSign, Mic, Link2, Sparkles, Calendar, Activity, Globe } from 'lucide-react';
 import { CopyApplyLinkButton } from './CopyApplyLinkButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { GeoExpandDialog } from '@/components/admin/GeoExpandDialog';
 
 interface JobTableProps {
   jobs: any[] | undefined;
