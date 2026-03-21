@@ -163,13 +163,12 @@ const HeroSection = () => {
           </Link>
         </motion.div>
 
-        {/* Trust signals - compact row */}
+        {/* Trust signals - centered */}
         <motion.div 
           variants={itemVariants} 
-          className="flex flex-col items-start gap-3"
+          className="flex flex-col items-center gap-3"
         >
-          {/* Dynamic company count */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
             <span className="inline-flex items-center text-sm lg:text-base text-black font-semibold bg-white rounded-full px-5 py-2 shadow-lg">
               <span className="w-2 h-2 bg-success rounded-full mr-2 animate-pulse" />
               {companyCount.toLocaleString()} Companies Hiring
@@ -180,19 +179,18 @@ const HeroSection = () => {
             </span>
           </div>
           
-          {/* Industry tags - always below company count */}
           <motion.div
             variants={tagContainerVariants}
             initial="hidden"
             animate="visible"
-            className="flex flex-nowrap sm:flex-wrap items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
+            className="flex flex-nowrap sm:flex-wrap items-center justify-center gap-2 overflow-x-auto scrollbar-hide pb-1"
           >
             {heroContent.industryTags?.map((tag, index) => (
               <motion.span
                 key={tag}
                 variants={tagVariants}
                 custom={index}
-                className="px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-black rounded-full border border-white hover:bg-black/80 transition-colors"
+                className="px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-white/15 backdrop-blur-sm rounded-full border border-white/30 hover:bg-white/25 transition-colors"
               >
                 {tag}
               </motion.span>

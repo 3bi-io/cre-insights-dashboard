@@ -34,13 +34,10 @@ export const GeoBlockingGate: React.FC<GeoBlockingGateProps> = ({
 }) => {
   const { isChecking, isBlocked } = useGeoBlocking();
 
-  // Show loading state while checking
-  if (isChecking) {
-    return <GeoCheckingSpinner />;
-  }
-
-  // Show blocked page if access is denied
-  if (isBlocked) {
+  // NEVER block rendering while checking — render children immediately
+  // and only block AFTER the check confirms the user is blocked.
+  // This prevents public pages from showing loading spinners.
+  if (isBlocked && !isChecking) {
     return (
       <React.Suspense fallback={<GeoCheckingSpinner />}>
         {blockedComponent || <RegionBlockedPage />}
@@ -48,7 +45,7 @@ export const GeoBlockingGate: React.FC<GeoBlockingGateProps> = ({
     );
   }
 
-  // Render children if access is allowed
+  // Render children immediately (even while checking)
   return <>{children}</>;
 };
 
