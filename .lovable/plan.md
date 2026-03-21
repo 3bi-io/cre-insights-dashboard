@@ -1,42 +1,29 @@
 
 
-# Source and Update Logos for Werner Enterprises & TMC Transportation
+# Fix TMC Transportation Logo
 
-## Current State
-- **Werner Enterprises** (`feb3479f`): `logo_url` is NULL
-- **TMC Transportation** (`50657f4d`): `logo_url` is NULL
-- **Hub Group** already has a logo at `https://applyai.jobs/logos/hubgroup-logo.png`
+## Problem
+The TMC Transportation logo file at `public/logos/tmc-transportation.png` is blank/white (0 visible content). The previous download captured an empty image. The database correctly references `https://applyai.jobs/logos/tmc-transportation.png` but it renders as nothing.
 
-## Logo Sources Identified
-- **Werner Enterprises**: Official yellow/gold wordmark logo from their website (original at `werner.com`). Will download the PNG version and save locally.
-- **TMC Transportation**: Official orange "TMC" logo with "An Employee-Owned Company" tagline from `tmctrans.com`. Will download and save locally.
+## Root Cause
+The original download source likely served a redirect, CAPTCHA, or empty response. The file was saved but contains no actual logo data.
 
-## Plan
+## Fix
 
-### Step 1: Download and save logo files
-Using `lov-exec`, download both logos to `public/logos/`:
-- `public/logos/werner-enterprises.png` -- Werner's yellow wordmark on transparent background
-- `public/logos/tmc-transportation.png` -- TMC's orange logo on transparent background
+### Step 1: Download TMC logo from a reliable source
+Use `lov-exec` to download the TMC Transportation logo from their official website or a logo repository. The logo is an orange "TMC" wordmark with "An Employee-Owned Company" tagline, visible in the header at `tmctrans.com`. Candidate sources:
+- Direct from tmctrans.com header image element
+- From seeklogo.com PNG export (2000x590px version)
+- From logo.wine or similar aggregator
 
-Source URLs:
-- Werner: `https://download.logo.wine/logo/Werner_Enterprises/Werner_Enterprises-Logo.wine.png`
-- TMC: Extract from tmctrans.com header (the logo img element)
-
-### Step 2: Update client records in database
-Run a SQL migration to set `logo_url` for both clients:
-```sql
-UPDATE clients SET logo_url = 'https://applyai.jobs/logos/werner-enterprises.png'
-WHERE id = 'feb3479f-4116-42a5-bb6a-811406c1c99a';
-
-UPDATE clients SET logo_url = 'https://applyai.jobs/logos/tmc-transportation.png'
-WHERE id = '50657f4d-c47b-4104-a307-b82d5fa4a1df';
-```
+### Step 2: Overwrite the existing file
+Replace `public/logos/tmc-transportation.png` with the valid logo file. No database migration needed -- the `logo_url` already points to the correct path.
 
 ### Step 3: Verify rendering
-Confirm both logos display correctly in the admin client list and public job cards using the existing `CompanyLogo` / `LogoAvatar` components. No component changes needed -- the existing infrastructure handles logo display automatically once `logo_url` is populated.
+Confirm the logo displays in the admin client dashboard and public job cards.
 
 ## Files Changed
-- **New**: `public/logos/werner-enterprises.png`
-- **New**: `public/logos/tmc-transportation.png`
-- **New**: SQL migration to update `logo_url` on both client records
+- **Replaced**: `public/logos/tmc-transportation.png` (blank -> actual TMC logo)
+
+No database or code changes required.
 
