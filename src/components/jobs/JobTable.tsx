@@ -288,7 +288,7 @@ const JobTable: React.FC<JobTableProps> = ({
                 const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
                 
                 return (
-                  <TableRow key={job.id} className="hover:bg-muted/50">
+                  <TableRow key={job.id} className="hover:bg-muted/40 even:bg-muted/10">
                     <TableCell className="font-medium">
                       <div className="min-w-0">
                         <div className="font-medium text-foreground truncate">{displayTitle}</div>
