@@ -3,7 +3,7 @@
  * Provides consistent role checking across navigation and components
  */
 
-export type AppRole = 'user' | 'viewer' | 'recruiter' | 'moderator' | 'admin' | 'super_admin';
+export type AppRole = 'user' | 'viewer' | 'client' | 'recruiter' | 'moderator' | 'admin' | 'super_admin';
 
 /**
  * Role hierarchy levels - higher number = more permissions
