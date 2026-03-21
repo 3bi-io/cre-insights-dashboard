@@ -160,12 +160,12 @@ export const RecentApplicantsTable: React.FC<RecentApplicantsTableProps> = ({ cl
                   </tr>
                 </thead>
                 <tbody>
-                  {paged.map(a => {
+                  {paged.map((a, rowIdx) => {
                     const stage = STAGE_BADGES[(a.status || 'pending').toLowerCase()] || STAGE_BADGES.pending;
                     const sourceColor = SOURCE_COLORS[(a.source || '').toLowerCase()] || 'bg-muted text-muted-foreground';
                     const ats = getAtsStatus(a);
                     return (
-                      <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                      <tr key={a.id} className={`border-b border-border/50 hover:bg-muted/50 transition-colors ${rowIdx % 2 === 1 ? 'bg-muted/20' : ''}`}>
                         <td className="py-2.5 px-3 font-medium text-foreground">
                           {a.first_name} {a.last_name}
                         </td>
