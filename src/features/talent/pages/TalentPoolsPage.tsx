@@ -128,16 +128,32 @@ export default function TalentPoolsPage() {
 
         {/* Pools Grid */}
         {pools.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <FolderOpen className="w-12 h-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No talent pools yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Create your first talent pool to start organizing candidates
+          <Card className="border-dashed border-2">
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="p-4 rounded-full bg-primary/10 mb-4">
+                <Users className="w-10 h-10 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">No talent pools yet</h3>
+              <p className="text-muted-foreground mb-2 max-w-md">
+                Talent pools help you organize candidates into groups for targeted outreach and faster hiring.
               </p>
-              <Button onClick={() => setIsCreateOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Pool
+              <p className="text-sm text-muted-foreground mb-6 max-w-md">
+                Group applicants by experience level, location, or job type to streamline your recruitment pipeline.
+              </p>
+              <div className="flex flex-wrap gap-2 mb-6">
+                <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/20">
+                  🚛 Experienced CDL-A Drivers
+                </Badge>
+                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                  🎓 New CDL Graduates
+                </Badge>
+                <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/20">
+                  ⭐ Student Ready Candidates
+                </Badge>
+              </div>
+              <Button size="lg" onClick={() => setIsCreateOpen(true)} className="gap-2">
+                <Plus className="w-5 h-5" />
+                Create Your First Pool
               </Button>
             </CardContent>
           </Card>
