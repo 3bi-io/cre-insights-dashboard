@@ -37,7 +37,8 @@ export const ClientPortalDashboard: React.FC<ClientPortalDashboardProps> = ({ ov
   // Pass null for organization since client-role users access via RLS directly
   const { data: analytics, isLoading: analyticsLoading, refetch } = useClientPortalAnalytics(activeClientId, dateRange);
 
-  if (clientsLoading) {
+  // In override mode (admin preview), skip client assignment loading/checks
+  if (!overrideClientId && clientsLoading) {
     return (
       <PageLayout>
         <div className="flex items-center justify-center min-h-[400px]">
@@ -47,7 +48,7 @@ export const ClientPortalDashboard: React.FC<ClientPortalDashboardProps> = ({ ov
     );
   }
 
-  if (clientsError || !assignedClients?.length) {
+  if (!overrideClientId && (clientsError || !assignedClients?.length)) {
     return (
       <PageLayout>
         <div className="text-center py-12">

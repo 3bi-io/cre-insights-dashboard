@@ -299,6 +299,7 @@ const AppRoutes: React.FC = () => {
         <Route path="feeds" element={<AdminRouteWrapper><FeedsManagement /></AdminRouteWrapper>} />
         <Route path="universal-feeds" element={<AdminRouteWrapper><UniversalFeeds /></AdminRouteWrapper>} />
         <Route path="clients" element={<AdminRouteWrapper><ClientsPage /></AdminRouteWrapper>} />
+        <Route path="client-dashboards" element={<AdminRouteWrapper><ClientDashboardsPage /></AdminRouteWrapper>} />
         <Route path="organizations" element={<AdminRouteWrapper><Organizations /></AdminRouteWrapper>} />
         <Route path="settings" element={<AdminRouteWrapper><Settings /></AdminRouteWrapper>} />
         <Route path="media" element={<AdminRouteWrapper><Media /></AdminRouteWrapper>} />
