@@ -17,7 +17,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Users, Briefcase, Gauge, Clock, Building2, RefreshCw } from 'lucide-react';
 import type { DateRange } from '@/features/clients/types/clientAnalytics.types';
 
-export const ClientPortalDashboard: React.FC = () => {
+interface ClientPortalDashboardProps {
+  overrideClientId?: string;
+}
+
+export const ClientPortalDashboard: React.FC<ClientPortalDashboardProps> = ({ overrideClientId }) => {
   const { data: assignedClients, isLoading: clientsLoading, error: clientsError } = useClientPortalData();
   const [dateRange, setDateRange] = useState<DateRange>('30d');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
