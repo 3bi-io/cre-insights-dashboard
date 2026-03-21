@@ -28,7 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { Client, UpdateClientData } from '../types/client.types';
-import { Building2, Link2, ClipboardList } from 'lucide-react';
+import { Building2, Link2, ClipboardList, CheckCircle2 } from 'lucide-react';
 
 const clientFormSchema = z.object({
   name: z.string().min(1, 'Client name is required'),
@@ -317,6 +317,10 @@ const EditClientDialog: React.FC<EditClientDialogProps> = ({
             </TabsContent>
 
             <TabsContent value="fields" className="mt-0 pr-4 data-[state=active]:flex-1">
+              <div className="flex items-center gap-2 mb-4 p-2 rounded-md bg-muted/50 border border-border">
+                <CheckCircle2 className="h-4 w-4 text-success flex-shrink-0" />
+                <span className="text-xs text-muted-foreground">Changes are saved automatically</span>
+              </div>
               {client?.organization_id ? (
                 <ClientApplicationFieldsConfig
                   clientId={client.id}
@@ -330,6 +334,10 @@ const EditClientDialog: React.FC<EditClientDialogProps> = ({
             </TabsContent>
 
             <TabsContent value="ats" className="mt-0 pr-4 data-[state=active]:flex-1">
+              <div className="flex items-center gap-2 mb-4 p-2 rounded-md bg-muted/50 border border-border">
+                <CheckCircle2 className="h-4 w-4 text-success flex-shrink-0" />
+                <span className="text-xs text-muted-foreground">Changes are saved automatically</span>
+              </div>
               {client?.organization_id ? (
                 <ClientATSSettings
                   clientId={client.id}

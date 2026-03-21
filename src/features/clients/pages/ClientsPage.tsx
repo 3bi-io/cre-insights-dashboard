@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { PageLayout } from '@/features/shared';
+import { Plus, Truck, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
-  ClientsHeader,
   ClientsSearch,
   ClientsTable,
   ClientsSummary,
@@ -15,6 +16,8 @@ import { useAuth } from '@/hooks/useAuth';
 import type { Client, ClientFilters } from '../types/client.types';
 import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
 
+const ITEMS_PER_PAGE = 25;
+
 const ClientsPage = () => {
   const [filters, setFilters] = useState<ClientFilters>({});
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -22,9 +25,9 @@ const ClientsPage = () => {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   
   const { userRole, organization } = useAuth();
-  const isAdmin = userRole === 'admin' || userRole === 'super_admin';
 
   const {
     clients,
@@ -33,7 +36,6 @@ const ClientsPage = () => {
     createClient,
     updateClient,
     deleteClient,
-    getClientsBySearch,
     isCreating,
     isUpdating,
     isDeleting,
@@ -48,7 +50,6 @@ const ClientsPage = () => {
     
     let filtered = clients;
 
-    // Apply search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(client =>
@@ -58,12 +59,10 @@ const ClientsPage = () => {
       );
     }
 
-    // Apply status filter
     if (filters.status && filters.status !== 'all') {
       filtered = filtered.filter(client => client.status === filters.status);
     }
 
-    // Apply location filter
     if (filters.location) {
       const locationLower = filters.location.toLowerCase();
       filtered = filtered.filter(client =>
@@ -75,13 +74,36 @@ const ClientsPage = () => {
     return filtered;
   }, [clients, filters]);
 
-  const handleCreateClient = () => {
-    setShowCreateDialog(true);
+  // Pagination
+  const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
+  const paginatedClients = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredClients.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredClients, currentPage]);
+
+  // Reset page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
+
+  const handleExportCSV = () => {
+    const headers = ['Name', 'Company', 'Email', 'Phone', 'City', 'State', 'Status'];
+    const rows = filteredClients.map(c => [
+      c.name, c.company || '', c.email || '', c.phone || '',
+      c.city || '', c.state || '', c.status
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `clients-export-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
-  const handleEditClient = (client: Client) => {
-    setEditingClient(client);
-  };
+  const handleCreateClient = () => setShowCreateDialog(true);
+  const handleEditClient = (client: Client) => setEditingClient(client);
 
   const handleDeleteClick = (clientId: string) => {
     setClientToDelete(clientId);
@@ -89,9 +111,7 @@ const ClientsPage = () => {
   };
 
   const handleConfirmDelete = () => {
-    if (clientToDelete) {
-      deleteClient(clientToDelete);
-    }
+    if (clientToDelete) deleteClient(clientToDelete);
     setDeleteDialogOpen(false);
     setClientToDelete(null);
   };
@@ -106,9 +126,7 @@ const ClientsPage = () => {
     setEditingClient(null);
   };
 
-  if (loading) {
-    return <ClientsLoading />;
-  }
+  if (loading) return <ClientsLoading />;
 
   if (error) {
     return (
@@ -117,13 +135,8 @@ const ClientsPage = () => {
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold mb-4">Error Loading Clients</h1>
             <p className="text-muted-foreground mb-4">
-              There was an error loading your client data: {error instanceof Error ? error.message : 'Unknown error'}
+              {error instanceof Error ? error.message : 'Unknown error'}
             </p>
-            {userRole === 'super_admin' && (
-              <p className="text-sm text-muted-foreground mt-2">
-                Super Admin: You should have access to all clients
-              </p>
-            )}
             {!organization && userRole !== 'super_admin' && (
               <p className="text-sm text-muted-foreground mt-2">
                 No organization found. Please contact your administrator.
@@ -141,46 +154,63 @@ const ClientsPage = () => {
     );
   }
 
+  const headerActions = (
+    <div className="flex items-center gap-2 flex-wrap">
+      <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-2">
+        <Download className="w-4 h-4" />
+        <span className="hidden sm:inline">Export</span>
+      </Button>
+      {!!organization?.id && (
+        <Button variant="outline" size="sm" onClick={() => setShowBulkTenstreetDialog(true)} className="gap-2">
+          <Truck className="w-4 h-4" />
+          <span className="hidden sm:inline">Bulk Tenstreet</span>
+        </Button>
+      )}
+      <Button size="sm" onClick={handleCreateClient} className="gap-2">
+        <Plus className="w-4 h-4" />
+        Add Client
+      </Button>
+    </div>
+  );
+
   return (
     <PageLayout 
       title="Clients" 
       description="Manage your client relationships and contact information"
+      actions={headerActions}
     >
-      <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-        <ClientsHeader 
-          clientsCount={filteredClients.length} 
-          onCreateClient={handleCreateClient}
-          onBulkTenstreet={() => setShowBulkTenstreetDialog(true)}
-          showBulkTenstreet={!!organization?.id}
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+        <ClientsSearch 
+          clientsCount={filteredClients.length}
+          onFiltersChange={setFilters}
+          filters={filters}
         />
-        <div className="mt-6 space-y-6">
-          <ClientsSearch 
-            clientsCount={filteredClients.length}
-            onFiltersChange={setFilters}
-            filters={filters}
-          />
-          <ClientsTable 
-            clients={filteredClients}
-            organizationId={organization?.id}
-            onEditClient={handleEditClient}
-            onDeleteClient={handleDeleteClick}
-          />
-          <ClientsSummary clients={filteredClients} />
+        
+        <ClientsSummary clients={filteredClients} />
+        
+        <ClientsTable 
+          clients={paginatedClients}
+          organizationId={organization?.id}
+          onEditClient={handleEditClient}
+          onDeleteClient={handleDeleteClick}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredClients.length}
+          onPageChange={setCurrentPage}
+        />
 
-          <ConfirmationDialog
-            open={deleteDialogOpen}
-            onOpenChange={setDeleteDialogOpen}
-            title="Delete Client"
-            description="Are you sure you want to delete this client?"
-            confirmLabel="Delete"
-            variant="destructive"
-            onConfirm={handleConfirmDelete}
-            isLoading={isDeleting}
-          />
-        </div>
+        <ConfirmationDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          title="Delete Client"
+          description="Are you sure you want to delete this client?"
+          confirmLabel="Delete"
+          variant="destructive"
+          onConfirm={handleConfirmDelete}
+          isLoading={isDeleting}
+        />
       </div>
 
-      {/* Dialogs */}
       <CreateClientDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
