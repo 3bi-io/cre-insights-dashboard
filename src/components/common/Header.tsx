@@ -163,15 +163,25 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center space-x-2" role="group" aria-label="Authentication">
               <ThemeToggle />
               {showAuth && (
-                <Link to="/auth" className="hidden lg:block">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                  >
-                    Sign In
-                  </Button>
-                </Link>
+                <>
+                  <Link to="/auth" className="hidden lg:block">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link to="/auth?signup=true" className="hidden lg:block">
+                    <Button 
+                      size="sm" 
+                      className="min-h-[44px] rounded-full bg-primary text-primary-foreground hover:bg-primary/90 px-5 font-semibold"
+                    >
+                      Get Started Free
+                    </Button>
+                  </Link>
+                </>
               )}
               {/* Mobile/tablet hamburger — visible below lg */}
               <Button
