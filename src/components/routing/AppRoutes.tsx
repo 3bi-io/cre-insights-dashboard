@@ -4,16 +4,16 @@ import Layout from "@/components/Layout";
 import PublicLayout from "@/components/public/PublicLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Skeleton } from "@/components/ui/skeleton";
+import JobsPage from "@/pages/public/JobsPage";
+import PublicClientsPage from "@/pages/public/ClientsPage";
+import FeaturesPage from "@/pages/public/FeaturesPage";
+import ContactPage from "@/pages/public/ContactPage";
+import ResourcesPage from "@/pages/public/ResourcesPage";
 
 // Public pages
 const LandingPage = React.lazy(() => import("@/pages/public/LandingPage"));
-const JobsPage = React.lazy(() => import("@/pages/public/JobsPage"));
 const JobDetailsPage = React.lazy(() => import("@/pages/public/JobDetailsPage"));
-const PublicClientsPage = React.lazy(() => import("@/pages/public/ClientsPage"));
-const FeaturesPage = React.lazy(() => import("@/pages/public/FeaturesPage"));
 // PricingPage removed - all features available to all users
-const ContactPage = React.lazy(() => import("@/pages/public/ContactPage"));
-const ResourcesPage = React.lazy(() => import("@/pages/public/ResourcesPage"));
 const PrivacyPolicyPage = React.lazy(() => import("@/pages/public/PrivacyPolicyPage"));
 const TermsOfServicePage = React.lazy(() => import("@/pages/public/TermsOfServicePage"));
 const CookiePolicyPage = React.lazy(() => import("@/pages/public/CookiePolicyPage"));
@@ -171,15 +171,15 @@ const AppRoutes: React.FC = () => {
       {/* Public Routes */}
       <Route path="/" element={<PublicLayout />}>
         <Route index element={<RouteWrapper><LandingPage /></RouteWrapper>} />
-        <Route path="jobs" element={<RouteWrapper><JobsPage /></RouteWrapper>} />
+        <Route path="jobs" element={<JobsPage />} />
         <Route path="jobs/:id" element={<RouteWrapper><JobDetailsPage /></RouteWrapper>} />
-        <Route path="clients" element={<RouteWrapper><PublicClientsPage /></RouteWrapper>} />
+        <Route path="clients" element={<PublicClientsPage />} />
         <Route path="companies" element={<Navigate to="/clients" replace />} />
-        <Route path="employers" element={<Navigate to="/clients" replace />} />
-        <Route path="features" element={<RouteWrapper><FeaturesPage /></RouteWrapper>} />
+        <Route path="employers" element={<PublicClientsPage />} />
+        <Route path="features" element={<FeaturesPage />} />
         
-        <Route path="contact" element={<RouteWrapper><ContactPage /></RouteWrapper>} />
-        <Route path="resources" element={<RouteWrapper><ResourcesPage /></RouteWrapper>} />
+        <Route path="contact" element={<ContactPage />} />
+        <Route path="resources" element={<ResourcesPage />} />
         <Route path="privacy-policy" element={<RouteWrapper><PrivacyPolicyPage /></RouteWrapper>} />
         <Route path="terms-of-service" element={<RouteWrapper><TermsOfServicePage /></RouteWrapper>} />
         <Route path="cookie-policy" element={<RouteWrapper><CookiePolicyPage /></RouteWrapper>} />

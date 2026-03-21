@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { buildBreadcrumbSchema } from '@/utils/breadcrumbSchema';
 import { Building2 } from 'lucide-react';
 import { SEO } from '@/components/SEO';
@@ -6,16 +6,39 @@ import { StructuredData } from '@/components/StructuredData';
 import { PublicJobCard } from '@/components/public/PublicJobCard';
 import { MobileFilterSheet } from '@/components/public/MobileFilterSheet';
 import { DataLoadingStateHandler, HeroBackground, ActiveFilterChips, VoiceApplicationContainer, useVoiceApplication } from '@/components/shared';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   usePublicJobsPage,
   JobFiltersDesktop,
   JobsLoadMoreButton,
   JobsPageHeader,
-  JobsResultsCount,
-  JobsLoadingSkeleton
+  JobsResultsCount
 } from '@/features/jobs';
 import type { PublicJob } from '@/features/jobs';
 import jobsHero from '@/assets/hero/jobs-hero.png';
+
+const LISTINGS_SKELETON_TIMEOUT_MS = 3000;
+
+function JobListingsGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <Card key={index}>
+          <CardHeader>
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-4 w-full mb-2" />
+            <Skeleton className="h-4 w-2/3 mb-4" />
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 const JobsPageContent = () => {
   const {
@@ -29,6 +52,22 @@ const JobsPageContent = () => {
   } = usePublicJobsPage();
 
   const { startVoiceApplication, isVoiceConnectedToJob } = useVoiceApplication();
+  const [hasListingsTimedOut, setHasListingsTimedOut] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setHasListingsTimedOut(false);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHasListingsTimedOut(true);
+    }, LISTINGS_SKELETON_TIMEOUT_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isLoading, searchTerm, locationFilter, clientFilter, categoryFilter, sortBy]);
+
+  const showListingsSkeleton = isLoading && !hasListingsTimedOut;
 
   const jobListSchema = {
     "@context": "https://schema.org",
@@ -60,10 +99,6 @@ const JobsPageContent = () => {
     { name: 'Home', href: '/' },
     { name: 'Jobs', href: '/jobs' },
   ]);
-
-  if (isLoading) {
-    return <JobsLoadingSkeleton />;
-  }
 
   const filterChips = [
     { label: `Search: "${searchTerm}"`, value: searchTerm, onClear: () => setSearchTerm('') },
@@ -123,11 +158,12 @@ const JobsPageContent = () => {
           <JobsResultsCount filteredCount={jobs.length} totalCount={totalCount} />
 
           <DataLoadingStateHandler
-            data={jobs} isLoading={false} isError={!!error} error={error}
+            data={jobs} isLoading={showListingsSkeleton} isError={false} error={error}
             emptyCheck={(data) => data.length === 0}
             emptyIcon={Building2} emptyTitle="No Jobs Found"
-            emptyDescription="Try adjusting your search criteria or check back later."
+            emptyDescription={error ? "We couldn't load jobs right now. Try adjusting your search or check back shortly." : "Try adjusting your search criteria or check back later."}
             dataLabel="jobs" className="mt-6"
+            loadingComponent={<JobListingsGridSkeleton />}
           >
             {(jobsData: PublicJob[]) => (
               <>

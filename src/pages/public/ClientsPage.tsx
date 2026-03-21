@@ -144,7 +144,7 @@ const ClientsPage = () => {
                 <Input type="text" placeholder="Search companies..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 h-10 text-sm bg-background border-border" />
               </div>
             </div>
-            <ClientsGrid clients={filteredClients} isLoading={isLoading} searchTerm={searchTerm} />
+            <ClientsGrid clients={filteredClients} isLoading={false} searchTerm={searchTerm} />
           </div>
         </section>
 
