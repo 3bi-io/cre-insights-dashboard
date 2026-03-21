@@ -382,6 +382,14 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
           mode="create"
         />
       )}
+
+      {geoExpandClientId && (
+        <GeoExpandDialog
+          open={!!geoExpandClientId}
+          onOpenChange={(open) => { if (!open) setGeoExpandClientId(null); }}
+          clientId={geoExpandClientId}
+        />
+      )}
     </>
   );
 };

@@ -138,6 +138,17 @@ const JobsPage = () => {
 
   const pageActions = (
     <>
+      {userRole === 'super_admin' && (
+        <Button
+          onClick={() => setShowGeoExpand(true)}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <Globe className="w-4 h-4" />
+          Geo Expand
+        </Button>
+      )}
+
       <ExportJobUrlsButton variant="outline" size="default" />
       
       <Button
