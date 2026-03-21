@@ -318,7 +318,7 @@ const ContactPage = () => {
                   <CardContent className="p-4 md:p-6">
                     <h4 className="font-semibold text-foreground mb-2 text-sm md:text-base">Still have questions?</h4>
                     <p className="text-muted-foreground text-sm mb-4">Our support team is happy to help.</p>
-                    <a href="mailto:support@ats.me">
+                    <a href="mailto:support@applyai.jobs">
                       <Button variant="outline" className="w-full sm:w-auto min-h-[44px]">
                         <Headphones className="mr-2 h-4 w-4" />Contact Support
                       </Button>
