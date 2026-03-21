@@ -345,8 +345,8 @@ const JobTable: React.FC<JobTableProps> = ({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(job.status || 'active')}>
-                        {job.status || 'active'}
+                      <Badge variant="outline" className={getStatusColor(job.status || 'active')}>
+                        {(job.status || 'active').charAt(0).toUpperCase() + (job.status || 'active').slice(1)}
                       </Badge>
                     </TableCell>
                     <TableCell>
