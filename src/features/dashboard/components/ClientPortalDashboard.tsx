@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { PageLayout } from '@/features/shared';
 import { useClientPortalData } from '@/hooks/useClientPortalData';
-import { useClientAnalytics } from '@/features/clients/hooks/useClientAnalytics';
+import { useClientPortalAnalytics } from '@/hooks/useClientPortalAnalytics';
 import {
   ClientAnalyticsDateFilter,
   ClientPipelineFunnel,
