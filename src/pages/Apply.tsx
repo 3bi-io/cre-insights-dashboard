@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react';
 import { ApplicationHeader } from '@/components/apply/ApplicationHeader';
 import { ApplicationForm } from '@/components/apply/ApplicationForm';
+import { SocialExpressForm } from '@/components/apply/SocialExpressForm';
 import { SimulatedApplicationForm } from '@/components/apply/SimulatedApplicationForm';
 import { useApplyContext } from '@/hooks/useApplyContext';
 import { useGeoBlocking } from '@/contexts/GeoBlockingContext';
+import { useSourceDetection } from '@/hooks/useSourceDetection';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildBreadcrumbSchema } from '@/components/StructuredData';
 import ZipRecruiterPixel from '@/components/tracking/ZipRecruiterPixel';
