@@ -46,8 +46,8 @@ const ClientsSearch: React.FC<ClientsSearchProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 flex-1 max-w-md">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-4 flex-1 min-w-[200px] max-w-md">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input 
@@ -62,25 +62,19 @@ const ClientsSearch: React.FC<ClientsSearchProps> = ({
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
+            size="sm"
             onClick={() => setShowFilters(!showFilters)}
             className="gap-2"
           >
             <Filter className="w-4 h-4" />
             Filters
             {activeFiltersCount > 0 && (
-              <Badge variant="secondary" className="ml-1">
-                {activeFiltersCount}
-              </Badge>
+              <Badge variant="secondary" className="ml-1">{activeFiltersCount}</Badge>
             )}
           </Button>
           
           {activeFiltersCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="gap-1"
-            >
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1">
               <X className="w-3 h-3" />
               Clear
             </Button>
@@ -118,39 +112,30 @@ const ClientsSearch: React.FC<ClientsSearchProps> = ({
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
           {clientsCount} client{clientsCount !== 1 ? 's' : ''} found
         </p>
         
         {activeFiltersCount > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Active filters:</span>
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
+            <span className="text-sm text-muted-foreground flex-shrink-0">Active filters:</span>
             {filters.search && (
-              <Badge variant="secondary" className="gap-1">
+              <Badge variant="secondary" className="gap-1 flex-shrink-0">
                 Search: {filters.search}
-                <X 
-                  className="w-3 h-3 cursor-pointer" 
-                  onClick={() => handleSearchChange('')}
-                />
+                <X className="w-3 h-3 cursor-pointer" onClick={() => handleSearchChange('')} />
               </Badge>
             )}
             {filters.status && (
-              <Badge variant="secondary" className="gap-1">
+              <Badge variant="secondary" className="gap-1 flex-shrink-0">
                 Status: {filters.status}
-                <X 
-                  className="w-3 h-3 cursor-pointer" 
-                  onClick={() => handleStatusChange('all')}
-                />
+                <X className="w-3 h-3 cursor-pointer" onClick={() => handleStatusChange('all')} />
               </Badge>
             )}
             {filters.location && (
-              <Badge variant="secondary" className="gap-1">
+              <Badge variant="secondary" className="gap-1 flex-shrink-0">
                 Location: {filters.location}
-                <X 
-                  className="w-3 h-3 cursor-pointer" 
-                  onClick={() => handleLocationChange('')}
-                />
+                <X className="w-3 h-3 cursor-pointer" onClick={() => handleLocationChange('')} />
               </Badge>
             )}
           </div>
