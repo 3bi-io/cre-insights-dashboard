@@ -51,7 +51,7 @@ export const UserRoleEditDialog = ({ user, open, onClose }: UserRoleEditDialogPr
         .from('user_roles')
         .insert({
           user_id: userId,
-          role: newRole as 'user' | 'admin' | 'moderator' | 'super_admin' | 'recruiter',
+          role: newRole as 'user' | 'admin' | 'moderator' | 'super_admin' | 'recruiter' | 'client',
           organization_id: organizationId || null,
         });
 
