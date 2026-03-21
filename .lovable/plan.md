@@ -1,25 +1,22 @@
 
 
-# Resend All 5 SMS Templates to +18177572828
+# Configure Twilio Secrets
 
-Same approach as before: create temporary `sms-template-preview` edge function, deploy, invoke with Jimmy Hayes / CDL-A Solo Truck Drivers / Danny Herman Trucking context, then delete.
+## What
+Add three Twilio environment secrets to the Supabase project so the existing centralized `twilio-client.ts` utility can function.
 
-## Templates
-1. **[1/5 - Verification]** — Initial outbound with bullet points, YES/EDIT/STOP
-2. **[2/5 - YES Not Enriched]** — Confirmation + application link
-3. **[3/5 - YES Already Enriched]** — Confirmation, recruiter follow-up
-4. **[4/5 - EDIT Response]** — Correction instructions
-5. **[5/5 - Correction Ack]** — Free-text update acknowledgment
+## Secrets to Add
 
-3-second delay between each. Now using the refactored shared `twilio-client.ts` (sendSms).
+| Secret Name | Value |
+|---|---|
+| `TWILIO_ACCOUNT_SID` | `AC6e7c280b093f2758a2356535952d2a0c` |
+| `TWILIO_AUTH_TOKEN` | `75f414c50967436bcf7b533e04c15a84` |
+| `TWILIO_PHONE_NUMBER` | `+12566002580` |
 
 ## Steps
-1. Create `supabase/functions/sms-template-preview/index.ts` using shared `sendSms`
-2. Deploy and invoke with `phone: +18177572828`
-3. Delete function after successful send
+1. Add all three secrets using the `add_secret` tool
+2. Verify they appear in the project's secret list
 
-## File
-| File | Action |
-|------|--------|
-| `supabase/functions/sms-template-preview/index.ts` | Create (temporary) |
+## No code changes needed
+The shared `twilio-client.ts` and all consuming edge functions (`send-sms`, `sms-webhook`, `sms-auth`, `elevenlabs-outbound-call`) already reference these exact variable names.
 
