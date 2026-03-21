@@ -1,31 +1,40 @@
 
 
-# Fix Role Change & Set cody@3bi.io to Client for Pemberton
+# Update All Email Addresses to support@applyai.jobs
 
-## Problems Found
+## Summary
 
-1. **`UserRoleDialog` TypeScript type** excludes `'client'` — the `UserRole` type is `'user' | 'admin' | 'super_admin' | 'moderator' | 'recruiter'`, missing `'client'`
-2. **Broken upsert logic** — The unique constraint is `(user_id, role)`, so upserting with a *new* role just inserts a second row instead of replacing the old one. cody@3bi.io currently has 3 roles (admin, user, client) accumulated from repeated attempts
-3. **`UserRoleEditDialog` (org-level)** has the same delete-then-insert pattern but casts role without `'client'` in the type union
+Audit found **5 locations** still using old `@3bi.io` addresses for admin notifications/reply-to, plus 1 typo and 1 old recipient address. All need to point to `support@applyai.jobs`.
 
-## Plan
+## Changes
 
-### 1. Fix `UserRoleDialog.tsx` (super admin user management)
-- Add `'client'` to the `UserRole` type
-- Replace the upsert-with-fallback logic with a clean **delete-all-then-insert** approach (delete all roles for the user, then insert the single new role)
+### 1. `supabase/functions/_shared/email-config.ts` (central config)
+Update reply-to addresses:
+- `support: "support@3bi.io"` → `"support@applyai.jobs"`
+- `hr: "hr@3bi.io"` → `"support@applyai.jobs"`
+- `admin: "admin@3bi.io"` → `"support@applyai.jobs"`
 
-### 2. Fix `UserRoleEditDialog.tsx` (org-level)
-- Add `'client'` to the role cast type in the insert statement
+### 2. `supabase/functions/contact-form/index.ts`
+Change admin notification recipient:
+- `to: ['admin@3bi.io']` → `to: ['support@applyai.jobs']`
 
-### 3. Database cleanup for cody@3bi.io
-- Migration to delete stale roles (admin, user) for cody@3bi.io, keeping only `client`
-- Verify the user_client_assignment to Pemberton Truck Lines Inc already exists (confirmed — it does)
+### 3. `supabase/functions/send-welcome-email/index.ts`
+Update support link in welcome email body:
+- `mailto:support@3bi.io` → `mailto:support@applyai.jobs`
+- Display text `support@3bi.io` → `support@applyai.jobs`
 
-### Files
+### 4. `src/pages/public/ContactPage.tsx`
+Fix typo in mailto href:
+- `href="mailto:sup@applyai.jobs"` → `href="mailto:support@applyai.jobs"`
 
-| Action | File |
-|--------|------|
-| Modify | `src/components/admin/UserRoleDialog.tsx` — fix type + mutation logic |
-| Modify | `src/components/dashboard/organization/UserRoleEditDialog.tsx` — add client to type cast |
-| Migration | Clean up cody@3bi.io roles to only `client` |
+### 5. Redeploy edge functions
+Deploy `contact-form` and `send-welcome-email` so the changes take effect.
+
+## Not Changed (already correct)
+- `src/components/Footer.tsx` — already `support@applyai.jobs`
+- `src/pages/Support.tsx` — already `support@applyai.jobs`
+- `src/pages/PartnerSetupGuidePage.tsx` — already `support@applyai.jobs`
+- `src/pages/ApiDocsPage.tsx` — already `support@applyai.jobs`
+- ContactPage structured data — already `support@applyai.jobs`
+- `c@3bi.io` references — these are super admin identity checks, not notification addresses
 
