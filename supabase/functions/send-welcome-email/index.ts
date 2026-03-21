@@ -101,7 +101,7 @@ const handler = async (req: Request): Promise<Response> => {
             </ul>
             
             <p style="font-size: 16px; margin-top: 30px; color: #6b7280;">
-              Need help? Reply to this email or contact our support team at <a href="mailto:support@3bi.io" style="color: #3b82f6;">support@3bi.io</a>
+              Need help? Reply to this email or contact our support team at <a href="mailto:support@applyai.jobs" style="color: #3b82f6;">support@applyai.jobs</a>
             </p>
             
             <p style="font-size: 16px; margin-top: 20px;">
