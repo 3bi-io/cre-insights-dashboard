@@ -55,7 +55,7 @@ const PublicFooter = () => {
   ];
 
   const solutionsLinks = [
-    { to: '/clients', label: 'Employers' },
+    { to: '/employers', label: 'Employers' },
     { to: '/blog', label: 'Blog' },
     { to: '/features#voice-apply', label: 'Voice Apply' },
     { to: '/features#ai-screening', label: 'AI Screening' },
