@@ -39,6 +39,8 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
   const navigate = useNavigate();
   const { data: atsSystems } = useATSSystems();
   const [quickAddClient, setQuickAddClient] = useState<{ id: string; name: string } | null>(null);
+  const [geoExpandClientId, setGeoExpandClientId] = useState<string | null>(null);
+  const { userRole } = useAuth();
   const tenstreetSystem = atsSystems?.find(s => s.slug === 'tenstreet');
 
   const getStatusColor = (status: string) => {
