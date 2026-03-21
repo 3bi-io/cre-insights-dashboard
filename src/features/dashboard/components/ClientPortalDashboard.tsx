@@ -17,20 +17,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Users, Briefcase, Gauge, Clock, Building2, RefreshCw } from 'lucide-react';
 import type { DateRange } from '@/features/clients/types/clientAnalytics.types';
 
-export const ClientPortalDashboard: React.FC = () => {
+interface ClientPortalDashboardProps {
+  overrideClientId?: string;
+}
+
+export const ClientPortalDashboard: React.FC<ClientPortalDashboardProps> = ({ overrideClientId }) => {
   const { data: assignedClients, isLoading: clientsLoading, error: clientsError } = useClientPortalData();
   const [dateRange, setDateRange] = useState<DateRange>('30d');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
   // Auto-select first client when loaded
-  const activeClientId = selectedClientId || assignedClients?.[0]?.id || null;
-  const activeClient = assignedClients?.find(c => c.id === activeClientId);
-  const hasMultipleClients = (assignedClients?.length || 0) > 1;
+  // If overrideClientId is set (admin preview mode), use it directly
+  const activeClientId = overrideClientId || selectedClientId || assignedClients?.[0]?.id || null;
+  const activeClient = overrideClientId 
+    ? { id: overrideClientId, name: '', logo_url: null, city: null, state: null, status: 'active' }
+    : assignedClients?.find(c => c.id === activeClientId);
+  const hasMultipleClients = !overrideClientId && (assignedClients?.length || 0) > 1;
 
   // Pass null for organization since client-role users access via RLS directly
   const { data: analytics, isLoading: analyticsLoading, refetch } = useClientPortalAnalytics(activeClientId, dateRange);
 
-  if (clientsLoading) {
+  // In override mode (admin preview), skip client assignment loading/checks
+  if (!overrideClientId && clientsLoading) {
     return (
       <PageLayout>
         <div className="flex items-center justify-center min-h-[400px]">
@@ -40,7 +48,7 @@ export const ClientPortalDashboard: React.FC = () => {
     );
   }
 
-  if (clientsError || !assignedClients?.length) {
+  if (!overrideClientId && (clientsError || !assignedClients?.length)) {
     return (
       <PageLayout>
         <div className="text-center py-12">
@@ -54,8 +62,10 @@ export const ClientPortalDashboard: React.FC = () => {
     );
   }
 
+  const Wrapper = overrideClientId ? React.Fragment : PageLayout;
+
   return (
-    <PageLayout>
+    <Wrapper>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -171,6 +181,6 @@ export const ClientPortalDashboard: React.FC = () => {
           </Card>
         )}
       </div>
-    </PageLayout>
+    </Wrapper>
   );
 };

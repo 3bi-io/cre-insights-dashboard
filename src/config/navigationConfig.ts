@@ -129,6 +129,19 @@ export const getNavigationGroups = (options: {
     tenstreetNotificationCount = 0
   } = options;
 
+  // Client-role users get minimal nav (only Support alongside Dashboard from mainNavItems)
+  if (userRole === 'client') {
+    return [
+      {
+        group: "Settings",
+        icon: Settings,
+        items: [
+          { path: '/admin/support', label: 'Support', icon: HelpCircle }
+        ]
+      }
+    ];
+  }
+
   // Support both new userRole and legacy boolean flags
   const isSuperAdmin = options.isSuperAdmin ?? userRole === 'super_admin';
   const isAdmin = options.isAdmin ?? (userRole === 'admin' || userRole === 'super_admin');
@@ -144,6 +157,9 @@ export const getNavigationGroups = (options: {
         { path: '/admin/jobs', label: 'Job Listings', icon: BriefcaseIcon },
         ...(organizationSlug !== 'acme' && isRecruiter ? [
           { path: '/admin/clients', label: 'Clients', icon: UserCheck }
+        ] : []),
+        ...(isAdmin ? [
+          { path: '/admin/client-dashboards', label: 'Client Dashboards', icon: BarChart3 }
         ] : []),
         { path: '/admin/routes', label: 'Routes', icon: MapPin },
         ...(isModerator ? [
@@ -288,6 +304,7 @@ export const routeTitles: Record<string, string> = {
   '/admin/talent/pools': 'Talent Pools',
   '/admin/social-beacons': 'Social Beacons',
   '/admin/social-engagement': 'Social Engagement',
+  '/admin/client-dashboards': 'Client Dashboards',
 };
 
 export const getRouteTitle = (pathname: string): string => {
