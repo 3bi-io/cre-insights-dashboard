@@ -29,6 +29,7 @@ const JobsPage = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
+  const [showGeoExpand, setShowGeoExpand] = useState(false);
   const { toast } = useToast();
   const { userRole } = useAuth();
   
