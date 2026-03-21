@@ -34,7 +34,7 @@ interface UserRoleDialogProps {
   onClose: () => void;
 }
 
-type UserRole = 'user' | 'admin' | 'super_admin' | 'moderator' | 'recruiter';
+type UserRole = 'user' | 'admin' | 'super_admin' | 'moderator' | 'recruiter' | 'client';
 
 export const UserRoleDialog: React.FC<UserRoleDialogProps> = ({
   user,
@@ -56,34 +56,23 @@ export const UserRoleDialog: React.FC<UserRoleDialogProps> = ({
     mutationFn: async () => {
       if (!user) throw new Error('No user selected');
       
-      // Upsert the role - this will update if exists or insert if not
-      const { error } = await supabase
+      // Delete all existing roles for this user, then insert the new one
+      const { error: deleteError } = await supabase
         .from('user_roles')
-        .upsert({
+        .delete()
+        .eq('user_id', user.id);
+      
+      if (deleteError) throw deleteError;
+      
+      const { error: insertError } = await supabase
+        .from('user_roles')
+        .insert({
           user_id: user.id,
           role: selectedRole,
           organization_id: user.organization_id || null,
-        }, {
-          onConflict: 'user_id,role',
         });
       
-      if (error) {
-        // If upsert fails, try delete then insert approach
-        await supabase
-          .from('user_roles')
-          .delete()
-          .eq('user_id', user.id);
-        
-        const { error: insertError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: user.id,
-            role: selectedRole,
-            organization_id: user.organization_id || null,
-          });
-        
-        if (insertError) throw insertError;
-      }
+      if (insertError) throw insertError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['super-admin-users'] });
