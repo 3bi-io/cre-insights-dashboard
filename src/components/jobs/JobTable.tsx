@@ -305,9 +305,18 @@ const JobTable: React.FC<JobTableProps> = ({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-muted-foreground font-mono text-sm">
-                        {job.job_id || 'N/A'}
-                      </span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-muted-foreground font-mono text-xs cursor-help">
+                              {job.job_id ? `${job.job_id.slice(0, 8)}…` : 'N/A'}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="font-mono text-xs">{job.job_id || 'No ID'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
