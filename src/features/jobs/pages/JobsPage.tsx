@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import JobsSearch from '@/components/jobs/JobsSearch';
-import { Upload, AlertCircle, RefreshCw, Download, Link2 } from 'lucide-react';
+import { Upload, AlertCircle, RefreshCw, Download, Link2, Globe } from 'lucide-react';
 import { PageLayout } from '@/features/shared';
 import CsvUpload from '@/components/CsvUpload';
 import { generateJobsPDF } from '@/utils/jobsPdfGenerator';
@@ -20,6 +20,7 @@ import {
 } from '../components';
 import { useJobs, useElevenLabsVoice } from '../hooks';
 import { ExportJobUrlsButton } from '@/components/admin/ExportJobUrlsButton';
+import { GeoExpandDialog } from '@/components/admin/GeoExpandDialog';
 
 type ViewMode = 'grid' | 'table';
 
