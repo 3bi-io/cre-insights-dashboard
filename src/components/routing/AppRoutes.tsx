@@ -85,6 +85,7 @@ const AdNetworks = React.lazy(() => import("@/pages/AdNetworks"));
 const JobBoards = React.lazy(() => import("@/pages/JobBoards"));
 const FeedsManagement = React.lazy(() => import("@/pages/FeedsManagement"));
 const ClientsPage = React.lazy(() => import("@/features/clients").then(m => ({ default: m.ClientsPage })));
+const ClientDashboardsPage = React.lazy(() => import("@/pages/ClientDashboardsPage"));
 const Organizations = React.lazy(() => import("@/pages/Organizations"));
 const Settings = React.lazy(() => import("@/pages/Settings"));
 const Media = React.lazy(() => import("@/pages/Media"));
