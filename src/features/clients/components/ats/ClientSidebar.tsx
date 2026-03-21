@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { LogoAvatar } from '@/components/ui/logo-avatar';
+import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
 import type { Client } from '../../types/client.types';
 import type { ClientMetrics } from '../../hooks/useClientMetrics';
 
@@ -116,12 +116,15 @@ const ClientSidebar: React.FC<ClientSidebarProps> = ({
                   )}
                 >
                   <div className="flex items-start gap-2.5">
-                    <LogoAvatar
-                      src={client.logo_url}
-                      alt={client.name}
-                      fallback={client.name.charAt(0)}
-                      size="sm"
-                    />
+                    <LogoAvatar size="sm">
+                      {client.logo_url ? (
+                        <LogoAvatarImage src={client.logo_url} alt={client.name} />
+                      ) : (
+                        <LogoAvatarFallback iconSize="sm">
+                          {client.name.charAt(0)}
+                        </LogoAvatarFallback>
+                      )}
+                    </LogoAvatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className={cn(

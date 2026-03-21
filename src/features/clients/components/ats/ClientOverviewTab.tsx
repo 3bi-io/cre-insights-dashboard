@@ -2,7 +2,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { LogoAvatar } from '@/components/ui/logo-avatar';
+import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
+import { cn } from '@/lib/utils';
 import {
   Users, Clock, CheckCircle2, XCircle, TrendingUp, Send,
   MapPin, Mail, Phone, Pencil,
@@ -80,7 +81,13 @@ const ClientOverviewTab: React.FC<ClientOverviewTabProps> = ({ client, applicati
         <CardContent className="p-6">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
-              <LogoAvatar src={client.logo_url} alt={client.name} fallback={client.name.charAt(0)} size="lg" />
+              <LogoAvatar size="lg">
+                {client.logo_url ? (
+                  <LogoAvatarImage src={client.logo_url} alt={client.name} />
+                ) : (
+                  <LogoAvatarFallback iconSize="lg" />
+                )}
+              </LogoAvatar>
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-xl font-bold">{client.name}</h2>
@@ -88,7 +95,7 @@ const ClientOverviewTab: React.FC<ClientOverviewTabProps> = ({ client, applicati
                     {client.status}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground flex-wrap">
                   {location && (
                     <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{location}</span>
                   )}
@@ -192,9 +199,5 @@ const ClientOverviewTab: React.FC<ClientOverviewTabProps> = ({ client, applicati
     </div>
   );
 };
-
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(' ');
-}
 
 export default ClientOverviewTab;
