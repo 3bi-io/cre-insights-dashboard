@@ -158,6 +158,9 @@ export const getNavigationGroups = (options: {
         ...(organizationSlug !== 'acme' && isRecruiter ? [
           { path: '/admin/clients', label: 'Clients', icon: UserCheck }
         ] : []),
+        ...(isAdmin ? [
+          { path: '/admin/client-dashboards', label: 'Client Dashboards', icon: BarChart3 }
+        ] : []),
         { path: '/admin/routes', label: 'Routes', icon: MapPin },
         ...(isModerator ? [
           { path: '/admin/talent/pools', label: 'Talent Pools', icon: Bookmark }
