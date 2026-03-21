@@ -2,6 +2,7 @@
 export { DashboardLayout } from './components/DashboardLayout';
 export { SuperAdminDashboard } from './components/SuperAdminDashboard';
 export { RegularUserDashboard } from './components/RegularUserDashboard';
+export { ClientPortalDashboard } from './components/ClientPortalDashboard';
 export { DashboardMetrics } from './components/DashboardMetrics';
 export { DashboardTabsComponent } from './components/DashboardTabs';
 export { useDashboardTabs } from './hooks/useDashboardTabs';

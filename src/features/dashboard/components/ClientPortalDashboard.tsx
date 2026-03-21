@@ -28,7 +28,7 @@ export const ClientPortalDashboard: React.FC = () => {
   const hasMultipleClients = (assignedClients?.length || 0) > 1;
 
   // Pass null for organization since client-role users access via RLS directly
-  const { data: analytics, isLoading: analyticsLoading, refetch } = useClientAnalytics(activeClientId, dateRange);
+  const { data: analytics, isLoading: analyticsLoading, refetch } = useClientPortalAnalytics(activeClientId, dateRange);
 
   if (clientsLoading) {
     return (
