@@ -9066,6 +9066,10 @@ export type Database = {
         Args: { p_amount?: number; p_metric: string; p_organization_id: string }
         Returns: undefined
       }
+      is_assigned_to_client: {
+        Args: { _client_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_holiday: {
         Args: { p_date: string; p_org_id: string }
         Returns: boolean
@@ -9178,7 +9182,13 @@ export type Database = {
       validate_phone_number: { Args: { phone: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "recruiter" | "user" | "super_admin"
+      app_role:
+        | "admin"
+        | "moderator"
+        | "recruiter"
+        | "user"
+        | "super_admin"
+        | "client"
       screening_request_status:
         | "pending"
         | "sent"
@@ -9322,7 +9332,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "recruiter", "user", "super_admin"],
+      app_role: [
+        "admin",
+        "moderator",
+        "recruiter",
+        "user",
+        "super_admin",
+        "client",
+      ],
       screening_request_status: [
         "pending",
         "sent",

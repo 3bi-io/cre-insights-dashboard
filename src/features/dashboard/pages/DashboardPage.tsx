@@ -6,6 +6,7 @@ import { hasRoleOrHigher } from '@/utils/roleUtils';
 import { SuperAdminDashboard } from '../components/SuperAdminDashboard';
 import { RegularUserDashboard } from '../components/RegularUserDashboard';
 import { DashboardLayout } from '../components/DashboardLayout';
+import { ClientPortalDashboard } from '../components/ClientPortalDashboard';
 
 const DashboardPage = () => {
   const { user, userRole, organization, loading } = useAuth();
@@ -39,8 +40,12 @@ const DashboardPage = () => {
     return <SuperAdminDashboard />;
   }
 
+  // Client role users get client-scoped portal
+  if (userRole === 'client') {
+    return <ClientPortalDashboard />;
+  }
+
   // Admin, moderator, and recruiter get organization dashboard
-  // Using hierarchy: recruiter (2) and above get the full dashboard
   if (hasRoleOrHigher(userRole, 'recruiter')) {
     return <DashboardLayout organizationName={organization?.name} />;
   }
