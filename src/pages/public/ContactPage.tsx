@@ -169,7 +169,7 @@ const ContactPage = () => {
                     <Mail className="h-8 w-8 text-primary flex-shrink-0" />
                     <div>
                       <p className="font-semibold text-foreground text-sm">Email Us</p>
-                      <a href="mailto:sales@applyai.jobs" className="text-xs text-primary hover:underline">sales@applyai.jobs</a>
+                      <a className="text-xs text-primary hover:underline" href="mailto:sup@applyai.jobs">support@applyai.jobs</a>
                     </div>
                   </CardContent>
                 </Card>
