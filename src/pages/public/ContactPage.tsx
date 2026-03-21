@@ -16,9 +16,9 @@ import {
   Accordion,
   AccordionContent,
   AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { 
+  AccordionTrigger } from
+'@/components/ui/accordion';
+import {
   Headphones,
   Send,
   Loader2,
@@ -28,8 +28,8 @@ import {
   MapPin,
   Mail,
   Calendar,
-  ArrowRight,
-} from 'lucide-react';
+  ArrowRight } from
+'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
@@ -47,7 +47,7 @@ const contactFormSchema = z.object({
   jobTitle: z.string().max(200).optional(),
   companySize: z.string().max(50).optional(),
   subject: z.string().min(1, "Please select a subject").max(100),
-  message: z.string().min(1, "Message is required").max(5000),
+  message: z.string().min(1, "Message is required").max(5000)
 });
 
 const ContactPage = () => {
@@ -55,15 +55,15 @@ const ContactPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
+
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', email: '', company: '',
     jobTitle: '', companySize: '', subject: '', message: ''
   });
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,7 +72,7 @@ const ContactPage = () => {
     const validationResult = contactFormSchema.safeParse(formData);
     if (!validationResult.success) {
       const fieldErrors: Record<string, string> = {};
-      validationResult.error.errors.forEach(err => {
+      validationResult.error.errors.forEach((err) => {
         if (err.path[0]) fieldErrors[err.path[0] as string] = err.message;
       });
       setErrors(fieldErrors);
@@ -95,11 +95,11 @@ const ContactPage = () => {
   };
 
   const faqs = [
-    { question: "How quickly can we get started?", answer: "Most customers are up and running within 24-48 hours. Our setup process is streamlined and our team provides full onboarding support." },
-    { question: "Do you offer custom integrations?", answer: "Yes, we provide custom integrations for Enterprise customers. Our team can work with your existing systems and tools." },
-    { question: "What kind of support do you provide?", answer: "We offer email support for all plans, priority support for Professional customers, and dedicated account management for Enterprise clients." },
-    { question: "Can we migrate data from our current ATS?", answer: "Absolutely! We provide data migration services to help you transfer your existing candidate data, job postings, and historical records." }
-  ];
+  { question: "How quickly can we get started?", answer: "Most customers are up and running within 24-48 hours. Our setup process is streamlined and our team provides full onboarding support." },
+  { question: "Do you offer custom integrations?", answer: "Yes, we provide custom integrations for Enterprise customers. Our team can work with your existing systems and tools." },
+  { question: "What kind of support do you provide?", answer: "We offer email support for all plans, priority support for Professional customers, and dedicated account management for Enterprise clients." },
+  { question: "Can we migrate data from our current ATS?", answer: "Absolutely! We provide data migration services to help you transfer your existing candidate data, job postings, and historical records." }];
+
 
   const faqSchemaData = buildFAQSchema(faqs);
   const contactPageSchema = {
@@ -108,14 +108,14 @@ const ContactPage = () => {
     "mainEntity": {
       "@type": "Organization", "name": "Apply AI", "email": "support@applyai.jobs",
       "contactPoint": [
-        { "@type": "ContactPoint", "contactType": "Sales", "email": "sales@applyai.jobs" },
-        { "@type": "ContactPoint", "contactType": "Customer Support", "email": "support@applyai.jobs" }
-      ]
+      { "@type": "ContactPoint", "contactType": "Sales", "email": "sales@applyai.jobs" },
+      { "@type": "ContactPoint", "contactType": "Customer Support", "email": "support@applyai.jobs" }]
+
     }
   };
   const organizationSchema = {
     "@context": "https://schema.org", "@type": "Organization",
-    "name": "Apply AI", "url": "https://applyai.jobs", "email": "support@applyai.jobs",
+    "name": "Apply AI", "url": "https://applyai.jobs", "email": "support@applyai.jobs"
   };
 
   return (
@@ -190,8 +190,8 @@ const ContactPage = () => {
                     <p className="text-muted-foreground text-sm md:text-base">Fill out the form below and we'll get back to you within 24 hours.</p>
                   </CardHeader>
                   <CardContent>
-                    {isSubmitted ? (
-                      <div className="text-center py-8 md:py-12">
+                    {isSubmitted ?
+                    <div className="text-center py-8 md:py-12">
                         <CheckCircle className="h-14 w-14 md:h-16 md:w-16 text-primary mx-auto mb-4" />
                         <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2">Message Sent!</h3>
                         <p className="text-muted-foreground mb-4 text-sm md:text-base">Thank you for reaching out. We'll get back to you within 24 hours.</p>
@@ -203,8 +203,8 @@ const ContactPage = () => {
                           </div>
                         </div>
                         <Button onClick={() => setIsSubmitted(false)} variant="ghost" className="mt-4 min-h-[44px]">Send Another Message</Button>
-                      </div>
-                    ) : (
+                      </div> :
+
                     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
@@ -269,10 +269,10 @@ const ContactPage = () => {
                           {errors.message && <p id="message-error" className="text-destructive text-xs mt-1" role="alert">{errors.message}</p>}
                         </div>
                         <Button type="submit" className="w-full bg-primary hover:bg-primary/90 min-h-[48px] text-base" disabled={isSubmitting}>
-                          {isSubmitting ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending...</>) : (<><Send className="mr-2 h-4 w-4" />Send Message</>)}
+                          {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending...</> : <><Send className="mr-2 h-4 w-4" />Send Message</>}
                         </Button>
                       </form>
-                    )}
+                    }
                   </CardContent>
                 </Card>
               </div>
@@ -290,9 +290,9 @@ const ContactPage = () => {
                       See Apply AI in action with a personalized walkthrough of Voice Apply, Social Beacon, and more.
                     </p>
                     <Link to="/contact?subject=demo">
-                      <Button className="w-full sm:w-auto min-h-[44px]">
-                        Book a Demo <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
+                      
+
+                      
                     </Link>
                   </CardContent>
                 </Card>
@@ -304,14 +304,14 @@ const ContactPage = () => {
                 <p className="text-muted-foreground mb-4 md:mb-6 text-sm md:text-base">Find quick answers to common questions.</p>
                 
                 <Accordion type="single" collapsible className="space-y-3">
-                  {faqs.map((faq, index) => (
-                    <AccordionItem key={index} value={`faq-${index}`} className="border rounded-lg px-4 bg-background">
+                  {faqs.map((faq, index) =>
+                  <AccordionItem key={index} value={`faq-${index}`} className="border rounded-lg px-4 bg-background">
                       <AccordionTrigger className="text-left py-4 hover:no-underline">
                         <span className="font-semibold text-foreground text-sm md:text-base pr-4">{faq.question}</span>
                       </AccordionTrigger>
                       <AccordionContent className="text-muted-foreground pb-4 text-sm md:text-base">{faq.answer}</AccordionContent>
                     </AccordionItem>
-                  ))}
+                  )}
                 </Accordion>
 
                 <Card className="mt-6 bg-primary/5 border-primary/20">
@@ -331,8 +331,8 @@ const ContactPage = () => {
         </section>
 
       </div>
-    </>
-  );
+    </>);
+
 };
 
 export default ContactPage;
