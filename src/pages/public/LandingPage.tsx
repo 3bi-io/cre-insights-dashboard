@@ -63,7 +63,7 @@ const LandingPage = () => {
         keywords="AI recruitment, automated callbacks, voice apply, AI voice agents, Apply AI, Tenstreet integration, recruitment automation, kanban pipeline, talent pools, activity tracking"
         canonical="https://applyai.jobs/"
       />
-      <StructuredData data={[buildWebSiteSchema(), buildOrganizationSchema()]} />
+      <StructuredData data={[buildWebSiteSchema(), buildOrganizationSchema(), buildSoftwareAppSchema()]} />
       
       {/* Hero */}
       <HeroSection />
