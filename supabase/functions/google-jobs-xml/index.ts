@@ -95,7 +95,9 @@ Deno.serve(async (req) => {
       user_agent: userAgent,
       job_count: jobListings?.length || 0,
       response_time_ms: responseTime
-    }).catch(err => logger.error('Failed to log feed access', err));
+    }).then(({ error: logErr }) => {
+      if (logErr) logger.error('Failed to log feed access', logErr);
+    });
 
     return new Response(xmlContent, {
       headers: {
