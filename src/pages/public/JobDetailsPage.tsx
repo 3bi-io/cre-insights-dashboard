@@ -27,6 +27,12 @@ const JobDetailsContent: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
+        <SEO
+          title={`Job Opening - Apply AI`}
+          description="View this job opportunity and apply today on Apply AI."
+          canonical={`https://applyai.jobs/jobs/${id}`}
+          noindex
+        />
         <div className="container mx-auto px-4 py-6 lg:py-8 max-w-6xl">
           <Skeleton className="h-5 w-32 mb-4 lg:mb-6" />
           <div className="grid lg:grid-cols-3 gap-6">
@@ -93,7 +99,7 @@ const JobDetailsContent: React.FC = () => {
     employmentType: job.job_type || 'FULL_TIME',
     hiringOrganization: companyName,
     hiringOrganizationLogo: job.clients?.logo_url,
-    jobLocation: displayLocation ? { city: job.city || '', state: job.state || '', country: 'US' } : undefined,
+    jobLocation: displayLocation ? { city: job.city || '', state: job.state || '', country: 'US', postalCode: job.zip || undefined } : undefined,
     baseSalary: (job.salary_min || job.salary_max) ? {
       minValue: job.salary_min || undefined, maxValue: job.salary_max || undefined,
       currency: 'USD', unitText: getSalaryUnitText(job.salary_type),
