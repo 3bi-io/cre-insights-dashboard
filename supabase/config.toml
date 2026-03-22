@@ -341,3 +341,6 @@ verify_jwt = false
 
 [functions.job-geo-expand]
 verify_jwt = false
+
+[functions.google-indexing-weekly]
+verify_jwt = false
