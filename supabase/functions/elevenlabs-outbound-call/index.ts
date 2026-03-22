@@ -1246,22 +1246,9 @@ async function processOutboundCall(
           }
           
           if (!callbackExists) {
-            // Schedule callback for next business day morning using next_business_datetime RPC
-            const callbackFrom = new Date(Date.now() + 60 * 60 * 1000); // at least 1 hour from now
             const orgClientId = (metadata.client_id as string) || clientId || null;
-            const { data: nextBizTime } = await supabase.rpc('next_business_datetime', {
-              p_org_id: organizationId,
-              p_from: callbackFrom.toISOString(),
-              p_client_id: orgClientId,
-            });
             
-            // Add jitter: 2-45 minutes offset to prevent all callbacks firing at exact business hours start
-            const baseCallbackTime = nextBizTime ? new Date(nextBizTime) : callbackFrom;
-            const jitterMinutes = 2 + Math.floor(Math.random() * 43); // 2-45 min spread
-            const jitteredCallbackTime = new Date(baseCallbackTime.getTime() + jitterMinutes * 60 * 1000);
-            const callbackAt = jitteredCallbackTime.toISOString();
-            
-            // Check if org/client has calendar connections for callback_purpose
+            // Check if org/client has calendar connections
             let hasCalendarConnections = false;
             if (orgClientId) {
               const { data: clientCalConns } = await supabase
@@ -1286,6 +1273,69 @@ async function processOutboundCall(
               if (orgCalConns) hasCalendarConnections = true;
             }
             
+            let callbackAt: string;
+            let schedulingMethod: string;
+            
+            // When calendars exist, try to find the recruiter's actual next open slot
+            if (hasCalendarConnections) {
+              try {
+                const calUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/calendar-integration`;
+                const tomorrow = new Date(Date.now() + 12 * 60 * 60 * 1000);
+                const windowEnd = new Date(tomorrow.getTime() + 3 * 24 * 60 * 60 * 1000); // 3-day window
+                const calResp = await fetch(calUrl, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                  },
+                  body: JSON.stringify({
+                    action: 'get_availability',
+                    organization_id: organizationId,
+                    client_id: orgClientId,
+                    start_time: tomorrow.toISOString(),
+                    end_time: windowEnd.toISOString(),
+                  }),
+                });
+                const calData = await calResp.json();
+                const slots = calData?.available_slots || calData?.slots || [];
+                
+                if (slots.length > 0) {
+                  // Use the first available slot
+                  const firstSlot = slots[0];
+                  callbackAt = firstSlot.start || firstSlot.start_time || firstSlot.start_at;
+                  schedulingMethod = 'calendar_availability';
+                  logger.info(`Calendar-aware callback scheduled at ${callbackAt} (first open slot)`);
+                } else {
+                  throw new Error('No calendar slots returned');
+                }
+              } catch (calErr) {
+                logger.warn('Calendar availability lookup failed, falling back to next_business_datetime', calErr);
+                // Fall through to generic scheduling below
+                const callbackFrom = new Date(Date.now() + 60 * 60 * 1000);
+                const { data: nextBizTime } = await supabase.rpc('next_business_datetime', {
+                  p_org_id: organizationId,
+                  p_from: callbackFrom.toISOString(),
+                  p_client_id: orgClientId,
+                });
+                const baseTime = nextBizTime ? new Date(nextBizTime) : callbackFrom;
+                const jitterMinutes = 2 + Math.floor(Math.random() * 43);
+                callbackAt = new Date(baseTime.getTime() + jitterMinutes * 60 * 1000).toISOString();
+                schedulingMethod = 'next_business_datetime_fallback';
+              }
+            } else {
+              // No calendar — use generic next business day + jitter
+              const callbackFrom = new Date(Date.now() + 60 * 60 * 1000);
+              const { data: nextBizTime } = await supabase.rpc('next_business_datetime', {
+                p_org_id: organizationId,
+                p_from: callbackFrom.toISOString(),
+                p_client_id: orgClientId,
+              });
+              const baseTime = nextBizTime ? new Date(nextBizTime) : callbackFrom;
+              const jitterMinutes = 2 + Math.floor(Math.random() * 43);
+              callbackAt = new Date(baseTime.getTime() + jitterMinutes * 60 * 1000).toISOString();
+              schedulingMethod = 'next_business_datetime';
+            }
+            
             const callbackMetadata: Record<string, unknown> = {
               ...(metadata || {}),
               is_after_hours_callback: true,
@@ -1294,6 +1344,7 @@ async function processOutboundCall(
               original_conversation_id: elevenLabsData.conversation_id || null,
               triggered_by: 'after_hours_auto_callback',
               no_calendar_fallback: !hasCalendarConnections,
+              scheduling_method: schedulingMethod,
             };
             
             const { data: callbackCall, error: callbackError } = await supabase
@@ -1305,7 +1356,7 @@ async function processOutboundCall(
                 phone_number: normalizedPhone,
                 status: 'scheduled',
                 scheduled_at: callbackAt,
-                retry_count: 1, // treat as a follow-up
+                retry_count: 1,
                 metadata: callbackMetadata,
               })
               .select('id')
@@ -1314,7 +1365,7 @@ async function processOutboundCall(
             if (callbackError) {
               logger.error('Failed to schedule after-hours callback', { error: callbackError });
             } else {
-              logger.info(`Scheduled after-hours callback ${callbackCall?.id} for ${callbackAt} (jitter: +${jitterMinutes}min, calendar: ${hasCalendarConnections})`);
+              logger.info(`Scheduled after-hours callback ${callbackCall?.id} for ${callbackAt} (method: ${schedulingMethod}, calendar: ${hasCalendarConnections})`);
             }
           }
         }
@@ -1480,7 +1531,11 @@ function buildDynamicVariables(
       vars.business_hours_note = `Currently within business hours (${orgStart} - ${orgEnd} ${tzLabel}). No recruiter calendars are connected. Do NOT attempt to transfer to a recruiter. Let the candidate know a recruiter will reach out to them directly. Complete the screening and gather their information.`;
     }
   } else {
-    vars.business_hours_note = `Currently outside business hours (${orgStart} - ${orgEnd} ${tzLabel}). Do NOT attempt to transfer to a recruiter. Instead, let the candidate know a recruiter will call them back during business hours on the next business day. Complete the screening and gather their information.`;
+    if (hasCalendar === 'yes') {
+      vars.business_hours_note = `Currently outside business hours (${orgStart} - ${orgEnd} ${tzLabel}). Do NOT transfer the call live to a recruiter. However, you CAN use the scheduling tools (check_availability / book_callback) to find the recruiter's next available slot and schedule a callback for the candidate. Offer to book a specific time on the recruiter's calendar. Complete the screening and gather their information.`;
+    } else {
+      vars.business_hours_note = `Currently outside business hours (${orgStart} - ${orgEnd} ${tzLabel}). Do NOT attempt to transfer to a recruiter. Instead, let the candidate know a recruiter will call them back during business hours on the next business day. Complete the screening and gather their information.`;
+    }
   }
 
   // Trucking-specific job context inference

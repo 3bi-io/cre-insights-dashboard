@@ -251,13 +251,29 @@ async function handleCheckAvailability(
         logger.error('Failed to create scheduled_callbacks record', scErr);
       }
       
+      // Fetch org's configured timezone for display
+      let displayTz = 'America/Chicago';
+      let displayTzLabel = 'Central Time';
+      try {
+        const { data: orgSettings } = await supabase
+          .from('organization_call_settings')
+          .select('business_hours_timezone')
+          .eq('organization_id', organization_id)
+          .is('client_id', null)
+          .maybeSingle();
+        if (orgSettings?.business_hours_timezone) {
+          displayTz = orgSettings.business_hours_timezone;
+          displayTzLabel = displayTz.replace(/_/g, ' ').split('/').pop() || displayTz;
+        }
+      } catch { /* use default */ }
+      
       const readableTime = scheduledTime.toLocaleString('en-US', {
-        weekday: 'long', hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago',
+        weekday: 'long', hour: 'numeric', minute: '2-digit', timeZone: displayTz,
       });
       
       return new Response(
         JSON.stringify({ 
-          result: `I've scheduled a callback for you on ${readableTime} Central Time. A recruiter will also be notified to follow up with you. Is there anything else I can help with?`,
+          result: `I've scheduled a callback for you on ${readableTime} ${displayTzLabel} time. A recruiter will also be notified to follow up with you. Is there anything else I can help with?`,
           scheduled_at: scheduledAtIso, no_calendar_fallback: true,
         }),
         { status: 200, headers }
