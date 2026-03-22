@@ -26,6 +26,20 @@ const buildOrganizationSchema = () => ({
     "addressCountry": "US",
   },
 });
+
+const buildSoftwareAppSchema = () => ({
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Apply AI",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "offers": {
+    "@type": "Offer",
+    "price": "299",
+    "priceCurrency": "USD"
+  },
+  "description": "AI-powered recruitment platform with Voice Apply technology, Tenstreet integration, predictive analytics, and 100+ job board distribution."
+});
 import HeroSection from '@/features/landing/components/sections/HeroSection';
 import { LoadingSkeleton } from '@/features/landing/components/shared/LoadingSkeleton';
 
@@ -49,7 +63,7 @@ const LandingPage = () => {
         keywords="AI recruitment, automated callbacks, voice apply, AI voice agents, Apply AI, Tenstreet integration, recruitment automation, kanban pipeline, talent pools, activity tracking"
         canonical="https://applyai.jobs/"
       />
-      <StructuredData data={[buildWebSiteSchema(), buildOrganizationSchema()]} />
+      <StructuredData data={[buildWebSiteSchema(), buildOrganizationSchema(), buildSoftwareAppSchema()]} />
       
       {/* Hero */}
       <HeroSection />
