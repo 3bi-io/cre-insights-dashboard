@@ -37,6 +37,19 @@ const GoogleJobsPlatformActions: React.FC = () => {
     if (user?.id) {
       const url = `https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/google-jobs-xml?user_id=${user.id}`;
       setFeedUrl(url);
+      
+      // Auto-fetch job count on mount
+      fetch(url)
+        .then(res => res.ok ? res.text() : Promise.reject())
+        .then(xmlText => {
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+          if (!xmlDoc.querySelector('parsererror')) {
+            const items = xmlDoc.querySelectorAll('url, item');
+            setJobCount(items.length);
+          }
+        })
+        .catch(() => {});
     }
   }, [user]);
 

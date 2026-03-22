@@ -99,7 +99,7 @@ const JobDetailsContent: React.FC = () => {
     employmentType: job.job_type || 'FULL_TIME',
     hiringOrganization: companyName,
     hiringOrganizationLogo: job.clients?.logo_url,
-    jobLocation: displayLocation ? { city: job.city || '', state: job.state || '', country: 'US' } : undefined,
+    jobLocation: displayLocation ? { city: job.city || '', state: job.state || '', country: 'US', postalCode: job.zip || undefined } : undefined,
     baseSalary: (job.salary_min || job.salary_max) ? {
       minValue: job.salary_min || undefined, maxValue: job.salary_max || undefined,
       currency: 'USD', unitText: getSalaryUnitText(job.salary_type),
