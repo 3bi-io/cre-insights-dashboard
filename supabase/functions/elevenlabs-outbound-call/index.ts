@@ -1480,7 +1480,11 @@ function buildDynamicVariables(
       vars.business_hours_note = `Currently within business hours (${orgStart} - ${orgEnd} ${tzLabel}). No recruiter calendars are connected. Do NOT attempt to transfer to a recruiter. Let the candidate know a recruiter will reach out to them directly. Complete the screening and gather their information.`;
     }
   } else {
-    vars.business_hours_note = `Currently outside business hours (${orgStart} - ${orgEnd} ${tzLabel}). Do NOT attempt to transfer to a recruiter. Instead, let the candidate know a recruiter will call them back during business hours on the next business day. Complete the screening and gather their information.`;
+    if (hasCalendar === 'yes') {
+      vars.business_hours_note = `Currently outside business hours (${orgStart} - ${orgEnd} ${tzLabel}). Do NOT transfer the call live to a recruiter. However, you CAN use the scheduling tools (check_availability / book_callback) to find the recruiter's next available slot and schedule a callback for the candidate. Offer to book a specific time on the recruiter's calendar. Complete the screening and gather their information.`;
+    } else {
+      vars.business_hours_note = `Currently outside business hours (${orgStart} - ${orgEnd} ${tzLabel}). Do NOT attempt to transfer to a recruiter. Instead, let the candidate know a recruiter will call them back during business hours on the next business day. Complete the screening and gather their information.`;
+    }
   }
 
   // Trucking-specific job context inference
