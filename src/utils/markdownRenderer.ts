@@ -72,43 +72,27 @@ function convertSentencesToBullets(text: string): string {
 }
 
 /**
- * Adds a bold "Summary" header and bolds the first content line.
+ * Bolds the first bullet point's text to highlight the top-line summary.
+ * Does not add a "Summary" header (components handle that separately).
  */
-function addSummaryHeader(text: string): string {
+function boldFirstBullet(text: string): string {
   const lines = text.split('\n');
-  const result: string[] = [];
-  let addedHeader = false;
-  let boldedFirst = false;
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    // If the text already starts with a header, skip adding Summary
-    if (!addedHeader && trimmed && /^#{1,6}\s/.test(trimmed)) {
-      addedHeader = true;
-      boldedFirst = true; // headers are already bold
-      result.push(line);
-      continue;
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (!trimmed) continue;
+    // If it's a bullet, bold just the text after the prefix
+    const bulletMatch = trimmed.match(/^([-*+]\s)(.*)/);
+    if (bulletMatch) {
+      lines[i] = `${bulletMatch[1]}**${bulletMatch[2]}**`;
+      break;
     }
-
-    // Add Summary header before first content line
-    if (!addedHeader && trimmed) {
-      addedHeader = true;
-      result.push('## Summary');
-      result.push('');
-    }
-
-    // Bold the first non-empty, non-header content line
-    if (addedHeader && !boldedFirst && trimmed && !isStructuredLine(trimmed)) {
-      boldedFirst = true;
-      result.push(`**${trimmed}**`);
-      continue;
-    }
-
-    result.push(line);
+    // If it's a header, skip — already bold
+    if (/^#{1,6}\s/.test(trimmed)) break;
+    // Plain text first line — bold it
+    lines[i] = `**${trimmed}**`;
+    break;
   }
-
-  return result.join('\n');
+  return lines.join('\n');
 }
 
 /**
