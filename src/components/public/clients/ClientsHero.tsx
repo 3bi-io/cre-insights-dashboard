@@ -1,5 +1,5 @@
 import React from 'react';
-import { HeroBackground, TruckWheelSpin } from '@/components/shared';
+import { HeroBackground } from '@/components/shared';
 import transportHero from '@/assets/hero/transport-hero.png';
 
 interface ClientsHeroProps {
