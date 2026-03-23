@@ -1,5 +1,5 @@
 import React from 'react';
-import { HeroBackground, TruckWheelSpin } from '@/components/shared';
+import { HeroBackground } from '@/components/shared';
 import transportHero from '@/assets/hero/transport-hero.png';
 
 interface ClientsHeroProps {
@@ -15,7 +15,7 @@ export const ClientsHero: React.FC<ClientsHeroProps> = ({ totalCompanies }) => {
       overlayVariant="dark"
       overlayOpacity={65}
       objectPosition="center 60%"
-      overlayContent={<TruckWheelSpin active />}
+      
     >
       <div className="container mx-auto px-4">
         <div className="max-w-3xl">
