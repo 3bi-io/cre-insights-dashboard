@@ -19,6 +19,7 @@ export const generateRoiCalculatorXLSX = async (): Promise<void> => {
     ['Actual results may vary based on your specific situation.'],
     [''],
     ['For questions, contact us at support@applyai.jobs']
+  ];
 
   const calculatorData: (string | number | null)[][] = [
     ['Metric', 'Current State', 'With Apply AI', 'Improvement'],
