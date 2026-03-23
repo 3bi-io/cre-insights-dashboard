@@ -104,11 +104,11 @@ export function renderJobDescription(text: string): string {
 
   let processed = text;
 
-  // Pre-process: add summary header and bold first line
-  processed = addSummaryHeader(processed);
-
-  // Pre-process: convert sentence-packed paragraphs to bullet lists
+  // Pre-process: convert sentence-packed paragraphs to bullet lists first
   processed = convertSentencesToBullets(processed);
+
+  // Then bold the first bullet/line as top-line summary
+  processed = boldFirstBullet(processed);
 
   let html: string;
   if (looksLikeMarkdown(processed)) {
