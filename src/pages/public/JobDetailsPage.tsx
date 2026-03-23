@@ -233,6 +233,7 @@ const JobDetailsContent: React.FC = () => {
             canonicalUrl={canonicalUrl}
             onVoiceApply={handleVoiceApply}
             isVoiceConnected={isConnected}
+            showVoiceButton={!isExternalApply}
           />
         </div>
 
