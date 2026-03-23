@@ -29,7 +29,7 @@ export const JobPerformanceSection: React.FC<JobPerformanceSectionProps> = ({ cl
     queryFn: async () => {
       const { data: jobs } = await supabase
         .from('job_listings')
-        .select('*, platforms(name), job_categories(name)')
+        .select('*')
         .eq('client_id', clientId);
 
       if (!jobs?.length) return [];
