@@ -13,6 +13,7 @@ import { useIsVoiceSupported } from '@/hooks/useVoiceCompatibility';
 
 interface StickyApplyCTAProps {
   applyUrl: string;
+  isExternalApply?: boolean;
   onVoiceApply?: () => void;
   isVoiceConnected: boolean;
   jobTitle: string;
