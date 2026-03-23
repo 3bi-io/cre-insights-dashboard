@@ -2,7 +2,7 @@
 
 ## Overview
 
-ATS.me now includes a native-feeling pull-to-refresh feature that works seamlessly on mobile devices. Users can pull down on any page to refresh the content.
+Apply AI now includes a native-feeling pull-to-refresh feature that works seamlessly on mobile devices. Users can pull down on any page to refresh the content.
 
 ## How It Works
 

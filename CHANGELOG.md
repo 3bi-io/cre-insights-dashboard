@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to ATS.me will be documented in this file.
+All notable changes to Apply AI will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -90,7 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🎉 Production Release
 
-The first production-ready release of ATS.me, a modern AI-powered Applicant Tracking System.
+The first production-ready release of Apply AI, a modern AI-powered Applicant Tracking System.
 
 ### Added - Phase 12: Advanced AI Features
 
@@ -362,7 +362,7 @@ None at this time. Please report issues on GitHub.
 
 ## Contributors
 
-- Development Team at ATS.me
+- Development Team at Apply AI
 - Built with [Lovable](https://lovable.dev)
 - UI components from [shadcn/ui](https://ui.shadcn.com)
 - Powered by [Supabase](https://supabase.com)

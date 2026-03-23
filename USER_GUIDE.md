@@ -1,6 +1,6 @@
-# ATS.me User Guide
+# Apply AI User Guide
 
-Complete guide for using ATS.me to streamline your recruitment process.
+Complete guide for using Apply AI to streamline your recruitment process.
 
 ## 📖 Table of Contents
 
@@ -21,7 +21,7 @@ Complete guide for using ATS.me to streamline your recruitment process.
 ### Creating Your Account
 
 1. **Sign Up**
-   - Visit your ATS.me instance
+   - Visit your Apply AI instance
    - Click "Sign Up" or "Get Started"
    - Enter your email address
    - Check your email for verification link
@@ -187,7 +187,7 @@ Notes are visible to all team members with access.
 
 ### Automatic Candidate Scoring
 
-ATS.me uses AI to automatically score candidates:
+Apply AI uses AI to automatically score candidates:
 
 **What is Scored:**
 - Technical skills match
@@ -230,7 +230,7 @@ The AI provides:
 
 ### Bias Detection
 
-ATS.me monitors for potential bias in:
+Apply AI monitors for potential bias in:
 - Screening patterns
 - Rejection reasons
 - Interview selections
@@ -416,16 +416,16 @@ Choose notification channels:
 
 ### Installing as App
 
-ATS.me can be installed as a native app:
+Apply AI can be installed as a native app:
 
 **On iPhone/iPad:**
-1. Open ATS.me in Safari
+1. Open Apply AI in Safari
 2. Tap the Share button
 3. Tap "Add to Home Screen"
 4. Tap "Add"
 
 **On Android:**
-1. Open ATS.me in Chrome
+1. Open Apply AI in Chrome
 2. Tap the menu (three dots)
 3. Tap "Add to Home Screen"
 4. Tap "Add"
@@ -437,7 +437,7 @@ ATS.me can be installed as a native app:
 
 ### Offline Mode
 
-When installed, ATS.me works offline:
+When installed, Apply AI works offline:
 - View cached applications
 - Add notes (syncs when online)
 - View analytics
@@ -536,7 +536,7 @@ All desktop features are available on mobile:
 ### Support Channels
 
 - **Documentation**: This guide and other docs
-- **Email**: support@ats.me
+- **Email**: support@applyai.jobs
 - **Chat**: In-app chat support
 - **Community**: Discord community
 

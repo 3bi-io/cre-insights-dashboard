@@ -1,6 +1,6 @@
 # Production Deployment Checklist
 
-Use this checklist to ensure a smooth production deployment of ATS.me.
+Use this checklist to ensure a smooth production deployment of Apply AI.
 
 ## 📋 Pre-Deployment Checklist
 

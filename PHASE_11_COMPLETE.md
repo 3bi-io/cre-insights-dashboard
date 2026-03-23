@@ -97,7 +97,7 @@ sendRejectionEmail()
 **Capacitor Configuration:**
 - File: `capacitor.config.ts`
 - App ID: `app.lovable.cf22d483762d45c7a42c85b40ce9290a`
-- App Name: `ats-me`
+- App Name: `apply-ai`
 - Hot-reload enabled via sandbox URL
 - Splash screen configured
 

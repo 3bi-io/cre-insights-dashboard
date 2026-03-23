@@ -1,6 +1,6 @@
-# Contributing to ATS.me
+# Contributing to Apply AI
 
-Thank you for your interest in contributing to ATS.me! This guide will help you get started.
+Thank you for your interest in contributing to Apply AI! This guide will help you get started.
 
 ## 📋 Table of Contents
 
@@ -48,7 +48,7 @@ We are committed to providing a welcoming and inspiring community for all. Pleas
 
 ### Finding Issues
 
-1. Check the [Issues](https://github.com/yourusername/ats-me/issues) page
+1. Check the [Issues](https://github.com/yourusername/apply-ai/issues) page
 2. Look for issues labeled:
    - `good-first-issue` - Great for beginners
    - `help-wanted` - We'd love contributions
@@ -68,11 +68,11 @@ We are committed to providing a welcoming and inspiring community for all. Pleas
 
 ```bash
 # Fork the repository on GitHub, then clone your fork
-git clone https://github.com/YOUR_USERNAME/ats-me.git
-cd ats-me
+git clone https://github.com/YOUR_USERNAME/apply-ai.git
+cd apply-ai
 
 # Add upstream remote
-git remote add upstream https://github.com/original-owner/ats-me.git
+git remote add upstream https://github.com/original-owner/apply-ai.git
 ```
 
 ### 2. Install Dependencies
@@ -107,7 +107,7 @@ The app will be available at `http://localhost:8080`
 ## 🏗️ Project Structure
 
 ```
-ats-me/
+apply-ai/
 ├── src/
 │   ├── components/       # Reusable UI components
 │   │   ├── ui/          # Base components (shadcn)
@@ -571,10 +571,10 @@ Contributors are recognized in:
 
 ## ❓ Questions?
 
-- Open a [Discussion](https://github.com/yourusername/ats-me/discussions)
-- Join our [Discord](https://discord.gg/ats-me)
-- Email: dev@ats.me
+- Open a [Discussion](https://github.com/yourusername/apply-ai/discussions)
+- Join our [Discord](https://discord.gg/apply-ai)
+- Email: dev@applyai.jobs
 
 ---
 
-Thank you for contributing to ATS.me! 🎉
+Thank you for contributing to Apply AI! 🎉
