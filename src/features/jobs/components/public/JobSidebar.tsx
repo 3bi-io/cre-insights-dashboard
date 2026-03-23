@@ -22,6 +22,7 @@ interface JobSidebarProps {
   canonicalUrl: string;
   onVoiceApply: () => void;
   isVoiceConnected: boolean;
+  showVoiceButton?: boolean;
 }
 
 export const JobSidebar = ({
@@ -35,6 +36,7 @@ export const JobSidebar = ({
   canonicalUrl,
   onVoiceApply,
   isVoiceConnected,
+  showVoiceButton = true,
 }: JobSidebarProps) => {
   return (
     <div className="hidden lg:block">
@@ -84,15 +86,17 @@ export const JobSidebar = ({
               </Link>
             )}
 
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={onVoiceApply}
-              disabled={isVoiceConnected}
-            >
-              <Mic className="w-4 h-4 mr-2" />
-              Apply with Voice
-            </Button>
+            {showVoiceButton && (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={onVoiceApply}
+                disabled={isVoiceConnected}
+              >
+                <Mic className="w-4 h-4 mr-2" />
+                Apply with Voice
+              </Button>
+            )}
           </CardContent>
         </Card>
 

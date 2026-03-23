@@ -233,6 +233,7 @@ const JobDetailsContent: React.FC = () => {
             canonicalUrl={canonicalUrl}
             onVoiceApply={handleVoiceApply}
             isVoiceConnected={isConnected}
+            showVoiceButton={!isExternalApply}
           />
         </div>
 
@@ -254,7 +255,7 @@ const JobDetailsContent: React.FC = () => {
           )}
         </div>
 
-        <StickyApplyCTA applyUrl={applyUrl} isExternalApply={isExternalApply} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={true} />
+        <StickyApplyCTA applyUrl={applyUrl} isExternalApply={isExternalApply} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={!isExternalApply} />
       </div>
     </div>
   );
