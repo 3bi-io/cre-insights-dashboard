@@ -108,10 +108,14 @@ const JobAnalyticsDialog: React.FC<JobAnalyticsDialogProps> = ({ job, open, onOp
         </DialogHeader>
         
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Analytics
+            </TabsTrigger>
+            <TabsTrigger value="description" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Description
             </TabsTrigger>
             <TabsTrigger value="feed-data" className="flex items-center gap-2">
               <Rss className="h-4 w-4" />
