@@ -7,6 +7,7 @@ import { MapPin, DollarSign, Building2, Clock, ExternalLink, Mic, Info, Sparkles
 import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
 import { JobContext } from '@/features/elevenlabs';
 import { sanitizers } from '@/utils/validation';
+import { renderJobDescription } from '@/utils/markdownRenderer';
 import { useIsVoiceSupported } from '@/hooks/useVoiceCompatibility';
 import { getDisplayCompanyName, formatSalary } from '@/utils/jobDisplayUtils';
 import {
