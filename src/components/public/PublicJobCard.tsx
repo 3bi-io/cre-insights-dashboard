@@ -45,7 +45,7 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
 
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
   const applyUrl = job.apply_url || `/apply?job_id=${job.id}`;
-  const isExternalApply = !!job.apply_url;
+  const isExternalApply = !!job.apply_url && !job.apply_url.includes('applyai.jobs');
   const showVoiceButton = hasVoiceAgent && isVoiceSupported && onVoiceApply && !isExternalApply;
 
   
