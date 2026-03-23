@@ -155,7 +155,7 @@ const HeroSection = () => {
             <Button
               variant="outline"
               size="lg"
-              className="w-full sm:w-auto min-h-[56px] px-10 py-5 text-lg font-bold border-2 border-white/40 bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm hover:scale-105 transition-all duration-300 shadow-lg"
+              className="w-full sm:w-auto min-h-[56px] px-10 py-5 text-lg font-bold border-2 border-black bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm hover:scale-105 transition-all duration-300 shadow-lg"
             >
               Book a Demo
               <ArrowRight className="ml-2 h-5 w-5" />
