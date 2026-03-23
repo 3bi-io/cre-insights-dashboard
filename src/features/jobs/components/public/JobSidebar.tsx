@@ -22,6 +22,7 @@ interface JobSidebarProps {
   canonicalUrl: string;
   onVoiceApply: () => void;
   isVoiceConnected: boolean;
+  showVoiceButton?: boolean;
 }
 
 export const JobSidebar = ({
