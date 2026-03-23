@@ -4265,6 +4265,7 @@ export type Database = {
           indeed_apply_post_url: string | null
           is_hidden: boolean | null
           is_sponsored: boolean | null
+          job_description: string | null
           job_id: string | null
           job_summary: string | null
           job_title: string | null
@@ -4310,6 +4311,7 @@ export type Database = {
           indeed_apply_post_url?: string | null
           is_hidden?: boolean | null
           is_sponsored?: boolean | null
+          job_description?: string | null
           job_id?: string | null
           job_summary?: string | null
           job_title?: string | null
@@ -4355,6 +4357,7 @@ export type Database = {
           indeed_apply_post_url?: string | null
           is_hidden?: boolean | null
           is_sponsored?: boolean | null
+          job_description?: string | null
           job_id?: string | null
           job_summary?: string | null
           job_title?: string | null
