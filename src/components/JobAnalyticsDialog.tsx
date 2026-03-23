@@ -271,7 +271,7 @@ const JobAnalyticsDialog: React.FC<JobAnalyticsDialogProps> = ({ job, open, onOp
                   <div
                     className="prose prose-sm dark:prose-invert max-w-none"
                     dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(
+                      __html: renderJobDescription(
                         ((job as any).job_description || (job as any).description) as string
                       ),
                     }}

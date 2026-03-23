@@ -117,7 +117,7 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
         {displayDescription && (
           <div 
             className="text-sm sm:text-base text-muted-foreground line-clamp-2 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: sanitizers.sanitizeHtml(displayDescription) }}
+            dangerouslySetInnerHTML={{ __html: renderJobDescription(displayDescription) }}
           />
         )}
 
