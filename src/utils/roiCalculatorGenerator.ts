@@ -67,6 +67,6 @@ export const generateRoiCalculatorXLSX = async (): Promise<void> => {
       { name: 'Calculator', data: calculatorData, columnWidths: [35, 18, 18, 15] },
       { name: 'ROI Summary', data: summaryData, columnWidths: [35, 20] },
     ],
-    'ats-me-roi-calculator.xlsx',
+    'apply-ai-roi-calculator.xlsx',
   );
 };

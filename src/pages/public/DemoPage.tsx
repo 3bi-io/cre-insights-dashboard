@@ -116,7 +116,7 @@ const DemoPage: React.FC = () => {
 
         <GradientCTA
           title="Ready to Transform Your Hiring?"
-          description="Join leading trucking companies using ATS.me to hire faster and smarter."
+          description="Join leading trucking companies using Apply AI to hire faster and smarter."
           primaryAction={{ label: 'Get Started', to: '/contact' }}
           secondaryAction={{ label: 'Contact Sales', to: '/contact' }}
         />
