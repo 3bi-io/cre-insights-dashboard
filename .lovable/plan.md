@@ -1,24 +1,17 @@
 
 
-# Fix Job Description Formatting
+# Fix Job Click Not Opening Dialog on Client Dashboard
 
-## Problems
-1. "Summary" appears twice (light + bold) — the `## Summary` header renders as a heading, but there may also be a `job_summary` field shown separately above
-2. First content line stays as a dense paragraph because bolding runs first, which causes the bullet converter to skip it
-3. Need: single "Summary" label, first line bold, rest as normal bullets
+## Problem
+In `JobPerformanceSection.tsx`, clicking a job calls `handleJobClick` which looks up the job in a separate `fullJobs` query. If that query returns empty (due to RLS or timing), the `if (full)` check fails silently and the dialog never opens.
 
 ## Changes
 
-### Update `src/utils/markdownRenderer.ts`
+### Update `src/features/dashboard/components/client-portal/JobPerformanceSection.tsx`
 
-1. **Swap processing order**: Run `convertSentencesToBullets()` BEFORE `addSummaryHeader()` so the dense paragraph gets split into bullets first
+1. **Merge the two queries**: Instead of running a separate `fullJobs` query, fetch the full job data (including `platforms(name), job_categories(name)`) in the existing `jobPerf` query. This eliminates the dependency on a second query that may not have loaded.
 
-2. **Fix `addSummaryHeader()`**: Instead of bolding the entire first content line, bold only the first bullet point's text (the `- ` prefix stays outside the bold). If the first content line is already a bullet (`- `), wrap just its text in bold.
+2. **Update `handleJobClick`**: Look up the job from `jobPerf` data directly (which already has the full fields) instead of from a separate `fullJobs` array.
 
-3. **Fix `isStructuredLine()`**: Remove the `/^\*\*/` check that incorrectly skips bold lines from bullet conversion
-
-4. **Check for duplicate "Summary"**: The `job_summary` field may already be rendered separately in the component. Need to verify if the `## Summary` header is causing duplication — if the component already shows a "Summary" label, remove the auto-inserted header from the renderer.
-
-### Verify `JobDetailsPage.tsx` and `JobAnalyticsDialog.tsx`
-Check if these components already display a "Summary" heading above the rendered content, which would explain the duplication. If so, remove the `## Summary` injection from the renderer and just bold the first bullet.
+3. **Add fallback**: If for any reason the full data isn't available, still open the dialog with whatever data is available (at minimum `id`, `title`, `status`) so the click always does something visible.
 
