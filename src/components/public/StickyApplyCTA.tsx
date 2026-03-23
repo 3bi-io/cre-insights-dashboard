@@ -22,6 +22,7 @@ interface StickyApplyCTAProps {
 
 export const StickyApplyCTA: React.FC<StickyApplyCTAProps> = ({
   applyUrl,
+  isExternalApply,
   onVoiceApply,
   isVoiceConnected,
   jobTitle,
