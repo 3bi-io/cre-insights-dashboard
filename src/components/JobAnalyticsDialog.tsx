@@ -260,7 +260,7 @@ const JobAnalyticsDialog: React.FC<JobAnalyticsDialogProps> = ({ job, open, onOp
               <Card className="border-primary/20 bg-primary/5">
                 <CardContent className="p-4">
                   <p className="text-sm font-medium text-muted-foreground mb-1">Summary</p>
-                  <p className="text-sm">{(job as any).job_summary}</p>
+                  <div className="text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderJobDescription((job as any).job_summary) }} />
                 </CardContent>
               </Card>
             )}
