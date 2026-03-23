@@ -74,7 +74,8 @@ const JobDetailsContent: React.FC = () => {
   const displayDescription = job.job_summary || job.job_description || '';
   const companyName = getDisplayCompanyName(job);
   const canonicalUrl = `https://applyai.jobs/jobs/${job.id}`;
-  const applyUrl = `/apply?job_id=${job.id}`;
+  const applyUrl = job.apply_url || `/apply?job_id=${job.id}`;
+  const isExternalApply = !!job.apply_url;
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
 
   const handleVoiceApply = () => {
@@ -228,6 +229,7 @@ const JobDetailsContent: React.FC = () => {
             salary={salary}
             location={displayLocation}
             applyUrl={applyUrl}
+            isExternalApply={isExternalApply}
             canonicalUrl={canonicalUrl}
             onVoiceApply={handleVoiceApply}
             isVoiceConnected={isConnected}
@@ -252,7 +254,7 @@ const JobDetailsContent: React.FC = () => {
           )}
         </div>
 
-        <StickyApplyCTA applyUrl={applyUrl} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={true} />
+        <StickyApplyCTA applyUrl={applyUrl} isExternalApply={isExternalApply} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={true} />
       </div>
     </div>
   );
