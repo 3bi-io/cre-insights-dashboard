@@ -46,7 +46,8 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
   const showVoiceButton = hasVoiceAgent && isVoiceSupported && onVoiceApply;
 
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
-  const applyUrl = `/apply?job_id=${job.id}`;
+  const applyUrl = job.apply_url || `/apply?job_id=${job.id}`;
+  const isExternalApply = !!job.apply_url;
   
   const handleVoiceApply = () => {
     if (!onVoiceApply || !hasVoiceAgent) return;
