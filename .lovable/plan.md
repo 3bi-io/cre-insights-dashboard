@@ -1,36 +1,26 @@
 
 
-# Add Minimum Experience Qualification Gate to Outbound Calls
+# Add Job Description Preview Tab to Job Details Dialog
 
-## Problem
-Candidates with insufficient experience (like Delisha Gardner with 0 months for Pemberton) are being transferred by the AI agent because there's no code-level guard.
+## Overview
+Add a "Description" tab to the existing `JobAnalyticsDialog` component so admins and clients can preview the full job description directly from the dashboard, verifying it looks correct without leaving the admin/client portal.
 
 ## Changes
 
-### 1. Database Migration
-Add `min_experience_months` column to `job_listings` and set Pemberton's minimum to **6 months**:
-```sql
-ALTER TABLE public.job_listings 
-ADD COLUMN min_experience_months integer DEFAULT NULL;
+### 1. Update `JobAnalyticsDialog.tsx`
+- Add a 4th tab called "Description" (with a `FileText` icon) to the existing tabs (Analytics, Feed Data, Embed Widgets)
+- Change the grid from `grid-cols-3` to `grid-cols-4`
+- The new tab content will:
+  - Show `job_summary` (if present) in a highlighted summary card at the top
+  - Render the full `job_description` (or `description`) using `dangerouslySetInnerHTML` since job descriptions often contain HTML markup
+  - Include a fallback "No description available" empty state
+  - Add a "Preview as Public" button that opens the public `/jobs/{id}` page in a new tab
+- Update the `JobAnalyticsDialogProps` interface to include `job_description`, `job_summary`, and `description` fields
 
-UPDATE public.job_listings 
-SET min_experience_months = 6 
-WHERE client_id IN (
-  SELECT id FROM clients WHERE name ILIKE '%pemberton%'
-);
-```
+### 2. No other file changes needed
+The `JobTable` already passes the full job object (with `[key: string]: unknown`) to the dialog, so `job_description` and `job_summary` will be available. The client dashboard reuses the same components.
 
-### 2. Update Edge Function: `elevenlabs-outbound-call/index.ts`
-
-**A. Fetch `min_experience_months`** in the job listing query.
-
-**B. Add experience qualification check** in `buildDynamicVariables`:
-- Parse applicant's months from `application.months`, `driving_experience_years`, or `exp`
-- Compare against `jobListing.min_experience_months`
-- Set new dynamic variables:
-  - `meets_minimum_experience`: `'yes'` | `'no'` | `'unknown'`
-  - `minimum_experience_required`: e.g. `'6 months'`
-  - `experience_disqualification_note`: When `'no'`, instructs agent: *"This candidate has X months of experience but this position requires a minimum of 6 months. Politely let them know they don't currently meet the minimum experience requirement, but that {company} would love for them to apply again once they have more experience. Do NOT transfer this call."*
-
-When `min_experience_months` is NULL on a job, the gate is skipped (backward compatible). No frontend or prompt changes needed.
+## Technical Details
+- Job descriptions from feeds are typically HTML. We'll render them inside a `prose` container with Tailwind typography styles for clean formatting.
+- The dialog already has `max-h-[80vh] overflow-y-auto`, so long descriptions will scroll naturally.
 
