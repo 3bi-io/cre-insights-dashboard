@@ -7,6 +7,7 @@ import { MapPin, DollarSign, Building2, Clock, ExternalLink, Mic, Info, Sparkles
 import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
 import { JobContext } from '@/features/elevenlabs';
 import { sanitizers } from '@/utils/validation';
+import { renderJobDescription } from '@/utils/markdownRenderer';
 import { useIsVoiceSupported } from '@/hooks/useVoiceCompatibility';
 import { getDisplayCompanyName, formatSalary } from '@/utils/jobDisplayUtils';
 import {
@@ -116,7 +117,7 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
         {displayDescription && (
           <div 
             className="text-sm sm:text-base text-muted-foreground line-clamp-2 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: sanitizers.sanitizeHtml(displayDescription) }}
+            dangerouslySetInnerHTML={{ __html: renderJobDescription(displayDescription) }}
           />
         )}
 

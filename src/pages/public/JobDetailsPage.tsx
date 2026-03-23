@@ -15,6 +15,7 @@ import { StickyApplyCTA } from '@/components/public/StickyApplyCTA';
 import { VoiceApplicationContainer, useVoiceApplication } from '@/components/shared';
 import { sanitizers } from '@/utils/validation';
 import { getDisplayCompanyName, formatSalary } from '@/utils/jobDisplayUtils';
+import { renderJobDescription } from '@/utils/markdownRenderer';
 import { JobShareActions } from '@/features/jobs/components/public/JobShareActions';
 import { JobSidebar } from '@/features/jobs/components/public/JobSidebar';
 
@@ -204,7 +205,7 @@ const JobDetailsContent: React.FC = () => {
                         prose-ul:my-4 prose-ul:list-disc prose-ul:pl-5 prose-ul:space-y-1.5
                         prose-ol:my-4 prose-ol:list-decimal prose-ol:pl-5 prose-ol:space-y-1.5
                         prose-li:text-foreground/90 prose-li:leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: sanitizers.sanitizeHtml(displayDescription) }}
+                      dangerouslySetInnerHTML={{ __html: renderJobDescription(displayDescription) }}
                     />
                   </div>
                 )}

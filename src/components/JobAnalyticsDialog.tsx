@@ -8,8 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Eye, MousePointer, DollarSign, BarChart3, Code, Rss, ExternalLink, Tag, Activity, FileText } from 'lucide-react';
-import DOMPurify from 'dompurify';
 import { EmbedTokenGenerator } from '@/features/jobs/components/EmbedTokenGenerator';
+import { renderJobDescription } from '@/utils/markdownRenderer';
 
 interface JobAnalyticsDialogProps {
   job: {
@@ -260,7 +260,7 @@ const JobAnalyticsDialog: React.FC<JobAnalyticsDialogProps> = ({ job, open, onOp
               <Card className="border-primary/20 bg-primary/5">
                 <CardContent className="p-4">
                   <p className="text-sm font-medium text-muted-foreground mb-1">Summary</p>
-                  <p className="text-sm">{(job as any).job_summary}</p>
+                  <div className="text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderJobDescription((job as any).job_summary) }} />
                 </CardContent>
               </Card>
             )}
@@ -271,7 +271,7 @@ const JobAnalyticsDialog: React.FC<JobAnalyticsDialogProps> = ({ job, open, onOp
                   <div
                     className="prose prose-sm dark:prose-invert max-w-none"
                     dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(
+                      __html: renderJobDescription(
                         ((job as any).job_description || (job as any).description) as string
                       ),
                     }}
