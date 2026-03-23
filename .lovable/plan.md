@@ -1,30 +1,33 @@
 
 
-# Render Markdown Job Descriptions Properly
+# Convert Sentence-Style Job Descriptions to Bullet Points
 
 ## Problem
-R.E. Garrison job descriptions are stored as **markdown** in `job_summary` (with `##` headers, `|` pipe tables, `**` bold, `###` sections). The app currently renders them via `dangerouslySetInnerHTML` which only handles HTML — so the markdown syntax appears as raw text.
+R.E. Garrison job descriptions have details packed into long sentences separated by periods (e.g., "Earn $4,000-$5,000 gross weekly. 70% of line haul + 100% of billed fuel surcharge. No trailer rental."). These render as dense paragraphs instead of scannable bullet points.
 
 ## Solution
-Install a markdown-to-HTML library and convert markdown content before sanitizing and rendering.
+Add a pre-processing step in `markdownRenderer.ts` that splits sentence-packed paragraphs into markdown bullet lists before passing to `marked`.
 
 ## Changes
 
-### 1. Install `marked` library
-Add `marked` — a fast, lightweight markdown parser that converts markdown to HTML. Works well with the existing DOMPurify sanitization pipeline.
+### Update `src/utils/markdownRenderer.ts`
+Add a `convertSentencesToBullets()` function that runs before markdown parsing:
 
-### 2. Create a markdown rendering utility (`src/utils/markdownRenderer.ts`)
-- Import `marked` and `DOMPurify`
-- Export a `renderMarkdown(text: string): string` function that:
-  - Detects if content looks like markdown (contains `#`, `|`, `**`, `- `, etc.) vs. plain HTML
-  - If markdown: parse with `marked`, then sanitize with DOMPurify
-  - If HTML: sanitize with DOMPurify directly (existing behavior)
-- This keeps backward compatibility for jobs that already have HTML descriptions
+- **Target only non-header, non-table paragraphs** — lines that don't start with `#`, `|`, `-`, `*`, or digits followed by `.`
+- **Split on `. ` or `, ` boundaries** where each segment is a distinct fact/benefit (minimum ~15 chars to avoid splitting things like "e.g., this")
+- **Prefix each segment with `- `** to create a markdown unordered list
+- **Preserve headers, tables, and existing lists** untouched
 
-### 3. Update rendering locations
-- **`JobDetailsPage.tsx`** — use `renderMarkdown()` instead of `sanitizers.sanitizeHtml()` for the description
-- **`PublicJobCard.tsx`** — same change for the card preview snippet
-- **`JobAnalyticsDialog.tsx`** — same change for the admin/client description preview tab
+For example, this input:
+> Earn $4,000-$5,000 gross weekly. 70% of line haul + 100% of billed fuel surcharge. No trailer rental.
 
-All three locations currently use `dangerouslySetInnerHTML` with sanitization, so the only change is swapping the processing function. The existing `prose` CSS classes on `JobDetailsPage` will automatically style the generated HTML (headers, tables, lists, bold text) correctly.
+Becomes:
+> - Earn $4,000-$5,000 gross weekly
+> - 70% of line haul + 100% of billed fuel surcharge
+> - No trailer rental
+
+The function processes the text line-by-line, only converting lines that contain 3+ sentence-ending periods and aren't already formatted.
+
+### No other files change
+The rendering components already call `renderJobDescription()` — the formatting improvement flows through automatically.
 
