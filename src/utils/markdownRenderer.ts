@@ -121,6 +121,9 @@ export function renderJobDescription(text: string): string {
 
   let processed = text;
 
+  // Pre-process: add summary header and bold first line
+  processed = addSummaryHeader(processed);
+
   // Pre-process: convert sentence-packed paragraphs to bullet lists
   processed = convertSentencesToBullets(processed);
 
