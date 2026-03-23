@@ -72,15 +72,27 @@ export const StickyApplyCTA: React.FC<StickyApplyCTAProps> = ({
     >
       <div className="container mx-auto px-4 py-3">
         <div className="flex gap-3">
-          <Link to={applyUrl} className="flex-1">
-            <Button 
-              className="w-full min-h-[48px] text-base font-semibold touch-manipulation"
-              size="lg"
-            >
-              Apply Now
-              <ExternalLink className="w-4 h-4 ml-2" aria-hidden="true" />
-            </Button>
-          </Link>
+          {isExternalApply ? (
+            <a href={applyUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
+              <Button 
+                className="w-full min-h-[48px] text-base font-semibold touch-manipulation"
+                size="lg"
+              >
+                Apply Now
+                <ExternalLink className="w-4 h-4 ml-2" aria-hidden="true" />
+              </Button>
+            </a>
+          ) : (
+            <Link to={applyUrl} className="flex-1">
+              <Button 
+                className="w-full min-h-[48px] text-base font-semibold touch-manipulation"
+                size="lg"
+              >
+                Apply Now
+                <ExternalLink className="w-4 h-4 ml-2" aria-hidden="true" />
+              </Button>
+            </Link>
+          )}
           {canShowVoiceButton && (
             <Button 
               variant="outline" 

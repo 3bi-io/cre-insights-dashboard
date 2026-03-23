@@ -8,6 +8,7 @@ interface JobDetails {
   job_title: string | null;
   job_summary: string | null;
   job_description: string | null;
+  apply_url: string | null;
   location: string | null;
   city: string | null;
   state: string | null;

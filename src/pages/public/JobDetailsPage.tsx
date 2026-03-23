@@ -254,7 +254,7 @@ const JobDetailsContent: React.FC = () => {
           )}
         </div>
 
-        <StickyApplyCTA applyUrl={applyUrl} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={true} />
+        <StickyApplyCTA applyUrl={applyUrl} isExternalApply={isExternalApply} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={true} />
       </div>
     </div>
   );

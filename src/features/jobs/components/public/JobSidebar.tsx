@@ -68,12 +68,21 @@ export const JobSidebar = ({
               </div>
             )}
 
-            <Link to={applyUrl} className="block">
-              <Button className="w-full min-h-[48px] text-base font-semibold" size="lg">
-                Apply Now
-                <ExternalLink className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
+            {isExternalApply ? (
+              <a href={applyUrl} target="_blank" rel="noopener noreferrer" className="block">
+                <Button className="w-full min-h-[48px] text-base font-semibold" size="lg">
+                  Apply Now
+                  <ExternalLink className="w-4 h-4 ml-2" />
+                </Button>
+              </a>
+            ) : (
+              <Link to={applyUrl} className="block">
+                <Button className="w-full min-h-[48px] text-base font-semibold" size="lg">
+                  Apply Now
+                  <ExternalLink className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            )}
 
             <Button
               variant="outline"
