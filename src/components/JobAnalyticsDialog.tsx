@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Eye, MousePointer, DollarSign, BarChart3, Code, Rss, ExternalLink, Tag, Activity } from 'lucide-react';
+import { Calendar, Eye, MousePointer, DollarSign, BarChart3, Code, Rss, ExternalLink, Tag, Activity, FileText } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { EmbedTokenGenerator } from '@/features/jobs/components/EmbedTokenGenerator';
 
 interface JobAnalyticsDialogProps {
