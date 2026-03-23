@@ -1,0 +1,3 @@
+UPDATE job_listings SET apply_url = 'https://cdljobnow.com/jobs/4802/werner-enterprises-dedicated-cdl-a-truck-driver-multiple-options-available?cc=48648m681' WHERE id = '861bce97-7740-4207-bd4e-bffa16352699';
+UPDATE job_listings SET apply_url = 'https://cdljobnow.com/jobs/7891/tmc-transportation-cdl-a-flatbed-driver?cc=48649barT' WHERE id = '3212c229-c1f6-42aa-8ae5-6350c562c09f';
+UPDATE job_listings SET apply_url = 'https://cdljobnow.com/jobs/6023/hub-group-intermodal-cdl-a-driver-east?cc=48650041b' WHERE id = '923781c4-57f3-4e88-919d-34ed641d5aa8';
