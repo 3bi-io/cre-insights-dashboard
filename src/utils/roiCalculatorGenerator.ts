@@ -8,7 +8,7 @@ import { writeExcelFileAOA } from '@/lib/excelHelper';
  */
 export const generateRoiCalculatorXLSX = async (): Promise<void> => {
   const instructionsData: (string | number | null)[][] = [
-    ['ATS.me ROI Calculator'],
+    ['Apply AI ROI Calculator'],
     [''],
     ['Instructions:'],
     ['1. Enter your current metrics in the "Current State" column on the Calculator sheet'],
