@@ -31,6 +31,7 @@ export const JobSidebar = ({
   salary,
   location,
   applyUrl,
+  isExternalApply,
   canonicalUrl,
   onVoiceApply,
   isVoiceConnected,
