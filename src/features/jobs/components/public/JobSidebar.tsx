@@ -36,6 +36,7 @@ export const JobSidebar = ({
   canonicalUrl,
   onVoiceApply,
   isVoiceConnected,
+  showVoiceButton = true,
 }: JobSidebarProps) => {
   return (
     <div className="hidden lg:block">
