@@ -1,21 +1,36 @@
 
 
-# Hide Voice Apply for External-URL Jobs
+# Fix External Apply Detection
 
-## Approach
-The simplest fix: hide the "Apply with Voice" button whenever a job has an external `apply_url`. This covers all 3 jobs and any future external-apply jobs — voice apply doesn't make sense when the application process lives on another site.
+## Problem
+The current logic `const isExternalApply = !!job.apply_url` treats ALL jobs with an `apply_url` as external. But most jobs have internal `apply_url` values (e.g. `https://applyai.jobs/apply?job_id=...&utm_source=rippling...`). Only 3 jobs have truly external URLs (cdljobnow.com). This breaks:
+- Apply button rendering (opens as external link instead of internal navigation)
+- Voice Apply button hidden for all jobs with any `apply_url`
 
-## Changes
+## Fix
 
 ### 1. `src/components/public/PublicJobCard.tsx`
-Add `isExternalApply` to the `showVoiceButton` condition so voice button is hidden for external jobs.
+Change the `isExternalApply` check to detect truly external URLs:
+```ts
+const isExternalApply = !!job.apply_url && !job.apply_url.includes('applyai.jobs');
+```
+Keep `applyUrl` logic as-is — internal `apply_url` values with UTM params should still be used (they route to the same internal apply page).
 
 ### 2. `src/pages/public/JobDetailsPage.tsx`
-Pass `showVoiceButton={!isExternalApply}` to `JobSidebar` and `StickyApplyCTA`, hiding the voice button on the detail page too.
+Same change to `isExternalApply`:
+```ts
+const isExternalApply = !!job.apply_url && !job.apply_url.includes('applyai.jobs');
+```
 
-### 3. `src/features/jobs/components/public/JobSidebar.tsx`
-Accept optional `showVoiceButton` prop (default `true`), conditionally render the voice button.
+For internal `apply_url` values, use `<Link>` with just the path+query portion (strip the domain) so React Router handles it. Update `applyUrl`:
+```ts
+const applyUrl = job.apply_url
+  ? (job.apply_url.includes('applyai.jobs')
+      ? new URL(job.apply_url).pathname + new URL(job.apply_url).search
+      : job.apply_url)
+  : `/apply?job_id=${job.id}`;
+```
 
-### 4. `src/components/public/StickyApplyCTA.tsx`
-Already has `showVoiceButton` prop — no change needed, just needs correct value from parent.
+### 3. No other file changes needed
+`JobSidebar.tsx` and `StickyApplyCTA.tsx` already handle `isExternalApply` and `showVoiceButton` props correctly — they just need the right values from parents.
 
