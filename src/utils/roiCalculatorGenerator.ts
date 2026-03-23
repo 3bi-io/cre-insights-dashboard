@@ -12,7 +12,7 @@ export const generateRoiCalculatorXLSX = async (): Promise<void> => {
     [''],
     ['Instructions:'],
     ['1. Enter your current metrics in the "Current State" column on the Calculator sheet'],
-    ['2. Review the projected improvements with ATS.me'],
+    ['2. Review the projected improvements with Apply AI'],
     ['3. Calculate your potential annual savings and ROI'],
     [''],
     ['Note: Improvement estimates are based on typical customer results.'],
