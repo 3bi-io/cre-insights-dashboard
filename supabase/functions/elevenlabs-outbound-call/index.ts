@@ -1462,6 +1462,31 @@ function buildDynamicVariables(
   // Experience
   vars.applicant_experience = formatExperience(application);
   
+  // Minimum experience qualification gate
+  const minExpMonths = jobListing?.min_experience_months as number | null;
+  if (minExpMonths != null && minExpMonths > 0) {
+    const applicantMonths = parseApplicantMonths(application);
+    vars.minimum_experience_required = minExpMonths >= 12 
+      ? `${Math.floor(minExpMonths / 12)} year${Math.floor(minExpMonths / 12) > 1 ? 's' : ''}` 
+      : `${minExpMonths} months`;
+    
+    if (applicantMonths === null) {
+      vars.meets_minimum_experience = 'unknown';
+      vars.experience_disqualification_note = '';
+    } else if (applicantMonths >= minExpMonths) {
+      vars.meets_minimum_experience = 'yes';
+      vars.experience_disqualification_note = '';
+    } else {
+      vars.meets_minimum_experience = 'no';
+      const companyName = (organization?.name as string) || 'the company';
+      vars.experience_disqualification_note = `IMPORTANT: This candidate has ${applicantMonths} months of driving experience but this position requires a minimum of ${vars.minimum_experience_required}. Politely let them know they don't currently meet the minimum experience requirement for this position, but that ${companyName} would love for them to apply again once they have more experience. Be encouraging and wish them well. Do NOT attempt to transfer this call to a recruiter.`;
+    }
+  } else {
+    vars.meets_minimum_experience = 'unknown';
+    vars.minimum_experience_required = '';
+    vars.experience_disqualification_note = '';
+  }
+  
   // Qualifications
   const over21 = (application?.over_21 as string) || (application?.age as string);
   vars.over_21_status = (over21 === 'Yes' || over21 === 'yes' || over21 === 'true' || over21 === '1') ? 'yes' : 'unknown';
