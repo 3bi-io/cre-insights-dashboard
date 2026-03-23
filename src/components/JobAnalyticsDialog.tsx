@@ -255,6 +255,48 @@ const JobAnalyticsDialog: React.FC<JobAnalyticsDialogProps> = ({ job, open, onOp
             )}
           </TabsContent>
           
+          <TabsContent value="description" className="space-y-6 mt-4">
+            {(job as any).job_summary && (
+              <Card className="border-primary/20 bg-primary/5">
+                <CardContent className="p-4">
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Summary</p>
+                  <p className="text-sm">{(job as any).job_summary}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {((job as any).job_description || (job as any).description) ? (
+              <Card>
+                <CardContent className="p-6">
+                  <div
+                    className="prose prose-sm dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(
+                        ((job as any).job_description || (job as any).description) as string
+                      ),
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground">No description available for this job listing.</p>
+                </CardContent>
+              </Card>
+            )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(`/jobs/${job.id}`, '_blank')}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Preview as Public
+            </Button>
+          </TabsContent>
+
           <TabsContent value="feed-data" className="space-y-6 mt-4">
             {/* Feed Information */}
             <Card>
