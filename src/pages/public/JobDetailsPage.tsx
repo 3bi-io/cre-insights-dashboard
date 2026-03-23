@@ -71,7 +71,7 @@ const JobDetailsContent: React.FC = () => {
 
   const displayTitle = job.title || job.job_title || 'Job Opening';
   const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : '');
-  const displayDescription = job.job_summary || job.job_description || '';
+  const displayDescription = job.job_description || job.job_summary || '';
   const companyName = getDisplayCompanyName(job);
   const canonicalUrl = `https://applyai.jobs/jobs/${job.id}`;
   const isExternalApply = !!job.apply_url && !job.apply_url.includes('applyai.jobs');
