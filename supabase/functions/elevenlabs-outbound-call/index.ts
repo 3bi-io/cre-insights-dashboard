@@ -830,7 +830,7 @@ async function processOutboundCall(
           .select(`
             id, title, job_title, job_summary, location, city, state,
             salary_min, salary_max, salary_type, job_type, experience_required,
-            organization_id, client_id
+            organization_id, client_id, min_experience_months
           `)
           .eq('id', application.job_listing_id)
           .single();
@@ -1462,6 +1462,31 @@ function buildDynamicVariables(
   // Experience
   vars.applicant_experience = formatExperience(application);
   
+  // Minimum experience qualification gate
+  const minExpMonths = jobListing?.min_experience_months as number | null;
+  if (minExpMonths != null && minExpMonths > 0) {
+    const applicantMonths = parseApplicantMonths(application);
+    vars.minimum_experience_required = minExpMonths >= 12 
+      ? `${Math.floor(minExpMonths / 12)} year${Math.floor(minExpMonths / 12) > 1 ? 's' : ''}` 
+      : `${minExpMonths} months`;
+    
+    if (applicantMonths === null) {
+      vars.meets_minimum_experience = 'unknown';
+      vars.experience_disqualification_note = '';
+    } else if (applicantMonths >= minExpMonths) {
+      vars.meets_minimum_experience = 'yes';
+      vars.experience_disqualification_note = '';
+    } else {
+      vars.meets_minimum_experience = 'no';
+      const companyName = (organization?.name as string) || 'the company';
+      vars.experience_disqualification_note = `IMPORTANT: This candidate has ${applicantMonths} months of driving experience but this position requires a minimum of ${vars.minimum_experience_required}. Politely let them know they don't currently meet the minimum experience requirement for this position, but that ${companyName} would love for them to apply again once they have more experience. Be encouraging and wish them well. Do NOT attempt to transfer this call to a recruiter.`;
+    }
+  } else {
+    vars.meets_minimum_experience = 'unknown';
+    vars.minimum_experience_required = '';
+    vars.experience_disqualification_note = '';
+  }
+  
   // Qualifications
   const over21 = (application?.over_21 as string) || (application?.age as string);
   vars.over_21_status = (over21 === 'Yes' || over21 === 'yes' || over21 === 'true' || over21 === '1') ? 'yes' : 'unknown';
@@ -1570,7 +1595,33 @@ function buildDynamicVariables(
   return vars;
 }
 
-// Format experience from various fields
+// Parse applicant's experience into total months (returns null if unknown)
+function parseApplicantMonths(application: Record<string, unknown> | null): number | null {
+  if (!application) return null;
+  
+  const years = application.driving_experience_years as number;
+  if (years && years > 0) return Math.round(years * 12);
+  
+  const months = application.months as string;
+  if (months) {
+    const monthNum = parseInt(months, 10);
+    if (!isNaN(monthNum)) return monthNum;
+  }
+  
+  const exp = application.exp as string;
+  if (exp) {
+    // Try to parse common patterns like "Less than 3 months", "6 months", "2 years"
+    const monthMatch = exp.match(/(\d+)\s*month/i);
+    if (monthMatch) return parseInt(monthMatch[1], 10);
+    const yearMatch = exp.match(/(\d+)\s*year/i);
+    if (yearMatch) return parseInt(yearMatch[1], 10) * 12;
+    if (/less\s*than\s*3/i.test(exp)) return 0;
+    if (/none|no\s*experience|0/i.test(exp)) return 0;
+  }
+  
+  return null;
+}
+
 function formatExperience(application: Record<string, unknown> | null): string {
   if (!application) return 'unknown';
   
