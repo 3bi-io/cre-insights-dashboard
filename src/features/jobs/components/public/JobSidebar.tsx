@@ -18,6 +18,7 @@ interface JobSidebarProps {
   salary?: string | null;
   location?: string;
   applyUrl: string;
+  isExternalApply?: boolean;
   canonicalUrl: string;
   onVoiceApply: () => void;
   isVoiceConnected: boolean;
