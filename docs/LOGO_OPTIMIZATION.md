@@ -20,7 +20,7 @@ The Brand component has been enhanced with comprehensive optimizations for all d
 ### 3. Organization Custom Logos
 - **Seamless integration**: Pass `customLogoUrl` and `organizationName` props
 - **All optimizations applied**: Custom logos get same performance benefits as default logos
-- **Graceful fallback**: Falls back to default ATS.me logo if custom logo fails to load
+- **Graceful fallback**: Falls back to default Apply AI logo if custom logo fails to load
 
 ### 4. Dark Mode Optimization
 - **Efficient rendering**: Horizontal variant shows appropriate logo based on theme
@@ -84,7 +84,7 @@ The Brand component has been enhanced with comprehensive optimizations for all d
 | `showAsLink` | `boolean` | `true` | Whether to render as clickable link |
 | `priority` | `boolean` | `false` | Enable eager loading for critical logos |
 | `customLogoUrl` | `string \| null` | `undefined` | URL for organization custom logo |
-| `organizationName` | `string` | `'ATS.me'` | Organization name for alt text |
+| `organizationName` | `string` | `'Apply AI'` | Organization name for alt text |
 
 ## Implementation Locations
 

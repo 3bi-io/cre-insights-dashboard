@@ -1,6 +1,6 @@
 # Environment Variables Documentation
 
-Complete guide to all environment variables used in ATS.me.
+Complete guide to all environment variables used in Apply AI.
 
 ## 📋 Required Variables
 

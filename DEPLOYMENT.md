@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide covers deploying ATS.me to production using various platforms.
+This guide covers deploying Apply AI to production using various platforms.
 
 ## 📋 Pre-Deployment Checklist
 
@@ -237,10 +237,10 @@ server {
 3. **Build and Run**
 ```bash
 # Build image
-docker build -t ats-me .
+docker build -t apply-ai .
 
 # Run container
-docker run -d -p 80:80 --name ats-me ats-me
+docker run -d -p 80:80 --name apply-ai apply-ai
 ```
 
 4. **Docker Compose** (with reverse proxy)

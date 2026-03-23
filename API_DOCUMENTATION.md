@@ -1,6 +1,6 @@
 # API Documentation
 
-Complete reference for ATS.me backend APIs and Edge Functions.
+Complete reference for Apply AI backend APIs and Edge Functions.
 
 ## 🌐 Base URLs
 

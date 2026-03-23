@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-Common issues and solutions for ATS.me.
+Common issues and solutions for Apply AI.
 
 ## 📋 Table of Contents
 
@@ -613,23 +613,23 @@ Common issues and solutions for ATS.me.
 
 **Users:**
 - In-app chat support
-- Email: support@ats.me
+- Email: support@applyai.jobs
 - Response time: 24-48 hours
 
 **Administrators:**
-- Priority support: admin-support@ats.me
+- Priority support: admin-support@applyai.jobs
 - Phone: (for enterprise plans)
 - Response time: 4 hours
 
 **Developers:**
 - GitHub Issues
 - Discord community
-- Email: dev@ats.me
+- Email: dev@applyai.jobs
 
 **Community:**
-- Discord: [Join our Discord](https://discord.gg/ats-me)
-- Forum: community.ats.me
-- Stack Overflow: Tag with `ats-me`
+- Discord: [Join our Discord](https://discord.gg/apply-ai)
+- Forum: community.applyai.jobs
+- Stack Overflow: Tag with `apply-ai`
 
 ### Creating a Good Bug Report
 

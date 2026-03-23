@@ -23,8 +23,8 @@ VitePWA({
   registerType: 'autoUpdate',
   includeAssets: ['logo-icon.png', 'robots.txt', 'sitemap.xml', 'og-social.png', 'twitter-card.png'],
   manifest: {
-    name: 'ATS.me - AI-Powered Recruitment Platform',
-    short_name: 'ATS.me',
+    name: 'Apply AI - AI-Powered Recruitment Platform',
+    short_name: 'Apply AI',
     display: 'standalone',
     theme_color: '#3b82f6',
     background_color: '#ffffff',
@@ -178,7 +178,7 @@ Created `src/vite-env.d.ts` with PWA module declarations:
 - ✅ **Standalone Mode:** Opens without browser chrome
 - ✅ **App Icon:** 512x512 and 192x192 sizes
 - ✅ **Splash Screen:** Auto-generated from manifest
-- ✅ **App Name:** "ATS.me - AI-Powered Recruitment Platform"
+- ✅ **App Name:** "Apply AI - AI-Powered Recruitment Platform"
 - ✅ **Theme Color:** Blue (#3b82f6) matching brand
 
 ### Performance Benefits:
@@ -249,7 +249,7 @@ Created `src/vite-env.d.ts` with PWA module declarations:
 ## 📱 User Experience Flow
 
 ### First Visit:
-1. User visits ATS.me in browser
+1. User visits Apply AI in browser
 2. Service worker registers in background
 3. Static assets cached automatically
 4. After 10 seconds: Install prompt appears (if not dismissed before)
@@ -384,10 +384,10 @@ Created `src/vite-env.d.ts` with PWA module declarations:
 ### For End Users:
 
 **Installing the App:**
-1. Visit https://ats.me
+1. Visit https://applyai.jobs
 2. Look for "Install" button in browser address bar OR
 3. Wait for install prompt to appear OR
-4. Visit https://ats.me/install for instructions
+4. Visit https://applyai.jobs/install for instructions
 
 **Using Offline:**
 - Once installed, the app works offline
@@ -422,7 +422,7 @@ Created `src/vite-env.d.ts` with PWA module declarations:
 
 ## 🎉 Summary
 
-Phase 7 has transformed ATS.me into a full-featured Progressive Web App:
+Phase 7 has transformed Apply AI into a full-featured Progressive Web App:
 - **Installable:** Users can add to home screen on any device
 - **Offline:** Core functionality works without internet
 - **Fast:** Cached assets load instantly

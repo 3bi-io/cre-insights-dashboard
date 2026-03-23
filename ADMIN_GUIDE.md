@@ -1,6 +1,6 @@
-# ATS.me Administrator Guide
+# Apply AI Administrator Guide
 
-Complete guide for system administrators managing ATS.me.
+Complete guide for system administrators managing Apply AI.
 
 ## 🔐 Admin Access
 
@@ -653,7 +653,7 @@ Import data from other systems:
 8. Confirm import
 
 **Field Mapping:**
-- Match your columns to ATS.me fields
+- Match your columns to Apply AI fields
 - Required fields must be mapped
 - Optional fields can be skipped
 
@@ -679,7 +679,7 @@ Includes:
 
 ### System Updates
 
-ATS.me updates automatically:
+Apply AI updates automatically:
 
 - Updates deployed during low-traffic periods
 - No downtime for most updates
@@ -806,12 +806,12 @@ Use to:
 ### Getting Support
 
 **Priority Support (Admin):**
-- Email: admin-support@ats.me
+- Email: admin-support@applyai.jobs
 - Phone: Available for enterprise plans
 - Response time: < 4 hours
 
 **Documentation:**
-- Full documentation at docs.ats.me
+- Full documentation at docs.applyai.jobs
 - Knowledge base articles
 - API reference
 - Community forum

@@ -114,7 +114,7 @@ ViteImageOptimizer plugin configured:
 
 1. **Open Graph Image** - `public/og-social.png` (1200x630)
    - Professional LinkedIn/Facebook share image
-   - Features ATS.me branding + dashboard visuals
+   - Features Apply AI branding + dashboard visuals
    - Optimized for 1200x630 OG standard
 
 2. **Twitter Card** - `public/twitter-card.png` (800x512)
@@ -126,9 +126,9 @@ ViteImageOptimizer plugin configured:
 
 **Updated Social Meta Tags:**
 ```html
-<!-- Replaced Google Storage URLs with ats.me domain -->
-<meta property="og:image" content="https://ats.me/og-social.png">
-<meta name="twitter:image" content="https://ats.me/twitter-card.png">
+<!-- Replaced Google Storage URLs with applyai.jobs domain -->
+<meta property="og:image" content="https://applyai.jobs/og-social.png">
+<meta name="twitter:image" content="https://applyai.jobs/twitter-card.png">
 ```
 
 **Added Performance Hints:**

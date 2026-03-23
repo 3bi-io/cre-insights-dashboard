@@ -1,11 +1,11 @@
-# ATS.me - AI-Powered Recruitment Platform
+# Apply AI - AI-Powered Recruitment Platform
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/React-18.3.1-blue.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5.3-blue.svg)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.4.2-purple.svg)](https://vitejs.dev/)
 
-Transform your recruitment process with AI-powered analytics, automated workflows, and intelligent candidate ranking. ATS.me is a modern, production-ready Applicant Tracking System built with cutting-edge technologies.
+Transform your recruitment process with AI-powered analytics, automated workflows, and intelligent candidate ranking. Apply AI is a modern, production-ready Applicant Tracking System built with cutting-edge technologies.
 
 ## ✨ Features
 
@@ -62,7 +62,7 @@ Transform your recruitment process with AI-powered analytics, automated workflow
 1. **Clone the repository**
 ```bash
 git clone <YOUR_GIT_URL>
-cd ats-me
+cd apply-ai
 ```
 
 2. **Install dependencies**
@@ -143,7 +143,7 @@ Navigate to `http://localhost:8080`
 ## 🏗️ Project Structure
 
 ```
-ats-me/
+apply-ai/
 ├── src/
 │   ├── components/          # Reusable UI components
 │   │   ├── ui/             # Base UI components (shadcn)
@@ -241,7 +241,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - **Documentation**: [docs.lovable.dev](https://docs.lovable.dev)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/ats-me/issues)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/apply-ai/issues)
 - **Discord**: [Lovable Community](https://discord.gg/lovable)
 
 ## 🗺️ Roadmap
@@ -264,6 +264,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-Made with ❤️ by the ATS.me Team
+Made with ❤️ by the Apply AI Team
 
 **Lovable Project URL**: https://lovable.dev/projects/cf22d483-762d-45c7-a42c-85b40ce9290a
