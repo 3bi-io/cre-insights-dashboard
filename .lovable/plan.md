@@ -1,17 +1,20 @@
 
 
-# Fix Job Click Not Opening Dialog on Client Dashboard
+# Fix Jobs Not Showing in R.E. Garrison Client Dashboard
 
 ## Problem
-In `JobPerformanceSection.tsx`, clicking a job calls `handleJobClick` which looks up the job in a separate `fullJobs` query. If that query returns empty (due to RLS or timing), the `if (full)` check fails silently and the dialog never opens.
+The recent change to `JobPerformanceSection.tsx` merged the job query to include `platforms(name)` and `job_categories(name)` joins. However, `job_listings` has no foreign key to `platforms` (and no `platform_id` column), so the Supabase query fails silently, returning no data.
 
-## Changes
+## Fix
 
 ### Update `src/features/dashboard/components/client-portal/JobPerformanceSection.tsx`
 
-1. **Merge the two queries**: Instead of running a separate `fullJobs` query, fetch the full job data (including `platforms(name), job_categories(name)`) in the existing `jobPerf` query. This eliminates the dependency on a second query that may not have loaded.
+Remove the invalid `platforms(name)` join from the query. Keep `job_categories(name)` only if `category_id` has a proper foreign key — but since there are no FK constraints on `job_listings` at all, remove both joins and just use `select('*')`:
 
-2. **Update `handleJobClick`**: Look up the job from `jobPerf` data directly (which already has the full fields) instead of from a separate `fullJobs` array.
+```
+- .select('*, platforms(name), job_categories(name)')
++ .select('*')
+```
 
-3. **Add fallback**: If for any reason the full data isn't available, still open the dialog with whatever data is available (at minimum `id`, `title`, `status`) so the click always does something visible.
+This restores the working query while keeping the merged single-query approach.
 
