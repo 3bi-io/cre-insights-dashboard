@@ -4272,6 +4272,7 @@ export type Database = {
           jobreferrer: string | null
           last_tenstreet_sync: string | null
           location: string | null
+          min_experience_months: number | null
           organization_id: string | null
           radius: number | null
           remote_type: string | null
@@ -4316,6 +4317,7 @@ export type Database = {
           jobreferrer?: string | null
           last_tenstreet_sync?: string | null
           location?: string | null
+          min_experience_months?: number | null
           organization_id?: string | null
           radius?: number | null
           remote_type?: string | null
@@ -4360,6 +4362,7 @@ export type Database = {
           jobreferrer?: string | null
           last_tenstreet_sync?: string | null
           location?: string | null
+          min_experience_months?: number | null
           organization_id?: string | null
           radius?: number | null
           remote_type?: string | null
