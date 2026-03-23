@@ -42,7 +42,7 @@ export const FlowDemoTab = () => {
               <h3 className="text-xl font-bold mb-2">Speed Matters in Recruitment</h3>
               <p className="text-muted-foreground max-w-xl">
                 Studies show that 50% of candidates accept the first offer they receive. 
-                With ATS.me, you connect with qualified candidates before your competitors even make contact.
+                With Apply AI, you connect with qualified candidates before your competitors even make contact.
               </p>
             </div>
           </div>

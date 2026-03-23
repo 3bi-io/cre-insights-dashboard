@@ -97,7 +97,7 @@ const DemoPage: React.FC = () => {
         {/* Feature Cards */}
         <section className="py-16 bg-muted/30">
           <div className="container mx-auto px-4">
-            <h2 className="text-2xl font-bold text-center mb-8">Why Choose ATS.me?</h2>
+            <h2 className="text-2xl font-bold text-center mb-8">Why Choose Apply AI?</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {demoFeatureCards.map((feature, index) => (
                 <Card key={index} className="text-center hover:shadow-lg transition-shadow">
@@ -116,7 +116,7 @@ const DemoPage: React.FC = () => {
 
         <GradientCTA
           title="Ready to Transform Your Hiring?"
-          description="Join leading trucking companies using ATS.me to hire faster and smarter."
+          description="Join leading trucking companies using Apply AI to hire faster and smarter."
           primaryAction={{ label: 'Get Started', to: '/contact' }}
           secondaryAction={{ label: 'Contact Sales', to: '/contact' }}
         />

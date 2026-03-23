@@ -8,11 +8,11 @@ import { writeExcelFileAOA } from '@/lib/excelHelper';
  */
 export const generateRoiCalculatorXLSX = async (): Promise<void> => {
   const instructionsData: (string | number | null)[][] = [
-    ['ATS.me ROI Calculator'],
+    ['Apply AI ROI Calculator'],
     [''],
     ['Instructions:'],
     ['1. Enter your current metrics in the "Current State" column on the Calculator sheet'],
-    ['2. Review the projected improvements with ATS.me'],
+    ['2. Review the projected improvements with Apply AI'],
     ['3. Calculate your potential annual savings and ROI'],
     [''],
     ['Note: Improvement estimates are based on typical customer results.'],
@@ -68,6 +68,6 @@ export const generateRoiCalculatorXLSX = async (): Promise<void> => {
       { name: 'Calculator', data: calculatorData, columnWidths: [35, 18, 18, 15] },
       { name: 'ROI Summary', data: summaryData, columnWidths: [35, 20] },
     ],
-    'ats-me-roi-calculator.xlsx',
+    'apply-ai-roi-calculator.xlsx',
   );
 };
