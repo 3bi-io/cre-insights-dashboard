@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Briefcase, TrendingUp } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+import JobAnalyticsDialog from '@/components/JobAnalyticsDialog';
 
 interface JobPerformanceSectionProps {
   clientId: string;
@@ -20,6 +21,22 @@ const getDateCutoff = (range: string) => {
 };
 
 export const JobPerformanceSection: React.FC<JobPerformanceSectionProps> = ({ clientId, dateRange }) => {
+  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [showDialog, setShowDialog] = useState(false);
+
+  // Fetch full job listings for this client (needed for dialog)
+  const { data: fullJobs } = useQuery({
+    queryKey: ['client-portal-full-jobs', clientId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('job_listings')
+        .select('*, platforms(name), job_categories(name)')
+        .eq('client_id', clientId);
+      return data || [];
+    },
+    enabled: !!clientId,
+  });
+
   const { data: jobPerf, isLoading } = useQuery({
     queryKey: ['client-portal-job-perf', clientId, dateRange],
     queryFn: async () => {
@@ -61,51 +78,73 @@ export const JobPerformanceSection: React.FC<JobPerformanceSectionProps> = ({ cl
     enabled: !!clientId,
   });
 
+  const handleJobClick = (jobId: string) => {
+    const full = fullJobs?.find(j => j.id === jobId);
+    if (full) {
+      setSelectedJob(full);
+      setShowDialog(true);
+    }
+  };
+
   return (
-    <Card className="border-border/50">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Briefcase className="w-5 h-5 text-amber-400" />
-          Job Performance
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">Performance breakdown by job listing</p>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="space-y-3">
-            {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
-          </div>
-        ) : !jobPerf?.length ? (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <Briefcase className="w-10 h-10 text-muted-foreground mb-3" />
-            <p className="text-muted-foreground font-medium">No job listings yet</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {jobPerf.map(job => (
-              <div key={job.id} className="flex items-center gap-4 rounded-lg bg-muted/30 border border-border/30 p-3 hover:bg-muted/50 transition-colors">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">{job.title}</p>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                    <span>{job.applications} applicant{job.applications !== 1 ? 's' : ''}</span>
-                    <span>Readiness: {job.avgReadiness}/100</span>
-                    <span>Delivery: {job.deliveryRate}%</span>
-                  </div>
-                </div>
-                <Badge
-                  variant="outline"
-                  className={job.status === 'active'
-                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                    : 'border-muted text-muted-foreground'
-                  }
+    <>
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Briefcase className="w-5 h-5 text-amber-400" />
+            Job Performance
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">Click a job to preview its description and details</p>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
+            </div>
+          ) : !jobPerf?.length ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <Briefcase className="w-10 h-10 text-muted-foreground mb-3" />
+              <p className="text-muted-foreground font-medium">No job listings yet</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {jobPerf.map(job => (
+                <div
+                  key={job.id}
+                  className="flex items-center gap-4 rounded-lg bg-muted/30 border border-border/30 p-3 hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => handleJobClick(job.id)}
                 >
-                  {job.status === 'active' ? 'Active' : job.status}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground truncate">{job.title}</p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                      <span>{job.applications} applicant{job.applications !== 1 ? 's' : ''}</span>
+                      <span>Readiness: {job.avgReadiness}/100</span>
+                      <span>Delivery: {job.deliveryRate}%</span>
+                    </div>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className={job.status === 'active'
+                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                      : 'border-muted text-muted-foreground'
+                    }
+                  >
+                    {job.status === 'active' ? 'Active' : job.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {selectedJob && (
+        <JobAnalyticsDialog
+          job={selectedJob}
+          open={showDialog}
+          onOpenChange={setShowDialog}
+        />
+      )}
+    </>
   );
 };
