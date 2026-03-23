@@ -1,26 +1,30 @@
 
 
-# Add Job Description Preview Tab to Job Details Dialog
+# Render Markdown Job Descriptions Properly
 
-## Overview
-Add a "Description" tab to the existing `JobAnalyticsDialog` component so admins and clients can preview the full job description directly from the dashboard, verifying it looks correct without leaving the admin/client portal.
+## Problem
+R.E. Garrison job descriptions are stored as **markdown** in `job_summary` (with `##` headers, `|` pipe tables, `**` bold, `###` sections). The app currently renders them via `dangerouslySetInnerHTML` which only handles HTML — so the markdown syntax appears as raw text.
+
+## Solution
+Install a markdown-to-HTML library and convert markdown content before sanitizing and rendering.
 
 ## Changes
 
-### 1. Update `JobAnalyticsDialog.tsx`
-- Add a 4th tab called "Description" (with a `FileText` icon) to the existing tabs (Analytics, Feed Data, Embed Widgets)
-- Change the grid from `grid-cols-3` to `grid-cols-4`
-- The new tab content will:
-  - Show `job_summary` (if present) in a highlighted summary card at the top
-  - Render the full `job_description` (or `description`) using `dangerouslySetInnerHTML` since job descriptions often contain HTML markup
-  - Include a fallback "No description available" empty state
-  - Add a "Preview as Public" button that opens the public `/jobs/{id}` page in a new tab
-- Update the `JobAnalyticsDialogProps` interface to include `job_description`, `job_summary`, and `description` fields
+### 1. Install `marked` library
+Add `marked` — a fast, lightweight markdown parser that converts markdown to HTML. Works well with the existing DOMPurify sanitization pipeline.
 
-### 2. No other file changes needed
-The `JobTable` already passes the full job object (with `[key: string]: unknown`) to the dialog, so `job_description` and `job_summary` will be available. The client dashboard reuses the same components.
+### 2. Create a markdown rendering utility (`src/utils/markdownRenderer.ts`)
+- Import `marked` and `DOMPurify`
+- Export a `renderMarkdown(text: string): string` function that:
+  - Detects if content looks like markdown (contains `#`, `|`, `**`, `- `, etc.) vs. plain HTML
+  - If markdown: parse with `marked`, then sanitize with DOMPurify
+  - If HTML: sanitize with DOMPurify directly (existing behavior)
+- This keeps backward compatibility for jobs that already have HTML descriptions
 
-## Technical Details
-- Job descriptions from feeds are typically HTML. We'll render them inside a `prose` container with Tailwind typography styles for clean formatting.
-- The dialog already has `max-h-[80vh] overflow-y-auto`, so long descriptions will scroll naturally.
+### 3. Update rendering locations
+- **`JobDetailsPage.tsx`** — use `renderMarkdown()` instead of `sanitizers.sanitizeHtml()` for the description
+- **`PublicJobCard.tsx`** — same change for the card preview snippet
+- **`JobAnalyticsDialog.tsx`** — same change for the admin/client description preview tab
+
+All three locations currently use `dangerouslySetInnerHTML` with sanitization, so the only change is swapping the processing function. The existing `prose` CSS classes on `JobDetailsPage` will automatically style the generated HTML (headers, tables, lists, bold text) correctly.
 
