@@ -24,25 +24,12 @@ export const JobPerformanceSection: React.FC<JobPerformanceSectionProps> = ({ cl
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [showDialog, setShowDialog] = useState(false);
 
-  // Fetch full job listings for this client (needed for dialog)
-  const { data: fullJobs } = useQuery({
-    queryKey: ['client-portal-full-jobs', clientId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('job_listings')
-        .select('*, platforms(name), job_categories(name)')
-        .eq('client_id', clientId);
-      return data || [];
-    },
-    enabled: !!clientId,
-  });
-
   const { data: jobPerf, isLoading } = useQuery({
     queryKey: ['client-portal-job-perf', clientId, dateRange],
     queryFn: async () => {
       const { data: jobs } = await supabase
         .from('job_listings')
-        .select('id, title, status')
+        .select('*, platforms(name), job_categories(name)')
         .eq('client_id', clientId);
 
       if (!jobs?.length) return [];
@@ -66,9 +53,7 @@ export const JobPerformanceSection: React.FC<JobPerformanceSectionProps> = ({ cl
         const deliveryRate = jobApps.length > 0 ? Math.round((delivered / jobApps.length) * 100) : 0;
 
         return {
-          id: job.id,
-          title: job.title,
-          status: job.status || 'active',
+          ...job,
           applications: jobApps.length,
           avgReadiness,
           deliveryRate,
@@ -79,9 +64,9 @@ export const JobPerformanceSection: React.FC<JobPerformanceSectionProps> = ({ cl
   });
 
   const handleJobClick = (jobId: string) => {
-    const full = fullJobs?.find(j => j.id === jobId);
-    if (full) {
-      setSelectedJob(full);
+    const job = jobPerf?.find(j => j.id === jobId);
+    if (job) {
+      setSelectedJob(job);
       setShowDialog(true);
     }
   };
