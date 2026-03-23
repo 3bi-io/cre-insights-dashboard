@@ -229,6 +229,7 @@ const JobDetailsContent: React.FC = () => {
             salary={salary}
             location={displayLocation}
             applyUrl={applyUrl}
+            isExternalApply={isExternalApply}
             canonicalUrl={canonicalUrl}
             onVoiceApply={handleVoiceApply}
             isVoiceConnected={isConnected}
