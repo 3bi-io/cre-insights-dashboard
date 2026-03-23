@@ -133,6 +133,95 @@ interface ScrapedJob {
   location: string | null;
   url: string;
   jobId: string;
+  description: string | null;
+}
+
+/**
+ * Clean up the raw markdown from a Rippling job page into a proper job description.
+ * Removes the title heading, trailing metadata (department, location, "Postularme ahora", etc.)
+ */
+function cleanJobDescription(markdown: string, jobTitle: string): string {
+  let lines = markdown.split('\n');
+
+  // Remove leading "# Content from ..." line if present
+  if (lines.length > 0 && lines[0].startsWith('# Content from')) {
+    lines = lines.slice(1);
+  }
+
+  // Remove leading title heading (## Title)
+  const titleIndex = lines.findIndex(l => {
+    const trimmed = l.trim();
+    return trimmed.startsWith('##') && trimmed.includes(jobTitle.substring(0, 20));
+  });
+  if (titleIndex !== -1) {
+    lines = lines.slice(titleIndex + 1);
+  }
+
+  // Remove trailing Rippling UI elements
+  const trailingPatterns = [
+    /^Postularme ahora$/i,
+    /^Apply now$/i,
+    /^Compartir en:?$/i,
+    /^Share:?$/i,
+  ];
+
+  // Trim from the bottom
+  while (lines.length > 0) {
+    const lastLine = lines[lines.length - 1].trim();
+    if (
+      lastLine === '' ||
+      trailingPatterns.some(p => p.test(lastLine)) ||
+      // Department/location metadata lines at the very bottom (short, no markdown)
+      (lines.length > 3 && lastLine.length < 40 && !lastLine.startsWith('#') && !lastLine.startsWith('-') && !lastLine.startsWith('*') && !lastLine.includes('**'))
+    ) {
+      lines.pop();
+    } else {
+      break;
+    }
+  }
+
+  return lines.join('\n').trim();
+}
+
+/**
+ * Scrape a single Rippling job page for its full description
+ */
+async function scrapeJobDescription(jobUrl: string, jobTitle: string, apiKey: string): Promise<string | null> {
+  try {
+    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: jobUrl,
+        formats: ['markdown'],
+        onlyMainContent: true,
+        waitFor: 2000,
+      }),
+    });
+
+    if (!response.ok) {
+      logger.error('Firecrawl API error scraping job page', null, { url: jobUrl, status: response.status });
+      return null;
+    }
+
+    const data = await response.json();
+    const content = data.data || data;
+    const markdown: string = content.markdown || '';
+
+    if (!markdown || markdown.length < 50) {
+      logger.warn('Job page returned minimal content', { url: jobUrl, length: markdown.length });
+      return null;
+    }
+
+    const cleaned = cleanJobDescription(markdown, jobTitle);
+    return cleaned.length > 30 ? cleaned : null;
+  } catch (error) {
+    logger.error('Failed to scrape job page', error, { url: jobUrl });
+    return null;
+  }
 }
 
 /**
@@ -221,6 +310,23 @@ async function scrapeRipplingJobs(): Promise<ScrapedJob[]> {
     }
   }
 
+  // Now scrape individual job pages for descriptions
+  logger.info('Scraping individual job pages for descriptions', { count: allJobs.length });
+  
+  for (const job of allJobs) {
+    const description = await scrapeJobDescription(job.url, job.title, apiKey);
+    job.description = description;
+    
+    if (description) {
+      logger.info('Got description for job', { title: job.title, descLength: description.length });
+    } else {
+      logger.warn('No description extracted for job', { title: job.title, url: job.url });
+    }
+    
+    // Small delay to be respectful to the API
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+
   return allJobs;
 }
 
@@ -283,6 +389,7 @@ function parseJobsFromMarkdown(markdown: string, jobLinks: string[]): ScrapedJob
           location,
           url,
           jobId,
+          description: null, // Will be populated later by individual page scraping
         });
       }
     }
@@ -300,6 +407,7 @@ function parseJobsFromMarkdown(markdown: string, jobLinks: string[]): ScrapedJob
         location: null,
         url,
         jobId: uuid,
+        description: null,
       });
     }
   }
@@ -435,6 +543,7 @@ const handler = wrapHandler(async (req: Request) => {
         const jobData = {
           title: job.title || 'Untitled Position',
           job_summary: job.department ? `Department: ${job.department}` : null,
+          job_description: job.description || null,
           location: locationData.location,
           city: locationData.city,
           state: locationData.state,
@@ -457,20 +566,19 @@ const handler = wrapHandler(async (req: Request) => {
         const existingJob = existingJobMap.get(job.jobId);
 
         if (existingJob) {
-          // Update existing job
-          const applyUrl = generateApplyUrl(existingJob.id);
-
+          // Update existing job - use Rippling URL as apply_url
           const { error: updateError } = await supabase
             .from('job_listings')
             .update({
               title: jobData.title,
               job_summary: jobData.job_summary,
+              job_description: jobData.job_description,
               location: jobData.location,
               city: jobData.city,
               state: jobData.state,
               remote_type: jobData.remote_type,
               url: jobData.url,
-              apply_url: applyUrl,
+              apply_url: job.url || existingJob.apply_url,
               category_id: jobData.category_id,
               updated_at: jobData.updated_at,
             })
@@ -491,10 +599,9 @@ const handler = wrapHandler(async (req: Request) => {
             .limit(1);
 
           if (duplicates && duplicates.length > 0) {
-            const applyUrl = generateApplyUrl(duplicates[0].id);
             await supabase
               .from('job_listings')
-              .update({ ...jobData, apply_url: applyUrl })
+              .update({ ...jobData, apply_url: job.url })
               .eq('id', duplicates[0].id);
             result.jobsUpdated++;
           } else {
@@ -508,11 +615,6 @@ const handler = wrapHandler(async (req: Request) => {
             if (insertError) {
               logger.error('Failed to insert job', new Error(JSON.stringify(insertError)), { jobId: job.jobId });
             } else if (newJob) {
-              const applyUrl = generateApplyUrl(newJob.id);
-              await supabase
-                .from('job_listings')
-                .update({ apply_url: applyUrl })
-                .eq('id', newJob.id);
               result.jobsInserted++;
             }
           }
