@@ -123,7 +123,7 @@ const HeroSection = () => {
           className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-playfair font-bold mb-6 leading-[1.05] tracking-tight"
         >
           <span className="text-white" style={{ textShadow: '0 2px 16px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.4)' }}>{heroContent.headline}</span>
-          <span className="text-primary drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]" style={{ textShadow: '0 0 20px hsl(var(--primary) / 0.6), 0 2px 8px rgba(0,0,0,0.5)' }}>
+          <span className="text-cyan-300 drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]" style={{ textShadow: '0 0 20px rgba(103,232,249,0.5), 0 2px 8px rgba(0,0,0,0.5)' }}>
             {heroContent.headlineAccent}
           </span>
         </motion.h1>
