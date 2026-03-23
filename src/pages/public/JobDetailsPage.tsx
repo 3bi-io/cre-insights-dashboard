@@ -15,6 +15,7 @@ import { StickyApplyCTA } from '@/components/public/StickyApplyCTA';
 import { VoiceApplicationContainer, useVoiceApplication } from '@/components/shared';
 import { sanitizers } from '@/utils/validation';
 import { getDisplayCompanyName, formatSalary } from '@/utils/jobDisplayUtils';
+import { renderJobDescription } from '@/utils/markdownRenderer';
 import { JobShareActions } from '@/features/jobs/components/public/JobShareActions';
 import { JobSidebar } from '@/features/jobs/components/public/JobSidebar';
 
