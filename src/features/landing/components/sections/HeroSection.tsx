@@ -122,7 +122,7 @@ const HeroSection = () => {
           variants={itemVariants}
           className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-playfair font-bold mb-6 leading-[1.05] tracking-tight"
         >
-          <span className="text-white">{heroContent.headline}</span>
+          <span className="text-white" style={{ textShadow: '0 2px 16px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.4)' }}>{heroContent.headline}</span>
           <span className="bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-transparent">
             {heroContent.headlineAccent}
           </span>
