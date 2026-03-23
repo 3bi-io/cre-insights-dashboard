@@ -21,42 +21,95 @@ function looksLikeMarkdown(text: string): boolean {
  * Converts dense sentence-style paragraphs into markdown bullet lists.
  * Only targets plain text lines with 3+ sentences; preserves headers, tables, and existing lists.
  */
+function isStructuredLine(trimmed: string): boolean {
+  return (
+    !trimmed ||
+    /^#{1,6}\s/.test(trimmed) ||
+    /^\|/.test(trimmed) ||
+    /^[-*+]\s/.test(trimmed) ||
+    /^\d+\.\s/.test(trimmed) ||
+    /^>/.test(trimmed) ||
+    /^```/.test(trimmed) ||
+    /^\*\*/.test(trimmed)
+  );
+}
+
+/**
+ * Converts dense sentence-style paragraphs into markdown bullet lists.
+ * Also converts comma-separated lists (3+ segments ≥10 chars) into bullets.
+ * Preserves headers, tables, and existing lists.
+ */
 function convertSentencesToBullets(text: string): string {
   return text
     .split('\n')
     .map((line) => {
       const trimmed = line.trim();
 
-      // Skip empty lines, headers, tables, existing lists, blockquotes
-      if (
-        !trimmed ||
-        /^#{1,6}\s/.test(trimmed) ||
-        /^\|/.test(trimmed) ||
-        /^[-*+]\s/.test(trimmed) ||
-        /^\d+\.\s/.test(trimmed) ||
-        /^>/.test(trimmed) ||
-        /^```/.test(trimmed)
-      ) {
-        return line;
+      if (isStructuredLine(trimmed)) return line;
+
+      // Try splitting on ". " boundaries first
+      const sentenceSegments = trimmed.split(/\.\s+/).filter(Boolean);
+      if (sentenceSegments.length >= 3) {
+        const bullets = sentenceSegments
+          .map((s) => s.replace(/\.$/, '').trim())
+          .filter((s) => s.length >= 10)
+          .map((s) => `- ${s}`);
+        if (bullets.length >= 3) return bullets.join('\n');
       }
 
-      // Split on ". " boundaries (sentence endings)
-      const segments = trimmed.split(/\.\s+/).filter(Boolean);
+      // Try splitting on ", " boundaries (for comma-separated lists like deductions)
+      const commaSegments = trimmed.split(/,\s+/).filter(Boolean);
+      if (commaSegments.length >= 3) {
+        const bullets = commaSegments
+          .map((s) => s.replace(/,$/, '').trim())
+          .filter((s) => s.length >= 10)
+          .map((s) => `- ${s}`);
+        if (bullets.length >= 3) return bullets.join('\n');
+      }
 
-      // Only convert if there are 3+ segments (sentence-dense paragraph)
-      if (segments.length < 3) return line;
-
-      // Filter out very short segments (< 10 chars) to avoid splitting abbreviations
-      const bullets = segments.map((s) => {
-        // Remove trailing period if present
-        const cleaned = s.replace(/\.$/, '').trim();
-        return cleaned.length >= 10 ? `- ${cleaned}` : null;
-      }).filter(Boolean);
-
-      // If we got enough bullets, return as list; otherwise keep original
-      return bullets.length >= 3 ? bullets.join('\n') : line;
+      return line;
     })
     .join('\n');
+}
+
+/**
+ * Adds a bold "Summary" header and bolds the first content line.
+ */
+function addSummaryHeader(text: string): string {
+  const lines = text.split('\n');
+  const result: string[] = [];
+  let addedHeader = false;
+  let boldedFirst = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // If the text already starts with a header, skip adding Summary
+    if (!addedHeader && trimmed && /^#{1,6}\s/.test(trimmed)) {
+      addedHeader = true;
+      boldedFirst = true; // headers are already bold
+      result.push(line);
+      continue;
+    }
+
+    // Add Summary header before first content line
+    if (!addedHeader && trimmed) {
+      addedHeader = true;
+      result.push('## Summary');
+      result.push('');
+    }
+
+    // Bold the first non-empty, non-header content line
+    if (addedHeader && !boldedFirst && trimmed && !isStructuredLine(trimmed)) {
+      boldedFirst = true;
+      result.push(`**${trimmed}**`);
+      continue;
+    }
+
+    result.push(line);
+  }
+
+  return result.join('\n');
 }
 
 /**
@@ -67,6 +120,9 @@ export function renderJobDescription(text: string): string {
   if (!text) return '';
 
   let processed = text;
+
+  // Pre-process: add summary header and bold first line
+  processed = addSummaryHeader(processed);
 
   // Pre-process: convert sentence-packed paragraphs to bullet lists
   processed = convertSentencesToBullets(processed);
