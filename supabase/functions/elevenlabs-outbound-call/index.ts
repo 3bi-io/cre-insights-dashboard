@@ -830,7 +830,7 @@ async function processOutboundCall(
           .select(`
             id, title, job_title, job_summary, location, city, state,
             salary_min, salary_max, salary_type, job_type, experience_required,
-            organization_id, client_id
+            organization_id, client_id, min_experience_months
           `)
           .eq('id', application.job_listing_id)
           .single();
