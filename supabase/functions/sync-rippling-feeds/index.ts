@@ -445,7 +445,7 @@ const handler = wrapHandler(async (req: Request) => {
           organization_id: ASPENVIEW_CONFIG.organizationId,
           category_id: categoryId,
           url: job.url,
-          apply_url: null as string | null,
+          apply_url: job.url || null,
           job_id: job.jobId,
           client_id: ASPENVIEW_CONFIG.clientId,
           client: ASPENVIEW_CONFIG.clientName,
