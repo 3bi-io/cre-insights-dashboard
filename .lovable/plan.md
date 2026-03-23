@@ -1,36 +1,29 @@
 
 
-# Fix External Apply Detection
+# Replace "ATS.me" References with "Apply AI"
 
-## Problem
-The current logic `const isExternalApply = !!job.apply_url` treats ALL jobs with an `apply_url` as external. But most jobs have internal `apply_url` values (e.g. `https://applyai.jobs/apply?job_id=...&utm_source=rippling...`). Only 3 jobs have truly external URLs (cdljobnow.com). This breaks:
-- Apply button rendering (opens as external link instead of internal navigation)
-- Voice Apply button hidden for all jobs with any `apply_url`
+## Scope
 
-## Fix
+All `https://ats.me` URL references were already cleaned up previously. What remains are **brand name text references** ("ATS.me") in UI-facing source files and one generated filename.
 
-### 1. `src/components/public/PublicJobCard.tsx`
-Change the `isExternalApply` check to detect truly external URLs:
-```ts
-const isExternalApply = !!job.apply_url && !job.apply_url.includes('applyai.jobs');
-```
-Keep `applyUrl` logic as-is — internal `apply_url` values with UTM params should still be used (they route to the same internal apply page).
+## Source Code Changes (4 files)
 
-### 2. `src/pages/public/JobDetailsPage.tsx`
-Same change to `isExternalApply`:
-```ts
-const isExternalApply = !!job.apply_url && !job.apply_url.includes('applyai.jobs');
-```
+### 1. `src/utils/roiCalculatorGenerator.ts`
+- Replace all "ATS.me" text → "Apply AI" in spreadsheet content (title, instructions, descriptions)
+- Rename output file from `ats-me-roi-calculator.xlsx` → `apply-ai-roi-calculator.xlsx`
 
-For internal `apply_url` values, use `<Link>` with just the path+query portion (strip the domain) so React Router handles it. Update `applyUrl`:
-```ts
-const applyUrl = job.apply_url
-  ? (job.apply_url.includes('applyai.jobs')
-      ? new URL(job.apply_url).pathname + new URL(job.apply_url).search
-      : job.apply_url)
-  : `/apply?job_id=${job.id}`;
-```
+### 2. `src/features/demo/FlowDemoTab.tsx` (line 45)
+- `"With ATS.me, you connect..."` → `"With Apply AI, you connect..."`
 
-### 3. No other file changes needed
-`JobSidebar.tsx` and `StickyApplyCTA.tsx` already handle `isExternalApply` and `showVoiceButton` props correctly — they just need the right values from parents.
+### 3. `src/pages/public/DemoPage.tsx` (lines 100, 119)
+- `"Why Choose ATS.me?"` → `"Why Choose Apply AI?"`
+- `"...using ATS.me to hire..."` → `"...using Apply AI to hire..."`
+
+### 4. `src/components/landing/BenefitsSection.tsx` (line 22)
+- `"Why Organizations Choose ATS.me"` → `"Why Organizations Choose Apply AI"`
+
+## Not Changed (intentional)
+
+- **`src/utils/blogImageUtils.ts`** — References like `why-ats-me-will-thrive-2026` are blog post slugs and asset filenames tied to actual files on disk and published URLs. Changing them would break image loading and blog routing.
+- **Markdown docs** (`CHANGELOG.md`, `CONTRIBUTING.md`, `PHASE_7_COMPLETE.md`, `docs/`) — Internal developer documentation, not user-facing. Can update separately if desired.
 
