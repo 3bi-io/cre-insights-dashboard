@@ -1,6 +1,6 @@
 # Hero Visual Consistency Guide
 
-This document establishes the visual standards for hero sections across all public-facing pages on the ATS.me platform.
+This document establishes the visual standards for hero sections across all public-facing pages on the Apply AI platform.
 
 ---
 

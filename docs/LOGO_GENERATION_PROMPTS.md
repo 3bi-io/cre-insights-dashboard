@@ -1,12 +1,12 @@
-# ATS.me Logo Generation Prompts
+# Apply AI Logo Generation Prompts
 
-Complete guide for generating professional ATS.me logos using AI tools like Midjourney, DALL-E 3, LogoDiffusion, Looka, and Brandmark.
+Complete guide for generating professional Apply AI logos using AI tools like Midjourney, DALL-E 3, LogoDiffusion, Looka, and Brandmark.
 
 ---
 
 ## **Brand Identity Overview**
 
-**Company:** ATS.me  
+**Company:** Apply AI  
 **Industry:** AI-Powered Recruitment & Applicant Tracking  
 **Primary Color:** Vibrant Blue `#3b82f6`  
 **Accent Color:** Emerald Green `#10b981`  
@@ -20,7 +20,7 @@ Complete guide for generating professional ATS.me logos using AI tools like Midj
 
 ### Midjourney Prompt
 ```
-minimal modern logo design for ATS.me tech company, abstract geometric letter A made from connected nodes and lines forming neural network, clean lines, professional, tech startup aesthetic, primary color vibrant blue #3b82f6, accent emerald green #10b981, flat design, negative space, svg vector style, white background, symmetrical composition --ar 1:1 --style raw --v 6
+minimal modern logo design for Apply AI tech company, abstract geometric letter A made from connected nodes and lines forming neural network, clean lines, professional, tech startup aesthetic, primary color vibrant blue #3b82f6, accent emerald green #10b981, flat design, negative space, svg vector style, white background, symmetrical composition --ar 1:1 --style raw --v 6
 ```
 
 **Advanced Options:**
@@ -30,7 +30,7 @@ minimal modern logo design for ATS.me tech company, abstract geometric letter A 
 
 ### DALL-E 3 Prompt
 ```
-Create a modern, minimalist logo for ATS.me, an AI-powered recruitment platform. The design should feature an abstract, geometric letter "A" constructed from connected nodes and lines that suggest a neural network or talent connection system. Use a vibrant blue (#3b82f6) as the primary color with emerald green (#10b981) accents. The style should be clean, professional, and tech-forward with flat design principles. Include both a square icon version (512x512px) and a horizontal version with "ATS.me" in modern sans-serif typography (280x56px). White or transparent background, suitable for both light and dark interfaces.
+Create a modern, minimalist logo for Apply AI, an AI-powered recruitment platform. The design should feature an abstract, geometric letter "A" constructed from connected nodes and lines that suggest a neural network or talent connection system. Use a vibrant blue (#3b82f6) as the primary color with emerald green (#10b981) accents. The style should be clean, professional, and tech-forward with flat design principles. Include both a square icon version (512x512px) and a horizontal version with "Apply AI" in modern sans-serif typography (280x56px). White or transparent background, suitable for both light and dark interfaces.
 ```
 
 ### LogoDiffusion / Looka / Brandmark
@@ -47,7 +47,7 @@ Professional tech logo, letter A formed by connected dots and lines, neural netw
 
 ### Midjourney Prompt
 ```
-sleek tech logo for ATS.me, stylized circuit board pattern forming abstract human head profile or brain shape, microchip pathways, AI recruitment theme, vibrant blue #3b82f6 primary color, emerald green #10b981 circuit traces, minimal modern design, professional tech startup aesthetic, geometric precision, flat vector art, transparent background --ar 1:1 --style raw --v 6
+sleek tech logo for Apply AI, stylized circuit board pattern forming abstract human head profile or brain shape, microchip pathways, AI recruitment theme, vibrant blue #3b82f6 primary color, emerald green #10b981 circuit traces, minimal modern design, professional tech startup aesthetic, geometric precision, flat vector art, transparent background --ar 1:1 --style raw --v 6
 ```
 
 **Advanced Options:**
@@ -57,7 +57,7 @@ sleek tech logo for ATS.me, stylized circuit board pattern forming abstract huma
 
 ### DALL-E 3 Prompt
 ```
-Design a sophisticated logo for ATS.me recruitment AI platform. Create an abstract representation combining a human head/brain silhouette with circuit board pathways and microchip elements. The circuit lines should flow elegantly, suggesting both technology and human intelligence. Primary color: vibrant blue #3b82f6, with emerald green #10b981 for circuit traces. Style: modern, clean, professional with geometric precision. Deliver both square icon (512x512px) and horizontal lockup with "ATS.me" wordmark in contemporary sans-serif font (280x56px). Transparent background, optimized for digital use.
+Design a sophisticated logo for Apply AI recruitment AI platform. Create an abstract representation combining a human head/brain silhouette with circuit board pathways and microchip elements. The circuit lines should flow elegantly, suggesting both technology and human intelligence. Primary color: vibrant blue #3b82f6, with emerald green #10b981 for circuit traces. Style: modern, clean, professional with geometric precision. Deliver both square icon (512x512px) and horizontal lockup with "Apply AI" wordmark in contemporary sans-serif font (280x56px). Transparent background, optimized for digital use.
 ```
 
 ### LogoDiffusion / Looka / Brandmark
@@ -74,7 +74,7 @@ Modern AI logo, circuit board brain, human head profile with tech pathways, recr
 
 ### Midjourney Prompt
 ```
-contemporary logo design for ATS.me, abstract network visualization with upward trajectory, connected nodes forming growth chart or rising arrow, talent network theme, vibrant blue #3b82f6 base with emerald green #10b981 highlights on ascending elements, clean minimalist style, professional SaaS aesthetic, geometric data visualization, flat design, white background --ar 1:1 --style raw --v 6
+contemporary logo design for Apply AI, abstract network visualization with upward trajectory, connected nodes forming growth chart or rising arrow, talent network theme, vibrant blue #3b82f6 base with emerald green #10b981 highlights on ascending elements, clean minimalist style, professional SaaS aesthetic, geometric data visualization, flat design, white background --ar 1:1 --style raw --v 6
 ```
 
 **Advanced Options:**
@@ -84,7 +84,7 @@ contemporary logo design for ATS.me, abstract network visualization with upward 
 
 ### DALL-E 3 Prompt
 ```
-Create a dynamic logo for ATS.me applicant tracking system. Design should visualize a network of connected nodes arranged in an upward growth pattern, suggesting talent elevation and career progression. Incorporate subtle arrow or chart-like elements showing upward momentum. Color palette: vibrant blue #3b82f6 for the network base, emerald green #10b981 for ascending/growth elements. Style: modern, clean, optimistic with data visualization aesthetics. Produce square icon (512x512px) and horizontal version with "ATS.me" in bold, modern sans-serif (280x56px). Transparent background, professional tech company aesthetic.
+Create a dynamic logo for Apply AI applicant tracking system. Design should visualize a network of connected nodes arranged in an upward growth pattern, suggesting talent elevation and career progression. Incorporate subtle arrow or chart-like elements showing upward momentum. Color palette: vibrant blue #3b82f6 for the network base, emerald green #10b981 for ascending/growth elements. Style: modern, clean, optimistic with data visualization aesthetics. Produce square icon (512x512px) and horizontal version with "Apply AI" in bold, modern sans-serif (280x56px). Transparent background, professional tech company aesthetic.
 ```
 
 ### LogoDiffusion / Looka / Brandmark
@@ -101,12 +101,12 @@ Tech startup logo, network graph with upward trend, connected nodes forming grow
 
 ### Midjourney
 ```
-horizontal logo lockup, icon + "ATS.me" wordmark, modern sans-serif typography, bold weight, clean spacing, tech company branding, blue #3b82f6 and green #10b981, professional minimal design, white background, balanced composition --ar 5:1 --style raw --v 6
+horizontal logo lockup, icon + "Apply AI" wordmark, modern sans-serif typography, bold weight, clean spacing, tech company branding, blue #3b82f6 and green #10b981, professional minimal design, white background, balanced composition --ar 5:1 --style raw --v 6
 ```
 
 ### DALL-E 3
 ```
-Design a horizontal logo layout for ATS.me (280x56px). Place the icon on the left, followed by "ATS.me" in a bold, modern sans-serif typeface (consider fonts like Inter, Poppins, or Montserrat). The icon should be one of the three concepts: neural network A, circuit brain, or growth network. Colors: blue #3b82f6 and green #10b981. Maintain professional spacing and visual balance. Transparent background.
+Design a horizontal logo layout for Apply AI (280x56px). Place the icon on the left, followed by "Apply AI" in a bold, modern sans-serif typeface (consider fonts like Inter, Poppins, or Montserrat). The icon should be one of the three concepts: neural network A, circuit brain, or growth network. Colors: blue #3b82f6 and green #10b981. Maintain professional spacing and visual balance. Transparent background.
 ```
 
 ---
@@ -262,7 +262,7 @@ If generating manually or refining:
 - **Outfit** (Bold) - Contemporary, tech startup
 
 **Letter Spacing:** Slightly increased (5-10% tracking)  
-**Case:** "ATS.me" (mixed case with period)  
+**Case:** "Apply AI" (mixed case with period)  
 **Weight:** Bold (700) or SemiBold (600)
 
 ---
@@ -341,4 +341,4 @@ If generated logos need refinement:
 
 **Document Version:** 1.0  
 **Last Updated:** 2025  
-**Created By:** ATS.me Team
+**Created By:** Apply AI Team
