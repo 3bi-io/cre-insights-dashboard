@@ -384,10 +384,10 @@ Created `src/vite-env.d.ts` with PWA module declarations:
 ### For End Users:
 
 **Installing the App:**
-1. Visit https://ats.me
+1. Visit https://applyai.jobs
 2. Look for "Install" button in browser address bar OR
 3. Wait for install prompt to appear OR
-4. Visit https://ats.me/install for instructions
+4. Visit https://applyai.jobs/install for instructions
 
 **Using Offline:**
 - Once installed, the app works offline
