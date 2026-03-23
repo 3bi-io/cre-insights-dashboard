@@ -29,8 +29,7 @@ function isStructuredLine(trimmed: string): boolean {
     /^[-*+]\s/.test(trimmed) ||
     /^\d+\.\s/.test(trimmed) ||
     /^>/.test(trimmed) ||
-    /^```/.test(trimmed) ||
-    /^\*\*/.test(trimmed)
+    /^```/.test(trimmed)
   );
 }
 
