@@ -1595,7 +1595,33 @@ function buildDynamicVariables(
   return vars;
 }
 
-// Format experience from various fields
+// Parse applicant's experience into total months (returns null if unknown)
+function parseApplicantMonths(application: Record<string, unknown> | null): number | null {
+  if (!application) return null;
+  
+  const years = application.driving_experience_years as number;
+  if (years && years > 0) return Math.round(years * 12);
+  
+  const months = application.months as string;
+  if (months) {
+    const monthNum = parseInt(months, 10);
+    if (!isNaN(monthNum)) return monthNum;
+  }
+  
+  const exp = application.exp as string;
+  if (exp) {
+    // Try to parse common patterns like "Less than 3 months", "6 months", "2 years"
+    const monthMatch = exp.match(/(\d+)\s*month/i);
+    if (monthMatch) return parseInt(monthMatch[1], 10);
+    const yearMatch = exp.match(/(\d+)\s*year/i);
+    if (yearMatch) return parseInt(yearMatch[1], 10) * 12;
+    if (/less\s*than\s*3/i.test(exp)) return 0;
+    if (/none|no\s*experience|0/i.test(exp)) return 0;
+  }
+  
+  return null;
+}
+
 function formatExperience(application: Record<string, unknown> | null): string {
   if (!application) return 'unknown';
   
