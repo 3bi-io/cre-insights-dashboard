@@ -147,8 +147,15 @@ function classifySections(sections: ParsedSection[]): ClassifiedContent {
 
 // ============= Narrative Builders =============
 
+/** Filter out items that are about company culture/values rather than job duties */
+const CULTURE_KEYWORDS = /culture|values|inclusive|diversity|equal\s*opportunity|we\s*believe|our\s*mission|our\s*vision|we\s*are\s*committed|we\s*offer\s*a|great\s*place\s*to\s*work|employee\s*engagement|work[\s-]life\s*balance|team[\s-]oriented|collaborative\s*environment|company\s*culture/i;
+
+function isDutyItem(item: string): boolean {
+  return !CULTURE_KEYWORDS.test(item);
+}
+
 /**
- * Groups items into natural paragraphs of 3-4 sentences each.
+ * Groups items into flowing prose paragraphs (3-4 sentences each), no bullets.
  */
 function itemsToParagraphs(items: string[], sentencesPerParagraph = 3): string {
   if (items.length === 0) return '';
@@ -167,57 +174,56 @@ function itemsToParagraphs(items: string[], sentencesPerParagraph = 3): string {
 }
 
 /**
- * Builds a ~100-word overview from the title and first few duty items.
+ * Builds a two-paragraph overview (~100 words total) from the title and first few duty items.
  */
 function buildOverview(title: string, duties: string[], qualifications: string[]): string {
   const role = title || 'this role';
-
-  // Take first 2-3 duties for the summary
-  const topDuties = duties.slice(0, 3).map(d => d.toLowerCase().replace(/\.$/, ''));
+  const topDuties = duties.slice(0, 4).map(d => d.toLowerCase().replace(/\.$/, ''));
   const qualSnippet = qualifications.length > 0
     ? qualifications[0].toLowerCase().replace(/\.$/, '')
     : null;
 
-  let overview = `The ${role} at AspenView Technology Partners is a dynamic opportunity for a professional `;
+  let p1 = `The ${role} at AspenView Technology Partners is a dynamic opportunity for a professional `;
   if (qualSnippet) {
-    overview += `with ${qualSnippet}. `;
+    p1 += `with ${qualSnippet}. `;
   } else {
-    overview += `looking to make an impact in a collaborative environment. `;
+    p1 += `looking to make a meaningful impact in a collaborative, innovation-driven environment. `;
   }
+  p1 += 'This position plays a key part in driving organizational success and delivering high-quality outcomes for internal and external stakeholders.';
 
+  let p2 = '';
   if (topDuties.length > 0) {
-    overview += `In this position, the successful candidate will focus on ${topDuties[0]}`;
-    if (topDuties.length > 1) overview += `, ${topDuties[1]}`;
-    if (topDuties.length > 2) overview += `, and ${topDuties[2]}`;
-    overview += '. ';
+    p2 += `Day to day, the successful candidate will focus on ${topDuties[0]}`;
+    if (topDuties.length > 1) p2 += `, ${topDuties[1]}`;
+    if (topDuties.length > 2) p2 += `, and ${topDuties[2]}`;
+    p2 += '. ';
   }
+  p2 += 'This role offers the opportunity to contribute meaningfully to the organization while growing professionally within a supportive and forward-thinking team.';
 
-  overview += 'This role offers the opportunity to contribute meaningfully to the organization while growing professionally within a supportive team.';
-
-  return overview;
+  return `${p1}\n\n${p2}`;
 }
 
 /**
- * Builds a company section if content exists, or uses a default.
+ * Builds the company section as a narrative paragraph.
  */
 function buildCompanySection(items: string[]): string {
   if (items.length > 0) {
-    return itemsToParagraphs(items);
+    return itemsToParagraphs(items, 4);
   }
-  return 'AspenView Technology Partners is a forward-thinking organization committed to innovation, collaboration, and professional growth. The company fosters an inclusive culture where team members are empowered to contribute their unique perspectives and advance their careers. With a focus on delivering high-quality solutions and maintaining strong client relationships, AspenView provides a supportive environment where employees can thrive.';
+  return 'AspenView Technology Partners is a forward-thinking organization committed to innovation, collaboration, and professional growth. The company fosters an inclusive culture where team members are empowered to contribute their unique perspectives and advance their careers. With a focus on delivering high-quality solutions and maintaining strong client relationships, AspenView provides a supportive environment where employees can thrive and build lasting impact.';
 }
 
 /**
- * Builds compensation section from extracted items or default.
+ * Builds compensation section as narrative prose.
  */
 function buildCompensationSection(items: string[]): string {
   if (items.length > 0) {
-    return itemsToParagraphs(items);
+    return itemsToParagraphs(items, 4);
   }
   return 'AspenView Technology Partners offers a competitive compensation package commensurate with experience and qualifications. Benefits may include health, dental, and vision insurance, retirement savings options, paid time off, and professional development opportunities. Specific details regarding compensation and benefits will be discussed during the interview process.';
 }
 
-// ============= O*NET Skills (renamed to Match Taxonomies) =============
+// ============= O*NET Skills (Match Taxonomies and Skills) =============
 
 const ONET_SKILL_MAP: Array<{ keywords: RegExp; paragraph: string }> = [
   {
@@ -350,16 +356,16 @@ function buildDisclosures(state: string | null | undefined, city: string | null 
   const parts: string[] = [];
 
   parts.push(
-    '**Equal Opportunity Employer**\n\nAspenView Technology Partners is an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, veteran status, or any other characteristic protected by applicable law.'
+    '## Equal Opportunity Employer\n\nAspenView Technology Partners is an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, veteran status, or any other characteristic protected by applicable law.'
   );
 
   const wageNote = getWageTransparencyNote(state, city);
   if (wageNote) {
-    parts.push(`**Wage Transparency Notice**\n\n${wageNote}`);
+    parts.push(`## Wage Transparency Notice\n\n${wageNote}`);
   }
 
   parts.push(
-    '**AI-Assisted Assessment Disclosure**\n\nIf you choose to use the "Apply with Voice" feature, your voice transcript will be assessed using artificial intelligence. This assessment evaluates only whether your responses align with the intake criteria and messaging provided by the hiring organization — it does not evaluate information beyond what is described in this job posting. Use of the Voice Apply feature is entirely optional and is not required to be considered for this position.'
+    '## AI-Assisted Assessment Disclosure\n\nIf you choose to use the "Apply with Voice" feature, your voice transcript will be assessed using artificial intelligence. This assessment evaluates only whether your responses align with the intake criteria and messaging provided by the hiring organization — it does not evaluate information beyond what is described in this job posting. Use of the Voice Apply feature is entirely optional and is not required to be considered for this position.'
   );
 
   return parts.join('\n\n');
@@ -379,31 +385,33 @@ export function transformAspenViewDescription(
   const sections = parseIntoSections(description);
   const classified = classifySections(sections);
 
-  // Merge qualifications into duties for the narrative (they often overlap)
-  const allDuties = [...classified.duties, ...classified.qualifications];
+  // Filter out culture/about content from duties
+  const pureDuties = classified.duties.filter(isDutyItem);
+  const qualItems = classified.qualifications.filter(isDutyItem);
+  const allDuties = [...pureDuties, ...qualItems];
 
   // Build structured output
   const output: string[] = [];
 
-  // Section 1: Overview (~100 words)
-  output.push(`## Overview\n\n${genderNormalize(buildOverview(title, classified.duties, classified.qualifications))}`);
+  // Section 1: Overview (two paragraphs, no bullets)
+  output.push(`## Overview\n\n${genderNormalize(buildOverview(title, allDuties, classified.qualifications))}`);
 
-  // Section 2: Duties & Responsibilities (natural paragraphs with breaks)
+  // Section 2: Duties & Responsibilities (narrative paragraphs, no bullets)
   if (allDuties.length > 0) {
     output.push(`## Duties & Responsibilities\n\n${genderNormalize(itemsToParagraphs(allDuties, 3))}`);
   }
 
-  // Section 3: About the Company
-  output.push(`## About AspenView Technology Partners\n\n${genderNormalize(buildCompanySection(classified.company))}`);
+  // Section 3: About the Company (narrative, no bullets)
+  output.push(`## AspenView Technology Partners\n\n${genderNormalize(buildCompanySection(classified.company))}`);
 
-  // Section 4: Compensation & Benefits
+  // Section 4: Compensation & Benefits (narrative, no bullets)
   output.push(`## Compensation & Benefits\n\n${genderNormalize(buildCompensationSection(classified.compensation))}`);
 
-  // Section 5: Match Taxonomies and Skills (O*NET)
+  // Section 5: Match Taxonomies and Skills (narrative paragraph, no bullets)
   const onetParagraph = getOnetParagraph(title);
   output.push(`## Match Taxonomies and Skills\n\n${onetParagraph}`);
 
-  // Section 6: Disclosures
+  // Section 6: Disclosures (paragraphs, no bullets)
   output.push(`---\n\n${buildDisclosures(state, city)}`);
 
   return output.join('\n\n');
