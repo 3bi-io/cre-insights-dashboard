@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SEO } from '@/components/SEO';
@@ -104,22 +105,24 @@ const ClientsPage = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {featuredEmployers.map((client, i) => (
                   <motion.div key={client.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-                    <Card className="hover:shadow-md hover:border-primary/30 transition-all duration-200">
-                      <CardContent className="p-4 flex items-center gap-4">
-                        {client.logo_url ? (
-                          <img src={client.logo_url} alt={client.name} className="w-12 h-12 rounded-lg object-contain bg-muted p-1 flex-shrink-0" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <Building2 className="h-6 w-6 text-primary" />
+                    <Link to={`/jobs?client=${encodeURIComponent(client.name)}`}>
+                      <Card className="hover:shadow-md hover:border-primary/30 transition-all duration-200 cursor-pointer">
+                        <CardContent className="p-4 flex items-center gap-4">
+                          {client.logo_url ? (
+                            <img src={client.logo_url} alt={client.name} className="w-12 h-12 rounded-lg object-contain bg-muted p-1 flex-shrink-0" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <Building2 className="h-6 w-6 text-primary" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-semibold text-foreground text-sm truncate">{client.name}</p>
+                            {client.city && client.state && <p className="text-xs text-muted-foreground truncate">{client.city}, {client.state}</p>}
+                            <Badge variant="secondary" className="text-xs mt-1">{client.job_count} {client.job_count === 1 ? 'job' : 'jobs'}</Badge>
                           </div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="font-semibold text-foreground text-sm truncate">{client.name}</p>
-                          {client.city && client.state && <p className="text-xs text-muted-foreground truncate">{client.city}, {client.state}</p>}
-                          <Badge variant="secondary" className="text-xs mt-1">{client.job_count} {client.job_count === 1 ? 'job' : 'jobs'}</Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </Link>
                   </motion.div>
                 ))}
               </div>
