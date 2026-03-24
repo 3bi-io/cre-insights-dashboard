@@ -26,7 +26,6 @@ interface RelatedJob {
   client_id: string | null;
   organization_id: string | null;
   clients: { name: string | null; logo_url: string | null } | null;
-  organizations: { name: string | null } | null;
   job_categories: { name: string | null } | null;
 }
 
