@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin } from 'lucide-react';
 import { queryKeys } from '@/lib/queryKeys';
-import { getDisplayCompanyName } from '@/utils/jobDisplayUtils';
+
 import { CompanyLogo } from '@/components/shared';
 interface RelatedJobsProps {
   currentJobId: string;
