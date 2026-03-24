@@ -6687,6 +6687,92 @@ export type Database = {
           },
         ]
       }
+      sms_logs: {
+        Row: {
+          application_id: string | null
+          body: string | null
+          conversation_id: string | null
+          created_at: string | null
+          direction: string
+          duration_ms: number | null
+          error_code: number | null
+          error_message: string | null
+          from_number: string
+          id: string
+          message_id: string | null
+          metadata: Json | null
+          session_id: string | null
+          status: string | null
+          to_number: string
+          twilio_sid: string | null
+        }
+        Insert: {
+          application_id?: string | null
+          body?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          direction: string
+          duration_ms?: number | null
+          error_code?: number | null
+          error_message?: string | null
+          from_number: string
+          id?: string
+          message_id?: string | null
+          metadata?: Json | null
+          session_id?: string | null
+          status?: string | null
+          to_number: string
+          twilio_sid?: string | null
+        }
+        Update: {
+          application_id?: string | null
+          body?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          direction?: string
+          duration_ms?: number | null
+          error_code?: number | null
+          error_message?: string | null
+          from_number?: string
+          id?: string
+          message_id?: string | null
+          metadata?: Json | null
+          session_id?: string | null
+          status?: string | null
+          to_number?: string
+          twilio_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sms_magic_links: {
         Row: {
           application_id: string | null

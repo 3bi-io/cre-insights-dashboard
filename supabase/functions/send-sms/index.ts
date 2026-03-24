@@ -10,7 +10,6 @@ import { verifyUser } from '../_shared/auth.ts';
 
 const logger = createLogger('send-sms');
 
-// Zod schema for SMS request validation
 const smsRequestSchema = z.object({
   to: z.string().min(10, 'Phone number must be at least 10 digits'),
   message: z.string().min(1, 'Message is required').max(1600, 'Message too long'),
@@ -20,13 +19,10 @@ const smsRequestSchema = z.object({
 
 type SMSRequest = z.infer<typeof smsRequestSchema>;
 
-// Phone normalization now handled by shared twilio-client
-
 const handler = async (req: Request): Promise<Response> => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
   
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -42,7 +38,7 @@ const handler = async (req: Request): Promise<Response> => {
       return errorResponse('Authentication required', 401, undefined, origin || undefined);
     }
 
-    // Rate limiting - 30 SMS per minute per user (150/min for DFW/Alabama devs)
+    // Rate limiting
     const rateLimitResult = await checkRateLimitWithGeo(req, `sms:${user.id}`, {
       maxRequests: 30,
       windowMs: 60000,
@@ -72,16 +68,36 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { to, message, conversationId, messageId } = validationResult.data;
 
-    // Initialize Supabase client
     const supabase = getServiceClient();
 
     logger.info('Sending SMS', { 
       conversation_id: conversationId || 'system',
+      user_id: user.id,
     });
 
     const startTime = Date.now();
     const twilioResult = await sendSms(to, message);
     const duration = Date.now() - startTime;
+
+    // Log to sms_logs audit table
+    try {
+      await supabase.from('sms_logs').insert({
+        direction: 'outbound',
+        from_number: Deno.env.get('TWILIO_PHONE_NUMBER') || '',
+        to_number: to,
+        body: message.slice(0, 1600),
+        twilio_sid: twilioResult.sid || null,
+        status: twilioResult.success ? 'sent' : 'failed',
+        error_message: twilioResult.error || null,
+        error_code: twilioResult.errorCode || null,
+        conversation_id: conversationId || null,
+        message_id: messageId || null,
+        duration_ms: duration,
+        metadata: { user_id: user.id, organization_id: user.organization_id },
+      });
+    } catch (logErr) {
+      logger.warn('Failed to write sms_logs', { error: (logErr as Error).message });
+    }
 
     if (!twilioResult.success) {
       logger.error('Twilio error', undefined, { 
@@ -90,7 +106,6 @@ const handler = async (req: Request): Promise<Response> => {
         duration_ms: duration 
       });
       
-      // Update message status to failed (only if messageId provided)
       if (messageId) {
         await supabase
           .from('sms_messages')
@@ -104,7 +119,7 @@ const handler = async (req: Request): Promise<Response> => {
       return errorResponse(twilioResult.error || 'Failed to send SMS', 500, undefined, origin || undefined);
     }
 
-    // Update message with Twilio SID and delivered status (only if messageId provided)
+    // Update message with Twilio SID and delivered status
     if (messageId) {
       const { error: updateError } = await supabase
         .from('sms_messages')
