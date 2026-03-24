@@ -166,10 +166,12 @@ const JobsPageContent = () => {
             dataLabel="jobs" className="mt-6"
             loadingComponent={<JobListingsGridSkeleton />}
           >
-            {(jobsData: PublicJob[]) => (
+            {(jobsData: PublicJob[]) => {
+              const groupedJobs = groupAspenViewJobs(jobsData);
+              return (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
-                  {jobsData.map((job) => (
+                  {groupedJobs.map((job) => (
                     <PublicJobCard 
                       key={job.id} 
                       job={job}
@@ -182,7 +184,8 @@ const JobsPageContent = () => {
                   <JobsLoadMoreButton onClick={loadMore} isLoading={isFetchingMore} />
                 )}
               </>
-            )}
+              );
+            }}
           </DataLoadingStateHandler>
         </div>
       </div>
