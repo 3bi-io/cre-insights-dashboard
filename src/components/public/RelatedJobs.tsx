@@ -7,8 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin } from 'lucide-react';
 import { queryKeys } from '@/lib/queryKeys';
-
 import { CompanyLogo } from '@/components/shared';
+
 interface RelatedJobsProps {
   currentJobId: string;
   clientId?: string | null;
@@ -25,7 +25,8 @@ interface RelatedJob {
   state: string | null;
   client_id: string | null;
   organization_id: string | null;
-  clients: { name: string | null; logo_url: string | null } | null;
+  clientName?: string | null;
+  clientLogoUrl?: string | null;
   job_categories: { name: string | null } | null;
 }
 
@@ -48,9 +49,7 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
           city,
           state,
           client_id,
-          organization_id,
-          clients(name, logo_url),
-          job_categories(name)
+          organization_id
         `)
         .eq('status', 'active')
         .eq('is_hidden', false)
@@ -93,9 +92,7 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
             city,
             state,
             client_id,
-            organization_id,
-            clients(name, logo_url),
-            job_categories(name)
+            organization_id
           `)
           .eq('status', 'active')
           .eq('is_hidden', false)
@@ -110,8 +107,30 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
         allJobs = [...allJobs, ...(moreJobs || [])];
       }
 
-      // Return jobs without organization info for privacy
-      return allJobs as RelatedJob[];
+      // Fetch client names from the public view (accessible to anon users)
+      const clientIds = [...new Set(allJobs.map(j => j.client_id).filter(Boolean))] as string[];
+      let clientMap: Record<string, { name: string | null; logo_url: string | null }> = {};
+      
+      if (clientIds.length > 0) {
+        const { data: clientsData } = await supabase
+          .from('public_client_info')
+          .select('id, name, logo_url')
+          .in('id', clientIds);
+        
+        if (clientsData) {
+          for (const c of clientsData) {
+            clientMap[c.id] = { name: c.name, logo_url: c.logo_url };
+          }
+        }
+      }
+
+      // Enrich jobs with client info
+      return allJobs.map(job => ({
+        ...job,
+        clientName: job.client_id ? clientMap[job.client_id]?.name : null,
+        clientLogoUrl: job.client_id ? clientMap[job.client_id]?.logo_url : null,
+        job_categories: null, // not fetched in this query
+      })) as RelatedJob[];
     },
     enabled: !!currentJobId,
     staleTime: 5 * 60 * 1000,
@@ -144,7 +163,7 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
       <h2 className="text-xl font-semibold">Related Jobs</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {relatedJobs.map((job) => {
-          const companyName = job.clients?.name || 'Company';
+          const companyName = job.clientName || 'Company';
           return (
             <Link key={job.id} to={`/jobs/${job.id}`}>
               <Card className="hover:shadow-md transition-shadow h-full">
@@ -154,7 +173,7 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
                   </h3>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                     <CompanyLogo
-                      logoUrl={job.clients?.logo_url}
+                      logoUrl={job.clientLogoUrl}
                       companyName={companyName}
                       size="sm"
                       className="w-5 h-5"
@@ -168,11 +187,6 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
                         {job.location || `${job.city}, ${job.state}`}
                       </span>
                     </div>
-                  )}
-                  {job.job_categories?.name && (
-                    <Badge variant="secondary" className="mt-2 text-xs">
-                      {job.job_categories.name}
-                    </Badge>
                   )}
                 </CardContent>
               </Card>
