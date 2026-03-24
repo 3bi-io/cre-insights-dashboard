@@ -83,17 +83,11 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
       <CardHeader className="pb-4 relative">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            {/* Badges row */}
-            <div className="flex items-center gap-2 mb-2">
+            {/* Readiness + info badges */}
+            <div className="flex flex-wrap items-center gap-2 mb-2">
               {isNew && (
                 <Badge className="bg-success/10 text-success border-success/20 text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">
                   New
-                </Badge>
-              )}
-              {hasVoiceAgent && (
-                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-[10px] font-semibold px-2 py-0.5">
-                  <Mic className="h-3 w-3 mr-1" />
-                  Voice
                 </Badge>
               )}
               {job.job_categories?.name && (
@@ -102,6 +96,7 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
                 </Badge>
               )}
             </div>
+            <JobReadinessBadges completedStages={completedStages} className="mb-2" />
 
             <Link to={`/jobs/${job.id}`} className="hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded">
               <CardTitle className="text-lg sm:text-xl leading-tight mb-2 line-clamp-2 group-hover:text-primary transition-colors">
