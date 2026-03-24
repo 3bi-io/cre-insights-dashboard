@@ -8,6 +8,7 @@ import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui
 import { JobContext } from '@/features/elevenlabs';
 import { sanitizers } from '@/utils/validation';
 import { renderJobDescription } from '@/utils/markdownRenderer';
+import { isAspenViewJob, transformAspenViewDescription } from '@/utils/aspenviewDescriptionTransformer';
 import { useIsVoiceSupported } from '@/hooks/useVoiceCompatibility';
 import { getDisplayCompanyName, formatSalary } from '@/utils/jobDisplayUtils';
 import {
@@ -118,7 +119,11 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
         {displayDescription && (
           <div 
             className="text-sm sm:text-base text-muted-foreground line-clamp-2 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: renderJobDescription(displayDescription) }}
+            dangerouslySetInnerHTML={{ __html: renderJobDescription(
+              isAspenViewJob(job.client_id)
+                ? transformAspenViewDescription(displayDescription, displayTitle, job.state, job.city)
+                : displayDescription
+            ) }}
           />
         )}
 
