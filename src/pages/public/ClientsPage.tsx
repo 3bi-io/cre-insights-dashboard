@@ -105,7 +105,7 @@ const ClientsPage = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {featuredEmployers.map((client, i) => (
                   <motion.div key={client.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-                    <Link to={`/jobs?client=${encodeURIComponent(client.name)}`}>
+                    <Link to={`/jobs?client=${client.id}`}>
                       <Card className="hover:shadow-md hover:border-primary/30 transition-all duration-200 cursor-pointer">
                         <CardContent className="p-4 flex items-center gap-4">
                           {client.logo_url ? (
