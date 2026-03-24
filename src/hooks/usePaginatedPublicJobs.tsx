@@ -78,6 +78,7 @@ export function usePaginatedPublicJobs({
           _search: searchTerm,
           _location: locationFilter,
           _client_id: clientFilter || null,
+          _category_id: categoryFilter || null,
         });
 
         if (rpcError) throw rpcError;
@@ -119,6 +120,9 @@ export function usePaginatedPublicJobs({
       }
       if (clientFilter) {
         query = query.eq('client_id', clientFilter);
+      }
+      if (categoryFilter) {
+        query = query.eq('category_id', categoryFilter);
       }
 
       const { data, error, count } = await query;
