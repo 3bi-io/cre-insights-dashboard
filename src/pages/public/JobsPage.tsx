@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { buildBreadcrumbSchema } from '@/utils/breadcrumbSchema';
 import { Building2 } from 'lucide-react';
 import { SEO } from '@/components/SEO';
@@ -16,6 +16,7 @@ import {
   JobsResultsCount
 } from '@/features/jobs';
 import type { PublicJob } from '@/features/jobs';
+import { groupAspenViewJobs } from '@/utils/aspenviewJobGrouping';
 import jobsHero from '@/assets/hero/jobs-hero.png';
 
 const LISTINGS_SKELETON_TIMEOUT_MS = 3000;
