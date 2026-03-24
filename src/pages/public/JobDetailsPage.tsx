@@ -211,11 +211,10 @@ const JobDetailsContent: React.FC = () => {
                         prose-ul:my-4 prose-ul:list-disc prose-ul:pl-5 prose-ul:space-y-1.5
                         prose-ol:my-4 prose-ol:list-decimal prose-ol:pl-5 prose-ol:space-y-1.5
                         prose-li:text-foreground/90 prose-li:leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: renderJobDescription(
-                        isAspenViewJob(job.client_id)
-                          ? transformAspenViewDescription(displayDescription, displayTitle, job.state, job.city)
-                          : displayDescription
-                      ) }}
+                      dangerouslySetInnerHTML={{ __html: isAspenViewJob(job.client_id)
+                        ? renderJobDescription(transformAspenViewDescription(displayDescription, displayTitle, job.state, job.city), true)
+                        : renderJobDescription(displayDescription)
+                      }}
                     />
                   </div>
                 )}

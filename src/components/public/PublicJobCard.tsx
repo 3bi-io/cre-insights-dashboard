@@ -119,11 +119,10 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
         {displayDescription && (
           <div 
             className="text-sm sm:text-base text-muted-foreground line-clamp-2 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: renderJobDescription(
-              isAspenViewJob(job.client_id)
-                ? transformAspenViewDescription(displayDescription, displayTitle, job.state, job.city)
-                : displayDescription
-            ) }}
+            dangerouslySetInnerHTML={{ __html: isAspenViewJob(job.client_id)
+              ? renderJobDescription(transformAspenViewDescription(displayDescription, displayTitle, job.state, job.city), true)
+              : renderJobDescription(displayDescription)
+            }}
           />
         )}
 
