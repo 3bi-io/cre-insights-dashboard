@@ -5,10 +5,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
-import { MapPin, DollarSign, Building2, Clock, Briefcase, ArrowLeft, Mic } from 'lucide-react';
+import { MapPin, DollarSign, Building2, Clock, Briefcase, ArrowLeft, Mic, ExternalLink } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildJobPostingSchema, buildBreadcrumbSchema, getSalaryUnitText } from '@/components/StructuredData';
 import { useJobDetails } from '@/hooks/useJobDetails';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { extractExperienceFromDescription, extractQualificationsFromDescription } from '@/utils/jobSchemaExtraction';
 import { RelatedJobs } from '@/components/public/RelatedJobs';
 import { StickyApplyCTA } from '@/components/public/StickyApplyCTA';
@@ -19,12 +21,45 @@ import { renderJobDescription } from '@/utils/markdownRenderer';
 import { isAspenViewJob, transformAspenViewDescription } from '@/utils/aspenviewDescriptionTransformer';
 import { JobShareActions } from '@/features/jobs/components/public/JobShareActions';
 import { JobSidebar } from '@/features/jobs/components/public/JobSidebar';
+import type { JobLocationVariant } from '@/utils/aspenviewJobGrouping';
+
+const ASPENVIEW_CLIENT_ID = '82513316-7df2-4bf0-83d8-6c511c83ddfb';
 
 const JobDetailsContent: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: job, isLoading, error } = useJobDetails(id);
   const { isConnected, startVoiceApplication } = useVoiceApplication();
+
+  // Fetch sibling jobs (same title, same client) for AspenView multi-location grouping
+  const { data: locationVariants } = useQuery({
+    queryKey: ['aspenview-siblings', id, job?.title, job?.client_id],
+    queryFn: async (): Promise<JobLocationVariant[]> => {
+      if (!job || !isAspenViewJob(job.client_id)) return [];
+
+      const { data, error } = await supabase
+        .from('job_listings')
+        .select('id, title, city, state, location, apply_url')
+        .eq('client_id', ASPENVIEW_CLIENT_ID)
+        .eq('status', 'active')
+        .eq('is_hidden', false)
+        .eq('title', job.title);
+
+      if (error || !data || data.length <= 1) return [];
+
+      return data.map((sibling) => ({
+        id: sibling.id,
+        location: sibling.location || (sibling.city && sibling.state ? `${sibling.city}, ${sibling.state}` : sibling.city || 'Remote'),
+        city: sibling.city,
+        state: sibling.state,
+        apply_url: sibling.apply_url,
+      }));
+    },
+    enabled: !!job && isAspenViewJob(job?.client_id),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isMultiLocation = locationVariants && locationVariants.length > 1;
 
   if (isLoading) {
     return (
