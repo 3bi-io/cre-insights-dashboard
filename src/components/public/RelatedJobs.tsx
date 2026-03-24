@@ -95,7 +95,6 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
             client_id,
             organization_id,
             clients(name, logo_url),
-            organizations(name),
             job_categories(name)
           `)
           .eq('status', 'active')
