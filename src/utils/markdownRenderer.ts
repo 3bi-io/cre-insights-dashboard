@@ -99,7 +99,7 @@ function boldFirstBullet(text: string): string {
  * Renders content as HTML, automatically detecting markdown vs HTML input.
  * Converts sentence-dense paragraphs to bullet lists, then sanitizes with DOMPurify.
  */
-export function renderJobDescription(text: string): string {
+export function renderJobDescription(text: string, skipBulletConversion = false): string {
   if (!text) return '';
 
   let processed = text;
