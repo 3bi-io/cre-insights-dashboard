@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin } from 'lucide-react';
 import { queryKeys } from '@/lib/queryKeys';
-import { getDisplayCompanyName } from '@/utils/jobDisplayUtils';
+
 import { CompanyLogo } from '@/components/shared';
 interface RelatedJobsProps {
   currentJobId: string;
@@ -26,7 +26,6 @@ interface RelatedJob {
   client_id: string | null;
   organization_id: string | null;
   clients: { name: string | null; logo_url: string | null } | null;
-  organizations: { name: string | null } | null;
   job_categories: { name: string | null } | null;
 }
 
@@ -51,7 +50,6 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
           client_id,
           organization_id,
           clients(name, logo_url),
-          organizations(name),
           job_categories(name)
         `)
         .eq('status', 'active')
@@ -97,7 +95,6 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
             client_id,
             organization_id,
             clients(name, logo_url),
-            organizations(name),
             job_categories(name)
           `)
           .eq('status', 'active')
@@ -147,7 +144,7 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
       <h2 className="text-xl font-semibold">Related Jobs</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {relatedJobs.map((job) => {
-          const companyName = job.clients?.name || job.organizations?.name || 'Company';
+          const companyName = job.clients?.name || 'Company';
           return (
             <Link key={job.id} to={`/jobs/${job.id}`}>
               <Card className="hover:shadow-md transition-shadow h-full">
