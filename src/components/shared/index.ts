@@ -24,5 +24,3 @@ export { GradientCTA } from './GradientCTA';
 export { ActiveFilterChips } from './ActiveFilterChips';
 export type { FilterChip } from './ActiveFilterChips';
 export { VoiceApplicationContainer, useVoiceApplication } from './VoiceApplicationContainer';
-export { JobReadinessBadges } from './JobReadinessBadges';
-export type { JobReadinessStage } from './JobReadinessBadges';
