@@ -5,10 +5,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
-import { MapPin, DollarSign, Building2, Clock, Briefcase, ArrowLeft, Mic } from 'lucide-react';
+import { MapPin, DollarSign, Building2, Clock, Briefcase, ArrowLeft, Mic, ExternalLink } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildJobPostingSchema, buildBreadcrumbSchema, getSalaryUnitText } from '@/components/StructuredData';
 import { useJobDetails } from '@/hooks/useJobDetails';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { extractExperienceFromDescription, extractQualificationsFromDescription } from '@/utils/jobSchemaExtraction';
 import { RelatedJobs } from '@/components/public/RelatedJobs';
 import { StickyApplyCTA } from '@/components/public/StickyApplyCTA';
@@ -19,12 +21,45 @@ import { renderJobDescription } from '@/utils/markdownRenderer';
 import { isAspenViewJob, transformAspenViewDescription } from '@/utils/aspenviewDescriptionTransformer';
 import { JobShareActions } from '@/features/jobs/components/public/JobShareActions';
 import { JobSidebar } from '@/features/jobs/components/public/JobSidebar';
+import type { JobLocationVariant } from '@/utils/aspenviewJobGrouping';
+
+const ASPENVIEW_CLIENT_ID = '82513316-7df2-4bf0-83d8-6c511c83ddfb';
 
 const JobDetailsContent: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: job, isLoading, error } = useJobDetails(id);
   const { isConnected, startVoiceApplication } = useVoiceApplication();
+
+  // Fetch sibling jobs (same title, same client) for AspenView multi-location grouping
+  const { data: locationVariants } = useQuery({
+    queryKey: ['aspenview-siblings', id, job?.title, job?.client_id],
+    queryFn: async (): Promise<JobLocationVariant[]> => {
+      if (!job || !isAspenViewJob(job.client_id)) return [];
+
+      const { data, error } = await supabase
+        .from('job_listings')
+        .select('id, title, city, state, location, apply_url')
+        .eq('client_id', ASPENVIEW_CLIENT_ID)
+        .eq('status', 'active')
+        .eq('is_hidden', false)
+        .eq('title', job.title);
+
+      if (error || !data || data.length <= 1) return [];
+
+      return data.map((sibling) => ({
+        id: sibling.id,
+        location: sibling.location || (sibling.city && sibling.state ? `${sibling.city}, ${sibling.state}` : sibling.city || 'Remote'),
+        city: sibling.city,
+        state: sibling.state,
+        apply_url: sibling.apply_url,
+      }));
+    },
+    enabled: !!job && isAspenViewJob(job?.client_id),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isMultiLocation = locationVariants && locationVariants.length > 1;
 
   if (isLoading) {
     return (
@@ -167,12 +202,21 @@ const JobDetailsContent: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mb-6 p-4 bg-muted/50 rounded-xl">
-                  {displayLocation && (
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-primary/70 flex-shrink-0 mt-0.5" />
-                      <div className="min-w-0"><p className="text-xs text-muted-foreground">Location</p><p className="font-medium text-sm truncate">{displayLocation}</p></div>
-                    </div>
-                  )}
+                {isMultiLocation ? (
+                  <div className="space-y-1">
+                    {locationVariants.map((variant) => (
+                      <div key={variant.id} className="flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-primary/70 flex-shrink-0 mt-0.5" />
+                        <div className="min-w-0"><p className="text-xs text-muted-foreground">Location</p><p className="font-medium text-sm truncate">{variant.location}</p></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : displayLocation ? (
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-4 h-4 text-primary/70 flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0"><p className="text-xs text-muted-foreground">Location</p><p className="font-medium text-sm truncate">{displayLocation}</p></div>
+                  </div>
+                ) : null}
                   {salary && (
                     <div className="flex items-start gap-2">
                       <DollarSign className="w-4 h-4 text-success/70 flex-shrink-0 mt-0.5" />
@@ -241,7 +285,8 @@ const JobDetailsContent: React.FC = () => {
             canonicalUrl={canonicalUrl}
             onVoiceApply={handleVoiceApply}
             isVoiceConnected={isConnected}
-            showVoiceButton={!isExternalApply}
+            showVoiceButton={!isExternalApply && !isMultiLocation}
+            locationVariants={isMultiLocation ? locationVariants : undefined}
           />
         </div>
 
@@ -263,7 +308,34 @@ const JobDetailsContent: React.FC = () => {
           )}
         </div>
 
-        <StickyApplyCTA applyUrl={applyUrl} isExternalApply={isExternalApply} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={!isExternalApply} />
+        {/* Multi-location mobile CTA */}
+        {isMultiLocation ? (
+          <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-background/95 backdrop-blur-lg border-t shadow-lg safe-area-bottom">
+            <div className="container mx-auto px-4 py-3 space-y-2">
+              {locationVariants.map((variant) => {
+                const variantUrl = variant.apply_url || `/apply?job_id=${variant.id}`;
+                const variantIsExternal = !!variant.apply_url && !variant.apply_url.includes('applyai.jobs');
+                return variantIsExternal ? (
+                  <a key={variant.id} href={variantUrl} target="_blank" rel="noopener noreferrer" className="block">
+                    <Button className="w-full min-h-[44px] text-sm font-semibold touch-manipulation" size="default">
+                      Apply to {variant.location}
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </Button>
+                  </a>
+                ) : (
+                  <Link key={variant.id} to={variantUrl} className="block">
+                    <Button className="w-full min-h-[44px] text-sm font-semibold touch-manipulation" size="default">
+                      Apply to {variant.location}
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <StickyApplyCTA applyUrl={applyUrl} isExternalApply={isExternalApply} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={!isExternalApply} />
+        )}
       </div>
     </div>
   );

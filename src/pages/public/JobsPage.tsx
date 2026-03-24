@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { buildBreadcrumbSchema } from '@/utils/breadcrumbSchema';
 import { Building2 } from 'lucide-react';
 import { SEO } from '@/components/SEO';
@@ -16,6 +16,7 @@ import {
   JobsResultsCount
 } from '@/features/jobs';
 import type { PublicJob } from '@/features/jobs';
+import { groupAspenViewJobs } from '@/utils/aspenviewJobGrouping';
 import jobsHero from '@/assets/hero/jobs-hero.png';
 
 const LISTINGS_SKELETON_TIMEOUT_MS = 3000;
@@ -165,10 +166,12 @@ const JobsPageContent = () => {
             dataLabel="jobs" className="mt-6"
             loadingComponent={<JobListingsGridSkeleton />}
           >
-            {(jobsData: PublicJob[]) => (
+            {(jobsData: PublicJob[]) => {
+              const groupedJobs = groupAspenViewJobs(jobsData);
+              return (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
-                  {jobsData.map((job) => (
+                  {groupedJobs.map((job) => (
                     <PublicJobCard 
                       key={job.id} 
                       job={job}
@@ -181,7 +184,8 @@ const JobsPageContent = () => {
                   <JobsLoadMoreButton onClick={loadMore} isLoading={isFetchingMore} />
                 )}
               </>
-            )}
+              );
+            }}
           </DataLoadingStateHandler>
         </div>
       </div>

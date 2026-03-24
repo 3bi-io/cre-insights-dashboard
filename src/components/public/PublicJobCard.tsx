@@ -11,6 +11,7 @@ import { renderJobDescription } from '@/utils/markdownRenderer';
 import { isAspenViewJob, transformAspenViewDescription } from '@/utils/aspenviewDescriptionTransformer';
 import { useIsVoiceSupported } from '@/hooks/useVoiceCompatibility';
 import { getDisplayCompanyName, formatSalary } from '@/utils/jobDisplayUtils';
+import type { JobLocationVariant } from '@/utils/aspenviewJobGrouping';
 import {
   Tooltip,
   TooltipContent,
@@ -43,11 +44,13 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
   const companyName = getDisplayCompanyName(job);
   const hasVoiceAgent = !!job.voiceAgent;
   const isNew = isNewJob(job.created_at);
+  const locationVariants: JobLocationVariant[] | undefined = job.locationVariants;
+  const isMultiLocation = locationVariants && locationVariants.length > 1;
 
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
   const applyUrl = job.apply_url || `/apply?job_id=${job.id}`;
   const isExternalApply = !!job.apply_url && !job.apply_url.includes('applyai.jobs');
-  const showVoiceButton = hasVoiceAgent && isVoiceSupported && onVoiceApply && !isExternalApply;
+  const showVoiceButton = hasVoiceAgent && isVoiceSupported && onVoiceApply && !isExternalApply && !isMultiLocation;
 
   
   const handleVoiceApply = () => {
@@ -127,12 +130,21 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
         )}
 
         <div className="space-y-2">
-          {displayLocation && (
+          {isMultiLocation ? (
+            <div className="space-y-1">
+              {locationVariants.map((variant) => (
+                <div key={variant.id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="w-4 h-4 flex-shrink-0 text-primary/70" aria-hidden="true" />
+                  <span>{variant.location}</span>
+                </div>
+              ))}
+            </div>
+          ) : displayLocation ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin className="w-4 h-4 flex-shrink-0 text-primary/70" aria-hidden="true" />
               <span>{displayLocation}</span>
             </div>
-          )}
+          ) : null}
 
           {salary && (
             <div className="flex items-center gap-2 text-sm">
@@ -149,72 +161,116 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
 
         {/* Consolidated CTA */}
         <div className="pt-4 border-t space-y-2">
-          {/* Primary CTA — direct apply */}
-          {isExternalApply ? (
-            <a href={applyUrl} target="_blank" rel="noopener noreferrer" className="block">
-              <Button 
-                className="w-full min-h-[48px] text-base font-semibold" 
-                size="lg"
-                variant="default"
-              >
-                Apply Now
-                <ExternalLink className="w-4 h-4 ml-2" aria-hidden="true" />
-              </Button>
-            </a>
+          {/* Multi-location: per-location apply buttons */}
+          {isMultiLocation ? (
+            <>
+              {locationVariants.map((variant) => {
+                const variantApplyUrl = variant.apply_url || `/apply?job_id=${variant.id}`;
+                const variantIsExternal = !!variant.apply_url && !variant.apply_url.includes('applyai.jobs');
+                const locationLabel = variant.location || 'this location';
+                
+                return variantIsExternal ? (
+                  <a key={variant.id} href={variantApplyUrl} target="_blank" rel="noopener noreferrer" className="block">
+                    <Button 
+                      className="w-full min-h-[44px] text-sm font-semibold" 
+                      size="default"
+                      variant="default"
+                    >
+                      Apply to {locationLabel}
+                      <ExternalLink className="w-4 h-4 ml-2" aria-hidden="true" />
+                    </Button>
+                  </a>
+                ) : (
+                  <Link key={variant.id} to={variantApplyUrl} className="block">
+                    <Button 
+                      className="w-full min-h-[44px] text-sm font-semibold" 
+                      size="default"
+                      variant="default"
+                    >
+                      Apply to {locationLabel}
+                      <ExternalLink className="w-4 h-4 ml-2" aria-hidden="true" />
+                    </Button>
+                  </Link>
+                );
+              })}
+              
+              {/* View Details for grouped jobs links to first variant */}
+              <Link to={`/jobs/${job.id}`} className="block">
+                <Button className="w-full" size="default" variant="outline">
+                  View Details
+                </Button>
+              </Link>
+            </>
           ) : (
-            <Link to={applyUrl} className="block">
-              <Button 
-                className="w-full min-h-[48px] text-base font-semibold" 
-                size="lg"
-                variant="default"
-              >
-                Apply Now
-                <ExternalLink className="w-4 h-4 ml-2" aria-hidden="true" />
-              </Button>
-            </Link>
-          )}
-
-          {/* Secondary CTA — view full details */}
-          <Link to={`/jobs/${job.id}`} className="block">
-            <Button 
-              className="w-full" 
-              size="default"
-              variant="outline"
-            >
-              View Details
-            </Button>
-          </Link>
-          
-          {showVoiceButton && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
+            <>
+              {/* Primary CTA — direct apply */}
+              {isExternalApply ? (
+                <a href={applyUrl} target="_blank" rel="noopener noreferrer" className="block">
                   <Button 
-                    className="w-full min-h-[44px] text-sm" 
-                    size="default" 
-                    variant={isVoiceConnected ? "secondary" : "outline"}
-                    onClick={handleVoiceApply}
-                    disabled={isVoiceConnected}
-                    aria-label={isVoiceConnected ? 'Voice application in progress' : 'Apply using voice conversation'}
+                    className="w-full min-h-[48px] text-base font-semibold" 
+                    size="lg"
+                    variant="default"
                   >
-                    <Mic className="w-4 h-4 mr-2" aria-hidden="true" />
-                    {isVoiceConnected ? 'Voice Active' : 'Apply with Voice'}
+                    Apply Now
+                    <ExternalLink className="w-4 h-4 ml-2" aria-hidden="true" />
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs">
-                  <p className="text-sm">
-                    Speak directly with our AI assistant to apply. Requires microphone access.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-          
-          {hasVoiceAgent && !isVoiceSupported && (
-            <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground">
-              <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" aria-hidden="true" />
-              <span>Voice apply requires a modern browser with microphone support.</span>
-            </div>
+                </a>
+              ) : (
+                <Link to={applyUrl} className="block">
+                  <Button 
+                    className="w-full min-h-[48px] text-base font-semibold" 
+                    size="lg"
+                    variant="default"
+                  >
+                    Apply Now
+                    <ExternalLink className="w-4 h-4 ml-2" aria-hidden="true" />
+                  </Button>
+                </Link>
+              )}
+
+              {/* Secondary CTA — view full details */}
+              <Link to={`/jobs/${job.id}`} className="block">
+                <Button 
+                  className="w-full" 
+                  size="default"
+                  variant="outline"
+                >
+                  View Details
+                </Button>
+              </Link>
+              
+              {showVoiceButton && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        className="w-full min-h-[44px] text-sm" 
+                        size="default" 
+                        variant={isVoiceConnected ? "secondary" : "outline"}
+                        onClick={handleVoiceApply}
+                        disabled={isVoiceConnected}
+                        aria-label={isVoiceConnected ? 'Voice application in progress' : 'Apply using voice conversation'}
+                      >
+                        <Mic className="w-4 h-4 mr-2" aria-hidden="true" />
+                        {isVoiceConnected ? 'Voice Active' : 'Apply with Voice'}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <p className="text-sm">
+                        Speak directly with our AI assistant to apply. Requires microphone access.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              
+              {hasVoiceAgent && !isVoiceSupported && (
+                <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground">
+                  <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                  <span>Voice apply requires a modern browser with microphone support.</span>
+                </div>
+              )}
+            </>
           )}
         </div>
       </CardContent>
