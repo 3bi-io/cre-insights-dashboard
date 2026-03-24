@@ -146,7 +146,7 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
       <h2 className="text-xl font-semibold">Related Jobs</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {relatedJobs.map((job) => {
-          const companyName = job.clients?.name || job.organizations?.name || 'Company';
+          const companyName = job.clients?.name || 'Company';
           return (
             <Link key={job.id} to={`/jobs/${job.id}`}>
               <Card className="hover:shadow-md transition-shadow h-full">
