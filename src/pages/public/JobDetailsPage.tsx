@@ -202,12 +202,21 @@ const JobDetailsContent: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mb-6 p-4 bg-muted/50 rounded-xl">
-                  {displayLocation && (
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-primary/70 flex-shrink-0 mt-0.5" />
-                      <div className="min-w-0"><p className="text-xs text-muted-foreground">Location</p><p className="font-medium text-sm truncate">{displayLocation}</p></div>
-                    </div>
-                  )}
+                {isMultiLocation ? (
+                  <div className="space-y-1">
+                    {locationVariants.map((variant) => (
+                      <div key={variant.id} className="flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-primary/70 flex-shrink-0 mt-0.5" />
+                        <div className="min-w-0"><p className="text-xs text-muted-foreground">Location</p><p className="font-medium text-sm truncate">{variant.location}</p></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : displayLocation ? (
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-4 h-4 text-primary/70 flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0"><p className="text-xs text-muted-foreground">Location</p><p className="font-medium text-sm truncate">{displayLocation}</p></div>
+                  </div>
+                ) : null}
                   {salary && (
                     <div className="flex items-start gap-2">
                       <DollarSign className="w-4 h-4 text-success/70 flex-shrink-0 mt-0.5" />
