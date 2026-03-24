@@ -11,7 +11,6 @@ import { renderJobDescription } from '@/utils/markdownRenderer';
 import { isAspenViewJob, transformAspenViewDescription } from '@/utils/aspenviewDescriptionTransformer';
 import { useIsVoiceSupported } from '@/hooks/useVoiceCompatibility';
 import { getDisplayCompanyName, formatSalary } from '@/utils/jobDisplayUtils';
-import { JobReadinessBadges, type JobReadinessStage } from '@/components/shared';
 import type { JobLocationVariant } from '@/utils/aspenviewJobGrouping';
 import {
   Tooltip,
@@ -53,13 +52,6 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
   const isExternalApply = !!job.apply_url && !job.apply_url.includes('applyai.jobs');
   const showVoiceButton = hasVoiceAgent && isVoiceSupported && onVoiceApply && !isExternalApply && !isMultiLocation;
 
-  // Derive readiness stages from available data (visual-only for now)
-  const completedStages: JobReadinessStage[] = ['posted'];
-  // Future: check intake completion for 'human_review' and 'final_approval'
-  if (hasVoiceAgent) {
-    completedStages.push('human_review', 'final_approval', 'voice_active');
-  }
-
   
   const handleVoiceApply = () => {
     if (!onVoiceApply || !hasVoiceAgent) return;
@@ -83,11 +75,17 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
       <CardHeader className="pb-4 relative">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            {/* Readiness + info badges */}
-            <div className="flex flex-wrap items-center gap-2 mb-2">
+            {/* Badges row */}
+            <div className="flex items-center gap-2 mb-2">
               {isNew && (
                 <Badge className="bg-success/10 text-success border-success/20 text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">
                   New
+                </Badge>
+              )}
+              {hasVoiceAgent && (
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-[10px] font-semibold px-2 py-0.5">
+                  <Mic className="h-3 w-3 mr-1" />
+                  Voice
                 </Badge>
               )}
               {job.job_categories?.name && (
@@ -96,7 +94,6 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
                 </Badge>
               )}
             </div>
-            <JobReadinessBadges completedStages={completedStages} className="mb-2" />
 
             <Link to={`/jobs/${job.id}`} className="hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded">
               <CardTitle className="text-lg sm:text-xl leading-tight mb-2 line-clamp-2 group-hover:text-primary transition-colors">

@@ -7,7 +7,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, MapPin, Eye, Edit, Trash2, DollarSign, Clock, Mic } from 'lucide-react';
 import type { JobListing } from '@/types/common.types';
 import { CompanyLogo } from '@/components/shared';
-import { JobReadinessBadges, type JobReadinessStage } from '@/components/shared';
 
 interface JobCardProps {
   job: JobListing;
@@ -98,12 +97,6 @@ const JobCard: React.FC<JobCardProps> = ({ job, onViewAnalytics, onVoiceApply })
         </div>
       </CardHeader>
       <CardContent className="space-y-4 flex-1 flex flex-col">
-        {/* Readiness pipeline */}
-        <JobReadinessBadges
-          completedStages={['posted'] as JobReadinessStage[]}
-          compact
-        />
-
         <div className="flex items-center justify-between">
           <Badge className={getStatusColor(job.status || 'active')}>
             {job.status || 'active'}
