@@ -119,15 +119,16 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
       </CardHeader>
 
       <CardContent className="space-y-4 relative">
-        {displayDescription && (
-          <div 
-            className="text-sm sm:text-base text-muted-foreground line-clamp-2 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: isAspenViewJob(job.client_id)
-              ? renderJobDescription(transformAspenViewDescription(displayDescription, displayTitle, job.state, job.city), true)
-              : renderJobDescription(displayDescription)
-            }}
-          />
-        )}
+        {displayDescription && (() => {
+          // Strip HTML tags and trim to a concise ≤100 char snippet for the card tile
+          const plain = displayDescription.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+          const snippet = plain.length > 100 ? plain.slice(0, 97) + '...' : plain;
+          return (
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+              {snippet}
+            </p>
+          );
+        })()}
 
         <div className="space-y-2">
           {isMultiLocation ? (
