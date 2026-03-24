@@ -44,11 +44,13 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
   const companyName = getDisplayCompanyName(job);
   const hasVoiceAgent = !!job.voiceAgent;
   const isNew = isNewJob(job.created_at);
+  const locationVariants: JobLocationVariant[] | undefined = job.locationVariants;
+  const isMultiLocation = locationVariants && locationVariants.length > 1;
 
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
   const applyUrl = job.apply_url || `/apply?job_id=${job.id}`;
   const isExternalApply = !!job.apply_url && !job.apply_url.includes('applyai.jobs');
-  const showVoiceButton = hasVoiceAgent && isVoiceSupported && onVoiceApply && !isExternalApply;
+  const showVoiceButton = hasVoiceAgent && isVoiceSupported && onVoiceApply && !isExternalApply && !isMultiLocation;
 
   
   const handleVoiceApply = () => {
