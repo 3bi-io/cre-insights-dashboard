@@ -285,7 +285,8 @@ const JobDetailsContent: React.FC = () => {
             canonicalUrl={canonicalUrl}
             onVoiceApply={handleVoiceApply}
             isVoiceConnected={isConnected}
-            showVoiceButton={!isExternalApply}
+            showVoiceButton={!isExternalApply && !isMultiLocation}
+            locationVariants={isMultiLocation ? locationVariants : undefined}
           />
         </div>
 
@@ -307,7 +308,34 @@ const JobDetailsContent: React.FC = () => {
           )}
         </div>
 
-        <StickyApplyCTA applyUrl={applyUrl} isExternalApply={isExternalApply} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={!isExternalApply} />
+        {/* Multi-location mobile CTA */}
+        {isMultiLocation ? (
+          <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-background/95 backdrop-blur-lg border-t shadow-lg safe-area-bottom">
+            <div className="container mx-auto px-4 py-3 space-y-2">
+              {locationVariants.map((variant) => {
+                const variantUrl = variant.apply_url || `/apply?job_id=${variant.id}`;
+                const variantIsExternal = !!variant.apply_url && !variant.apply_url.includes('applyai.jobs');
+                return variantIsExternal ? (
+                  <a key={variant.id} href={variantUrl} target="_blank" rel="noopener noreferrer" className="block">
+                    <Button className="w-full min-h-[44px] text-sm font-semibold touch-manipulation" size="default">
+                      Apply to {variant.location}
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </Button>
+                  </a>
+                ) : (
+                  <Link key={variant.id} to={variantUrl} className="block">
+                    <Button className="w-full min-h-[44px] text-sm font-semibold touch-manipulation" size="default">
+                      Apply to {variant.location}
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <StickyApplyCTA applyUrl={applyUrl} isExternalApply={isExternalApply} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={!isExternalApply} />
+        )}
       </div>
     </div>
   );
