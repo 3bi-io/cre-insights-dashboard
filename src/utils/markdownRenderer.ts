@@ -104,11 +104,13 @@ export function renderJobDescription(text: string, skipBulletConversion = false)
 
   let processed = text;
 
-  // Pre-process: convert sentence-packed paragraphs to bullet lists first
-  processed = convertSentencesToBullets(processed);
+  if (!skipBulletConversion) {
+    // Pre-process: convert sentence-packed paragraphs to bullet lists first
+    processed = convertSentencesToBullets(processed);
 
-  // Then bold the first bullet/line as top-line summary
-  processed = boldFirstBullet(processed);
+    // Then bold the first bullet/line as top-line summary
+    processed = boldFirstBullet(processed);
+  }
 
   let html: string;
   if (looksLikeMarkdown(processed)) {
