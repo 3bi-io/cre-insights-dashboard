@@ -1,25 +1,27 @@
 /**
  * AspenView Description Transformer
- * Converts bullet-point job descriptions to narrative format,
- * adds ONET skills, gender-normalizes language, and appends legal disclosures.
+ * Converts bullet-point job descriptions into structured narrative sections:
+ *   1. Overview (~100 words)
+ *   2. Duties & Responsibilities (natural paragraphs)
+ *   3. About the Company
+ *   4. Compensation & Benefits
+ *   5. Match Taxonomies and Skills (O*NET)
+ *   6. Legal Disclosures (EEO, wage transparency, AI assessment)
+ *
+ * Also applies gender-neutral language normalization.
  * Only applied to AspenView Technology Partners jobs.
  */
 
 const ASPENVIEW_CLIENT_ID = '82513316-7df2-4bf0-83d8-6c511c83ddfb';
 
-/**
- * Check if a job belongs to AspenView
- */
 export function isAspenViewJob(clientId: string | null | undefined): boolean {
   return clientId === ASPENVIEW_CLIENT_ID;
 }
 
-/**
- * Gender-normalize text: replace gendered pronouns with inclusive alternatives
- */
+// ============= Gender Normalization =============
+
 function genderNormalize(text: string): string {
   return text
-    // Pronoun replacements (case-sensitive patterns)
     .replace(/\bhe or she\b/gi, 'they')
     .replace(/\bhe\/she\b/gi, 'they')
     .replace(/\bshe\/he\b/gi, 'they')
@@ -30,7 +32,6 @@ function genderNormalize(text: string): string {
     .replace(/\bhim\/her\b/gi, 'them')
     .replace(/\bhimself or herself\b/gi, 'themselves')
     .replace(/\bherself or himself\b/gi, 'themselves')
-    // Gendered nouns
     .replace(/\bchairman\b/gi, 'chairperson')
     .replace(/\bforeman\b/gi, 'foreperson')
     .replace(/\bmanpower\b/gi, 'workforce')
@@ -42,33 +43,46 @@ function genderNormalize(text: string): string {
     .replace(/\bmanmade\b/gi, 'manufactured')
     .replace(/\bman-made\b/gi, 'manufactured')
     .replace(/\bfreshman\b/gi, 'first-year')
-    // Standalone gendered pronouns (careful with context)
     .replace(/\bHe\b(?=\s+(?:will|shall|should|must|is|has|may|can|would|could))/g, 'They')
     .replace(/\bShe\b(?=\s+(?:will|shall|should|must|is|has|may|can|would|could))/g, 'They')
     .replace(/\bhis\b(?=\s+(?:role|position|duties|responsibilities|work|team|manager|supervisor))/gi, 'their')
     .replace(/\bher\b(?=\s+(?:role|position|duties|responsibilities|work|team|manager|supervisor))/gi, 'their');
 }
 
-/**
- * Convert bullet-point descriptions into flowing narrative paragraphs.
- * Groups related bullets by section headers and merges them into prose.
- */
-function bulletsToNarrative(text: string): string {
+// ============= Content Parsing =============
+
+interface ParsedSection {
+  header: string | null;
+  items: string[];
+}
+
+/** Keywords that indicate compensation/benefits sections */
+const COMP_KEYWORDS = /compens|salary|pay|wage|benefit|insurance|401|retirement|pto|paid\s*time|bonus|stipend|perks|health\s*plan/i;
+/** Keywords that indicate company/about sections */
+const COMPANY_KEYWORDS = /about\s*(the\s*)?(company|us|org)|who\s*we\s*are|our\s*(mission|culture|values|story|team)|company\s*(overview|description|profile)/i;
+/** Keywords that indicate qualifications/requirements */
+const QUAL_KEYWORDS = /qualif|require|must\s*have|minimum|prefer|experience|education|skill|certif/i;
+/** Keywords that indicate duties/responsibilities */
+const DUTY_KEYWORDS = /dut|responsibilit|what\s*you|you\s*will|key\s*(tasks|functions|activities)|scope|essential\s*functions|day[\s-]to[\s-]day/i;
+
+function parseIntoSections(text: string): ParsedSection[] {
   const lines = text.split('\n');
-  const sections: { header: string | null; items: string[] }[] = [];
-  let currentSection: { header: string | null; items: string[] } = { header: null, items: [] };
+  const sections: ParsedSection[] = [];
+  let current: ParsedSection = { header: null, items: [] };
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
 
-    // Check for headers (markdown or plain text followed by colon)
-    const headerMatch = trimmed.match(/^#{1,6}\s+(.+)/) || trimmed.match(/^([A-Z][^.!?]*):$/);
-    if (headerMatch) {
-      if (currentSection.items.length > 0 || currentSection.header) {
-        sections.push(currentSection);
-      }
-      currentSection = { header: headerMatch[1].replace(/:$/, '').trim(), items: [] };
+    // Detect headers
+    const mdHeader = trimmed.match(/^#{1,6}\s+(.+)/);
+    const colonHeader = trimmed.match(/^([A-Z][^.!?]{2,60}):$/);
+    const boldHeader = trimmed.match(/^\*\*([^*]+)\*\*:?\s*$/);
+
+    if (mdHeader || colonHeader || boldHeader) {
+      if (current.items.length > 0 || current.header) sections.push(current);
+      const headerText = (mdHeader?.[1] || colonHeader?.[1] || boldHeader?.[1]).replace(/:$/, '').trim();
+      current = { header: headerText, items: [] };
       continue;
     }
 
@@ -78,49 +92,133 @@ function bulletsToNarrative(text: string): string {
     const content = bulletMatch?.[1] || numberedMatch?.[1] || trimmed;
 
     if (content) {
-      currentSection.items.push(content.replace(/\.$/, '').trim());
+      // Ensure sentence ends with period
+      const cleaned = content.trim().replace(/[.;,]$/, '').trim();
+      if (cleaned.length > 0) current.items.push(cleaned);
     }
   }
 
-  if (currentSection.items.length > 0 || currentSection.header) {
-    sections.push(currentSection);
-  }
+  if (current.items.length > 0 || current.header) sections.push(current);
+  return sections;
+}
 
-  // Build narrative paragraphs
-  const paragraphs: string[] = [];
+// ============= Section Classification =============
+
+interface ClassifiedContent {
+  duties: string[];
+  qualifications: string[];
+  compensation: string[];
+  company: string[];
+  other: string[];
+}
+
+function classifySections(sections: ParsedSection[]): ClassifiedContent {
+  const result: ClassifiedContent = {
+    duties: [],
+    qualifications: [],
+    compensation: [],
+    company: [],
+    other: [],
+  };
 
   for (const section of sections) {
-    if (section.items.length === 0) continue;
+    const header = section.header || '';
+    const bucket =
+      COMP_KEYWORDS.test(header) ? 'compensation' :
+      COMPANY_KEYWORDS.test(header) ? 'company' :
+      QUAL_KEYWORDS.test(header) ? 'qualifications' :
+      DUTY_KEYWORDS.test(header) ? 'duties' :
+      null;
 
-    let paragraph: string;
-
-    if (section.items.length === 1) {
-      paragraph = section.items[0] + '.';
-    } else if (section.items.length <= 3) {
-      paragraph = section.items.join(', ') + '.';
+    if (bucket) {
+      result[bucket].push(...section.items);
     } else {
-      // Join with natural connectors
-      const allButLast = section.items.slice(0, -1).join(', ');
-      paragraph = allButLast + ', and ' + section.items[section.items.length - 1] + '.';
-    }
-
-    // Capitalize first letter
-    paragraph = paragraph.charAt(0).toUpperCase() + paragraph.slice(1);
-
-    if (section.header) {
-      paragraphs.push(`**${section.header}**\n\n${paragraph}`);
-    } else {
-      paragraphs.push(paragraph);
+      // Try to classify by content if no header matched
+      for (const item of section.items) {
+        if (COMP_KEYWORDS.test(item)) result.compensation.push(item);
+        else if (COMPANY_KEYWORDS.test(item)) result.company.push(item);
+        else result.duties.push(item);
+      }
     }
   }
 
+  return result;
+}
+
+// ============= Narrative Builders =============
+
+/**
+ * Groups items into natural paragraphs of 3-4 sentences each.
+ */
+function itemsToParagraphs(items: string[], sentencesPerParagraph = 3): string {
+  if (items.length === 0) return '';
+
+  const paragraphs: string[] = [];
+  for (let i = 0; i < items.length; i += sentencesPerParagraph) {
+    const chunk = items.slice(i, i + sentencesPerParagraph);
+    const sentences = chunk.map(s => {
+      let sentence = s.charAt(0).toUpperCase() + s.slice(1);
+      if (!/[.!?]$/.test(sentence)) sentence += '.';
+      return sentence;
+    });
+    paragraphs.push(sentences.join(' '));
+  }
   return paragraphs.join('\n\n');
 }
 
 /**
- * ONET-based skills and knowledge mapping by job title keywords.
- * Each entry produces a paragraph under 300 characters referencing ONET.
+ * Builds a ~100-word overview from the title and first few duty items.
  */
+function buildOverview(title: string, duties: string[], qualifications: string[]): string {
+  const role = title || 'this role';
+
+  // Take first 2-3 duties for the summary
+  const topDuties = duties.slice(0, 3).map(d => d.toLowerCase().replace(/\.$/, ''));
+  const qualSnippet = qualifications.length > 0
+    ? qualifications[0].toLowerCase().replace(/\.$/, '')
+    : null;
+
+  let overview = `The ${role} at AspenView Technology Partners is a dynamic opportunity for a professional `;
+  if (qualSnippet) {
+    overview += `with ${qualSnippet}. `;
+  } else {
+    overview += `looking to make an impact in a collaborative environment. `;
+  }
+
+  if (topDuties.length > 0) {
+    overview += `In this position, the successful candidate will focus on ${topDuties[0]}`;
+    if (topDuties.length > 1) overview += `, ${topDuties[1]}`;
+    if (topDuties.length > 2) overview += `, and ${topDuties[2]}`;
+    overview += '. ';
+  }
+
+  overview += 'This role offers the opportunity to contribute meaningfully to the organization while growing professionally within a supportive team.';
+
+  return overview;
+}
+
+/**
+ * Builds a company section if content exists, or uses a default.
+ */
+function buildCompanySection(items: string[]): string {
+  if (items.length > 0) {
+    return itemsToParagraphs(items);
+  }
+  return 'AspenView Technology Partners is a forward-thinking organization committed to innovation, collaboration, and professional growth. The company fosters an inclusive culture where team members are empowered to contribute their unique perspectives and advance their careers. With a focus on delivering high-quality solutions and maintaining strong client relationships, AspenView provides a supportive environment where employees can thrive.';
+}
+
+/**
+ * Builds compensation section from extracted items or default.
+ */
+function buildCompensationSection(items: string[]): string {
+  if (items.length > 0) {
+    return itemsToParagraphs(items);
+  }
+  return 'AspenView Technology Partners offers a competitive compensation package commensurate with experience and qualifications. Benefits may include health, dental, and vision insurance, retirement savings options, paid time off, and professional development opportunities. Specific details regarding compensation and benefits will be discussed during the interview process.';
+}
+
+// ============= O*NET Skills (renamed to Match Taxonomies) =============
+
 const ONET_SKILL_MAP: Array<{ keywords: RegExp; paragraph: string }> = [
   {
     keywords: /software\s*(engineer|developer)|full[\s-]?stack|front[\s-]?end|back[\s-]?end|web\s*developer/i,
@@ -184,30 +282,21 @@ const ONET_SKILL_MAP: Array<{ keywords: RegExp; paragraph: string }> = [
   },
 ];
 
-/**
- * Get ONET skills paragraph based on job title (< 300 chars)
- */
 function getOnetParagraph(title: string): string {
   for (const entry of ONET_SKILL_MAP) {
     if (entry.keywords.test(title)) {
-      // Ensure under 300 characters
-      return entry.paragraph.length <= 300
-        ? entry.paragraph
-        : entry.paragraph.substring(0, 297) + '...';
+      return entry.paragraph.length <= 300 ? entry.paragraph : entry.paragraph.substring(0, 297) + '...';
     }
   }
-  // Generic fallback
   return 'Per O*NET, this role draws on critical thinking, active listening, complex problem solving, and effective communication. Key knowledge areas include technology applications, organizational management, and professional practices.';
 }
 
-/**
- * Build location-specific wage transparency disclosure
- */
+// ============= Legal Disclosures =============
+
 function getWageTransparencyNote(state: string | null | undefined, city: string | null | undefined): string | null {
   const s = state?.toLowerCase().trim();
   const c = city?.toLowerCase().trim();
 
-  // States with pay transparency laws
   const transparencyStates: Record<string, string> = {
     'california': 'California Pay Transparency Act (SB 1162)',
     'ca': 'California Pay Transparency Act (SB 1162)',
@@ -237,7 +326,6 @@ function getWageTransparencyNote(state: string | null | undefined, city: string 
     'ma': 'Massachusetts Pay Transparency Law',
   };
 
-  // City-specific laws
   if (c?.includes('new york') || c?.includes('nyc')) {
     return 'In accordance with the New York City Pay Transparency Law, salary ranges are provided for this position. Applicants have the right to inquire about compensation before or after accepting an offer.';
   }
@@ -258,38 +346,27 @@ function getWageTransparencyNote(state: string | null | undefined, city: string 
   return null;
 }
 
-/**
- * Build the full disclosures section
- */
-function buildDisclosures(
-  state: string | null | undefined,
-  city: string | null | undefined,
-): string {
-  const disclosures: string[] = [];
+function buildDisclosures(state: string | null | undefined, city: string | null | undefined): string {
+  const parts: string[] = [];
 
-  // Equal Opportunity Employment
-  disclosures.push(
+  parts.push(
     '**Equal Opportunity Employer**\n\nAspenView Technology Partners is an Equal Opportunity Employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, sex, sexual orientation, gender identity, national origin, disability, veteran status, or any other characteristic protected by applicable law.'
   );
 
-  // Wage transparency (location-based)
   const wageNote = getWageTransparencyNote(state, city);
   if (wageNote) {
-    disclosures.push(`**Wage Transparency Notice**\n\n${wageNote}`);
+    parts.push(`**Wage Transparency Notice**\n\n${wageNote}`);
   }
 
-  // AI Assessment disclosure (Voice Apply only)
-  disclosures.push(
+  parts.push(
     '**AI-Assisted Assessment Disclosure**\n\nIf you choose to use the "Apply with Voice" feature, your voice transcript will be assessed using artificial intelligence. This assessment evaluates only whether your responses align with the intake criteria and messaging provided by the hiring organization — it does not evaluate information beyond what is described in this job posting. Use of the Voice Apply feature is entirely optional and is not required to be considered for this position.'
   );
 
-  return '\n\n---\n\n' + disclosures.join('\n\n');
+  return parts.join('\n\n');
 }
 
-/**
- * Main transformer: applies all AspenView-specific transformations to a job description.
- * Only call this for AspenView jobs (check with isAspenViewJob first).
- */
+// ============= Main Transformer =============
+
 export function transformAspenViewDescription(
   description: string,
   title: string,
@@ -298,18 +375,36 @@ export function transformAspenViewDescription(
 ): string {
   if (!description) return '';
 
-  // Step 1: Convert bullets to narrative
-  let transformed = bulletsToNarrative(description);
+  // Parse raw description into sections
+  const sections = parseIntoSections(description);
+  const classified = classifySections(sections);
 
-  // Step 2: Gender-normalize
-  transformed = genderNormalize(transformed);
+  // Merge qualifications into duties for the narrative (they often overlap)
+  const allDuties = [...classified.duties, ...classified.qualifications];
 
-  // Step 3: Add ONET skills paragraph
+  // Build structured output
+  const output: string[] = [];
+
+  // Section 1: Overview (~100 words)
+  output.push(`## Overview\n\n${genderNormalize(buildOverview(title, classified.duties, classified.qualifications))}`);
+
+  // Section 2: Duties & Responsibilities (natural paragraphs with breaks)
+  if (allDuties.length > 0) {
+    output.push(`## Duties & Responsibilities\n\n${genderNormalize(itemsToParagraphs(allDuties, 3))}`);
+  }
+
+  // Section 3: About the Company
+  output.push(`## About AspenView Technology Partners\n\n${genderNormalize(buildCompanySection(classified.company))}`);
+
+  // Section 4: Compensation & Benefits
+  output.push(`## Compensation & Benefits\n\n${genderNormalize(buildCompensationSection(classified.compensation))}`);
+
+  // Section 5: Match Taxonomies and Skills (O*NET)
   const onetParagraph = getOnetParagraph(title);
-  transformed += `\n\n**Skills & Knowledge (O*NET Reference)**\n\n${onetParagraph}`;
+  output.push(`## Match Taxonomies and Skills\n\n${onetParagraph}`);
 
-  // Step 4: Add disclosures
-  transformed += buildDisclosures(state, city);
+  // Section 6: Disclosures
+  output.push(`---\n\n${buildDisclosures(state, city)}`);
 
-  return transformed;
+  return output.join('\n\n');
 }
