@@ -11,6 +11,7 @@ import { renderJobDescription } from '@/utils/markdownRenderer';
 import { isAspenViewJob, transformAspenViewDescription } from '@/utils/aspenviewDescriptionTransformer';
 import { useIsVoiceSupported } from '@/hooks/useVoiceCompatibility';
 import { getDisplayCompanyName, formatSalary } from '@/utils/jobDisplayUtils';
+import { JobReadinessBadges, type JobReadinessStage } from '@/components/shared';
 import type { JobLocationVariant } from '@/utils/aspenviewJobGrouping';
 import {
   Tooltip,
@@ -51,6 +52,13 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
   const applyUrl = job.apply_url || `/apply?job_id=${job.id}`;
   const isExternalApply = !!job.apply_url && !job.apply_url.includes('applyai.jobs');
   const showVoiceButton = hasVoiceAgent && isVoiceSupported && onVoiceApply && !isExternalApply && !isMultiLocation;
+
+  // Derive readiness stages from available data (visual-only for now)
+  const completedStages: JobReadinessStage[] = ['posted'];
+  // Future: check intake completion for 'human_review' and 'final_approval'
+  if (hasVoiceAgent) {
+    completedStages.push('human_review', 'final_approval', 'voice_active');
+  }
 
   
   const handleVoiceApply = () => {
