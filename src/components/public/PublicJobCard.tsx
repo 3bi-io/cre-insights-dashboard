@@ -11,6 +11,7 @@ import { renderJobDescription } from '@/utils/markdownRenderer';
 import { isAspenViewJob, transformAspenViewDescription } from '@/utils/aspenviewDescriptionTransformer';
 import { useIsVoiceSupported } from '@/hooks/useVoiceCompatibility';
 import { getDisplayCompanyName, formatSalary } from '@/utils/jobDisplayUtils';
+import type { JobLocationVariant } from '@/utils/aspenviewJobGrouping';
 import {
   Tooltip,
   TooltipContent,
