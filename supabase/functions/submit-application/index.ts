@@ -716,7 +716,9 @@ async function sendConfirmationEmail(
       candidateName: `${firstName} ${lastName}`.trim(),
       jobTitle: jobTitle || 'Driver Position',
       companyName: companyName,
-      type: 'application_received'
+      type: 'application_received',
+      ...(applicationId && { applicationId }),
+      ...(jobListingId && { jobListingId }),
     };
     
     // Include client logo URL if available
