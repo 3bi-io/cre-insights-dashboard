@@ -90,7 +90,7 @@ serve(async (req: Request): Promise<Response> => {
               ${inviterText} ${orgText} as a <strong>${roleDisplay}</strong>.
             </p>
             
-            <p style="font-size: 14px; color: #6b7280; margin-bottom: 24px;">
+            <p style="font-size: 14px; color: #374151; margin-bottom: 24px;">
               ${EMAIL_CONFIG.brand.name} is a modern applicant tracking system that helps teams hire faster with AI-powered voice recruitment and smart automation.
             </p>
             
@@ -100,14 +100,14 @@ serve(async (req: Request): Promise<Response> => {
               </a>
             </div>
             
-            <div style="background: #f9fafb; border-radius: 8px; padding: 16px; margin-top: 24px;">
-              <p style="font-size: 13px; color: #6b7280; margin: 0;">
+            <div style="background-color: #f9fafb; border-radius: 8px; padding: 16px; margin-top: 24px;">
+              <p style="font-size: 13px; color: #374151; margin: 0;">
                 <strong>Your role:</strong> ${roleDisplay}<br>
                 ${organizationName ? `<strong>Organization:</strong> ${organizationName}` : ''}
               </p>
             </div>
             
-            <p style="font-size: 12px; color: #9ca3af; margin-top: 24px;">
+            <p style="font-size: 12px; color: #666666; margin-top: 24px;">
               If you didn't expect this invitation, you can safely ignore this email.
             </p>
           </div>

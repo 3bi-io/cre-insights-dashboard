@@ -101,7 +101,7 @@ function generateScreeningEmail(
                 <div style="text-align: center;">
                   <a href="${portalLink}" style="${buttonStyles}">Access Screening Portal</a>
                 </div>
-                <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">⏰ This request will expire in 30 days.</p>
+                <p style="font-size: 14px; color: #374151; margin-top: 20px;">⏰ This request will expire in 30 days.</p>
                 <p style="font-size: 16px; margin-top: 25px; margin-bottom: 5px;">Thank you,</p>
                 <p style="font-size: 16px; font-weight: 600; margin-top: 0;">${safeOrg}</p>
               </div>
@@ -140,7 +140,7 @@ function generateScreeningEmail(
                     • You'll receive a confirmation once submitted
                   </p>
                 </div>
-                <p style="font-size: 14px; color: #6b7280;">⏰ Please complete within 30 days.</p>
+                <p style="font-size: 14px; color: #374151;">⏰ Please complete within 30 days.</p>
                 <p style="font-size: 16px; margin-top: 25px; margin-bottom: 5px;">Best regards,</p>
                 <p style="font-size: 16px; font-weight: 600; margin-top: 0;">${safeOrg} Recruitment Team</p>
               </div>
@@ -176,7 +176,7 @@ function generateScreeningEmail(
                 <div style="text-align: center;">
                   <a href="${portalLink}" style="${buttonStyles}">Upload Results</a>
                 </div>
-                <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">⏰ This request will expire in 30 days.</p>
+                <p style="font-size: 14px; color: #374151; margin-top: 20px;">⏰ This request will expire in 30 days.</p>
                 <p style="font-size: 16px; margin-top: 25px; margin-bottom: 5px;">Thank you,</p>
                 <p style="font-size: 16px; font-weight: 600; margin-top: 0;">${safeOrg}</p>
               </div>
