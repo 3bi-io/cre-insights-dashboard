@@ -44,8 +44,6 @@ export function createATSAdapter(
       return new RESTJSONAdapter(config);
     
     default:
-      // Unknown API type - log warning and default to REST JSON
-      return new RESTJSONAdapter(config);
       return new RESTJSONAdapter(config);
   }
 }
@@ -189,6 +187,15 @@ export function getSystemBySlug(slug: string): ATSSystem | null {
       base_endpoint: 'https://api.hireology.com/v1',
       category: 'healthcare',
     },
+    
+    // Double Nickel (trucking, Auth0 OAuth)
+    doublenickel: {
+      name: 'Double Nickel',
+      api_type: 'rest_json',
+      base_endpoint: 'https://dashboard.getdoublenickel.com/api/applicants',
+      category: 'trucking',
+      supports_test_mode: true,
+    },
   };
 
   const systemConfig = systemConfigs[slug];
@@ -216,7 +223,7 @@ export function getSystemBySlug(slug: string): ATSSystem | null {
  */
 export function getSupportedSystems(): Array<{ slug: string; name: string; category: string }> {
   const slugs = [
-    'tenstreet', 'driverreach', 'workn',
+    'tenstreet', 'driverreach', 'workn', 'doublenickel',
     'greenhouse', 'lever', 'workable', 'jazzhr', 'bamboohr',
     'icims', 'smartrecruiters', 'ashby', 'jobvite',
     'bullhorn', 'fountain', 'harri',
