@@ -310,26 +310,22 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
           });
         }, CONNECTION_TIMEOUT_MS);
 
-        // Build overrides: firstMessage only (prompt managed in ElevenLabs dashboard)
-        const jobContext = context?.jobContext as JobContext | undefined;
-        const voiceId = context?.voiceId as string | undefined;
-        const overrides = jobContext ? createAgentOverrides(jobContext, voiceId) : undefined;
-
-        logger.info('Starting conversation', { agentId, attempt, dynamicVariables, hasOverrides: !!overrides }, 'VoiceAgentConnection');
+        // No client-side overrides — first message & prompt managed in ElevenLabs dashboard
+        // Dynamic variables (candidate_name, job_title, company_name, etc.) are injected
+        // so the dashboard first message can use {{candidate_name}}, {{job_title}}, etc.
+        logger.info('Starting conversation', { agentId, attempt, dynamicVariables }, 'VoiceAgentConnection');
         
         // Use signedUrl from edge function
         if (urlResponse.data?.signedUrl) {
           await conversation.startSession({
             signedUrl: urlResponse.data.signedUrl,
             dynamicVariables,
-            ...(overrides && { overrides: overrides as any })
           });
         } else {
           // Direct agentId connection for public agents
           await conversation.startSession({
             agentId,
             dynamicVariables,
-            ...(overrides && { overrides: overrides as any })
           });
         }
 
