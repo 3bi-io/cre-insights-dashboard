@@ -133,6 +133,7 @@ interface ElevenLabsWebhookPayload {
   analysis?: {
     data_collection_results?: Record<string, unknown>;
     transcript_summary?: string;
+    tool_calls?: Array<Record<string, unknown>>;
   };
   transcript?: Array<{
     role: string;
