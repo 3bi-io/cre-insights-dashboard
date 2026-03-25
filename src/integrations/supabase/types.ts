@@ -9141,6 +9141,7 @@ export type Database = {
               experience_level: string
               id: string
               is_hidden: boolean
+              job_description: string
               job_summary: string
               job_title: string
               job_type: string
