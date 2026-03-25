@@ -118,17 +118,41 @@ serve(async (req) => {
           
           let mappedStatus = 'initiated';
           let durationSeconds = null;
+          let voicemailDetected = false;
           
           if (elStatus === 'done' || elStatus === 'ended') {
             durationSeconds = convData.metadata?.call_duration_secs || null;
+            
+            // --- Voicemail Detection (two-pronged) ---
+            // 1. Check if ElevenLabs voicemail_detection tool was triggered
+            const toolCalls = convData.analysis?.tool_calls || [];
+            const vmToolTriggered = Array.isArray(toolCalls) && toolCalls.some(
+              (tc: Record<string, unknown>) => tc.tool_name === 'voicemail_detection' || tc.name === 'voicemail_detection'
+            );
+            
+            // 2. Transcript-based fallback: scan for voicemail indicator phrases
+            const transcriptText = Array.isArray(convData.transcript)
+              ? convData.transcript.map((t: Record<string, unknown>) => String(t.message || '')).join(' ').toLowerCase()
+              : '';
+            const vmPhrases = [
+              'leave a message', 'leave your message', 'after the tone', 'after the beep',
+              'not available', 'unavailable right now', 'please record your message',
+              'voicemail', 'mailbox', 'press one', 'press 1 for',
+              'at the tone', 'cannot take your call', 'can\'t come to the phone',
+              'not able to take', 'record a message', 'leave your name',
+            ];
+            const vmTranscriptMatch = vmPhrases.some(phrase => transcriptText.includes(phrase));
+            
+            voicemailDetected = vmToolTriggered || vmTranscriptMatch;
+            
             // If call ended with 0 or no duration, driver didn't answer
             if (!durationSeconds || durationSeconds <= 0) {
               mappedStatus = 'no_answer';
               logger.info(`Call ${call.id} ended with no duration - marking as no_answer`);
-            } else if (durationSeconds < 15) {
-              // Short-duration calls likely hit voicemail — treat as no_answer
+            } else if (voicemailDetected) {
+              // Voicemail detected regardless of duration — mark as no_answer
               mappedStatus = 'no_answer';
-              logger.info(`Call ${call.id} ended with short duration (${durationSeconds}s < 15s) - likely voicemail, marking as no_answer`);
+              logger.info(`Call ${call.id} voicemail detected (tool: ${vmToolTriggered}, transcript: ${vmTranscriptMatch}, duration: ${durationSeconds}s) - marking as no_answer`);
             } else {
               mappedStatus = 'completed';
             }
@@ -164,6 +188,7 @@ serve(async (req) => {
             .update({
               status: mappedStatus,
               duration_seconds: durationSeconds,
+              voicemail_detected: voicemailDetected,
               completed_at: mappedStatus === 'completed' ? new Date().toISOString() : null,
               updated_at: new Date().toISOString()
             })
