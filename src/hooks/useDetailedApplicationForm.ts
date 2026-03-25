@@ -276,19 +276,34 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
   });
 
   // Fetch existing application data when arriving via SMS link (app_id in URL)
+  // Uses edge function to bypass RLS — anonymous users can't query applications directly
   useEffect(() => {
     if (!appIdFromUrl || prefillData) return; // Skip if we already have prefill data from route state
     
     const fetchExistingApplication = async () => {
       try {
-        const { data, error } = await supabase
-          .from('applications')
-          .select('first_name, last_name, applicant_email, phone, city, state, zip, cdl, cdl_class, cdl_endorsements, exp, consent_to_sms, over_21, veteran, address_1, address_2, country')
-          .eq('id', appIdFromUrl)
-          .single();
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const response = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/get-application-prefill`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${anonKey}`,
+            },
+            body: JSON.stringify({ app_id: appIdFromUrl }),
+          }
+        );
         
-        if (error || !data) {
-          logger.warn('Failed to fetch application for SMS prefill', { error });
+        if (!response.ok) {
+          logger.warn('Failed to fetch application for SMS prefill', { status: response.status });
+          return;
+        }
+        
+        const { data } = await response.json();
+        if (!data) {
+          logger.warn('No data returned for SMS prefill');
           return;
         }
 

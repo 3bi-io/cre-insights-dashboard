@@ -702,7 +702,9 @@ async function sendConfirmationEmail(
   jobTitle: string | null,
   clientName: string | null,
   organizationName: string,
-  clientLogoUrl: string | null = null
+  clientLogoUrl: string | null = null,
+  applicationId: string | null = null,
+  jobListingId: string | null = null
 ): Promise<void> {
   // Use client name for applicant emails (privacy), fallback to org name
   const companyName = clientName || organizationName || 'Company';
@@ -714,7 +716,9 @@ async function sendConfirmationEmail(
       candidateName: `${firstName} ${lastName}`.trim(),
       jobTitle: jobTitle || 'Driver Position',
       companyName: companyName,
-      type: 'application_received'
+      type: 'application_received',
+      ...(applicationId && { applicationId }),
+      ...(jobListingId && { jobListingId }),
     };
     
     // Include client logo URL if available
@@ -1193,7 +1197,7 @@ Deno.serve(async (req) => {
     // Send confirmation email to applicant (non-blocking background task)
     // Uses clientName for privacy - applicants see the employer brand, not the recruiting org
     EdgeRuntime.waitUntil(
-      sendConfirmationEmail(applicantEmail, firstName, lastName, jobTitle, clientName, organizationName, clientLogoUrl)
+      sendConfirmationEmail(applicantEmail, firstName, lastName, jobTitle, clientName, organizationName, clientLogoUrl, data.id, data.job_listing_id)
     );
 
     // Resolve client_id from the job listing for ATS routing
