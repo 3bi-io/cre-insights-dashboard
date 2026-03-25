@@ -1,48 +1,25 @@
 
 
-## Current Status
+## Issue: Old "ATS.ME" Branding on Login Page
 
-The Thank You page (`src/pages/ThankYou.tsx`) **already has** the "Complete Your Full Application" CTA button with the `ClipboardList` icon and messaging. It works correctly during the same browser session because `formData` is passed via React Router state from the short application submission.
+### Finding
 
-**However, there is one gap to fix:**
+After a thorough review of the entire codebase, **no "ATS.ME" or "Next-Generation Applicant Tracking System" text exists anywhere in the code**. The auth page (`src/pages/Auth.tsx`) correctly uses:
+- The `Brand` component which renders "Apply AI" with the new logo
+- Tagline: "AI-Powered Recruitment Platform"
+- All SEO meta tags reference "Apply AI" and "applyai.jobs"
 
-The button navigates to `/apply/detailed` but does not include `app_id` in the URL query params. This means the new `get-application-prefill` edge function cannot be used if the router state is lost. The fix is simple:
+The screenshot you uploaded is showing a **cached/stale build**. The rebranding was already completed in the codebase.
 
-## Changes
+### What Needs to Happen
 
-### 1. Update Thank You page navigation to include `app_id` in URL
+1. **Republish the site** — The latest build with Apply AI branding needs to be deployed to production. The current published build appears to be from before the rebranding was applied.
 
-**File:** `src/pages/ThankYou.tsx` (lines 46-52)
+2. **Update the published URL subdomain** — The current published URL is `ats-me.lovable.app`, which still carries the old brand name. This should be updated to use the custom domain `applyai.jobs` exclusively, or at minimum renamed.
 
-Change `handleContinueToFullApplication` to include `app_id` in the query string:
+3. **Clear CDN/browser cache** — After republishing, users may need to hard-refresh (Ctrl+Shift+R) to see the updated branding if their browser cached the old version.
 
-```typescript
-const handleContinueToFullApplication = () => {
-  const jobId = formData?.job_listing_id || formData?.job_id;
-  const params = new URLSearchParams();
-  if (jobId) params.set('job_id', jobId);
-  if (applicationId) params.set('app_id', applicationId);
-  const searchParams = params.toString() ? `?${params.toString()}` : '';
-  navigate(`/apply/detailed${searchParams}`, {
-    state: { prefill: { ...formData, applicationId } }
-  });
-};
-```
+### No Code Changes Required
 
-This ensures that even if router state is lost (page refresh, link sharing), the detailed form can still fetch pre-fill data via the `get-application-prefill` edge function using the `app_id` URL parameter.
-
-### 2. Always show the CTA (even without router state)
-
-**File:** `src/pages/ThankYou.tsx` (line 111)
-
-Change the condition from `{formData && (` to `{(formData || applicationId) && (` so the button also shows when only `applicationId` is available. Additionally, extract `applicationId` from URL params as a fallback:
-
-```typescript
-const searchParams = new URLSearchParams(location.search);
-const applicationId = state?.applicationId || searchParams.get('app_id');
-```
-
-This way, if someone arrives at `/thank-you?app_id=xxx`, they still see the CTA.
-
-This is a small, targeted fix — the CTA content and design are already correct.
+The login page code is already correct. This is a deployment/caching issue, not a code issue. Would you like me to trigger a republish?
 
