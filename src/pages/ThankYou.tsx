@@ -46,7 +46,10 @@ const ThankYou = () => {
 
   const handleContinueToFullApplication = () => {
     const jobId = formData?.job_listing_id || formData?.job_id;
-    const searchParams = jobId ? `?job_id=${jobId}` : '';
+    const params = new URLSearchParams();
+    if (jobId) params.set('job_id', jobId);
+    if (applicationId) params.set('app_id', applicationId);
+    const searchParams = params.toString() ? `?${params.toString()}` : '';
     navigate(`/apply/detailed${searchParams}`, {
       state: { prefill: { ...formData, applicationId } }
     });
