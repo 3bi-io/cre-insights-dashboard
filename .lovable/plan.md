@@ -1,85 +1,48 @@
 
 
-## Analysis: Broken "Full Application" Link
+## Current Status
 
-### Root Cause Found
+The Thank You page (`src/pages/ThankYou.tsx`) **already has** the "Complete Your Full Application" CTA button with the `ClipboardList` icon and messaging. It works correctly during the same browser session because `formData` is passed via React Router state from the short application submission.
 
-There are **two distinct issues** causing the link to not work for applicants:
+**However, there is one gap to fix:**
 
----
+The button navigates to `/apply/detailed` but does not include `app_id` in the URL query params. This means the new `get-application-prefill` edge function cannot be used if the router state is lost. The fix is simple:
 
-### Issue 1: RLS Blocks Anonymous Pre-fill (SMS Link Flow)
+## Changes
 
-When an applicant receives an SMS with a link like:
-```
-https://applyai.jobs/apply/detailed?job_id=xxx&app_id=yyy
-```
+### 1. Update Thank You page navigation to include `app_id` in URL
 
-The `useDetailedApplicationForm` hook (line 284) tries to fetch the existing application data from the `applications` table using the **anonymous Supabase client**:
+**File:** `src/pages/ThankYou.tsx` (lines 46-52)
 
-```typescript
-const { data, error } = await supabase
-  .from('applications')
-  .select('first_name, last_name, ...')
-  .eq('id', appIdFromUrl)
-  .single();
-```
-
-However, **all RLS policies on `applications` require `authenticated` role**. There is no `anon` SELECT policy. The query silently fails, returning no data — so the form loads completely empty with no pre-fill, making it appear "broken" or pointless to the applicant.
-
-### Issue 2: Thank You Page Button Relies on Ephemeral Router State
-
-The "Complete Your Full Application" button on `/thank-you` uses `navigate()` with React Router `state`:
+Change `handleContinueToFullApplication` to include `app_id` in the query string:
 
 ```typescript
-navigate(`/apply/detailed${searchParams}`, {
-  state: { prefill: { ...formData, applicationId } }
-});
+const handleContinueToFullApplication = () => {
+  const jobId = formData?.job_listing_id || formData?.job_id;
+  const params = new URLSearchParams();
+  if (jobId) params.set('job_id', jobId);
+  if (applicationId) params.set('app_id', applicationId);
+  const searchParams = params.toString() ? `?${params.toString()}` : '';
+  navigate(`/apply/detailed${searchParams}`, {
+    state: { prefill: { ...formData, applicationId } }
+  });
+};
 ```
 
-This **only works during the same browser session**. If the applicant:
-- Closes the tab and reopens it later
-- Shares the URL
-- Bookmarks it
-- Gets the link via email or SMS
+This ensures that even if router state is lost (page refresh, link sharing), the detailed form can still fetch pre-fill data via the `get-application-prefill` edge function using the `app_id` URL parameter.
 
-...the `location.state` is `null`, so no pre-fill data is available. Combined with Issue 1, the form is completely blank.
+### 2. Always show the CTA (even without router state)
 
-### Issue 3: Confirmation Email Has No Link to Detailed App
+**File:** `src/pages/ThankYou.tsx` (line 111)
 
-The `application_received` email template contains no CTA or link to the detailed application form. The only way to reach it is through the ephemeral Thank You page button or the SMS flow (which is blocked by RLS).
+Change the condition from `{formData && (` to `{(formData || applicationId) && (` so the button also shows when only `applicationId` is available. Additionally, extract `applicationId` from URL params as a fallback:
 
----
+```typescript
+const searchParams = new URLSearchParams(location.search);
+const applicationId = state?.applicationId || searchParams.get('app_id');
+```
 
-### Proposed Fix
+This way, if someone arrives at `/thank-you?app_id=xxx`, they still see the CTA.
 
-#### 1. Create a public edge function for application pre-fill
-A new edge function `get-application-prefill` that accepts an `app_id` and returns only the safe, non-sensitive fields needed for pre-fill (name, email, phone, city, state, zip, CDL info). This bypasses RLS by using the service role key server-side while only exposing limited data.
-
-#### 2. Update `useDetailedApplicationForm` to call the edge function
-Replace the direct Supabase client query (which is blocked by RLS) with a call to the new edge function.
-
-#### 3. Add detailed application link to confirmation email
-Include a "Complete Your Full Application" CTA button in the `application_received` email template, linking to `/apply/detailed?job_id=xxx&app_id=yyy`.
-
-#### 4. (Optional) Add link validation
-Add a lightweight token or hash to the `app_id` URL parameter to prevent enumeration attacks (e.g., `app_id=uuid&token=hmac_hash`).
-
----
-
-### Technical Details
-
-**New edge function: `get-application-prefill`**
-- Input: `{ app_id: string }`
-- Output: Limited fields only (first_name, last_name, email, phone, city, state, zip, cdl, cdl_class, cdl_endorsements, exp, over_21, veteran)
-- Uses service role to bypass RLS
-- Rate-limited by app_id to prevent abuse
-
-**Email template change** (`send-application-email/index.ts`):
-- Add a CTA button after the "What's Next?" section
-- URL format: `https://applyai.jobs/apply/detailed?job_id={jobListingId}&app_id={applicationId}`
-- Requires passing `applicationId` and `jobListingId` to the email function
-
-**Hook update** (`useDetailedApplicationForm.ts`, lines 282-322):
-- Replace `supabase.from('applications').select(...)` with `fetch` to the new edge function
+This is a small, targeted fix — the CTA content and design are already correct.
 
