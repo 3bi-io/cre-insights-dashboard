@@ -37,10 +37,11 @@ const ThankYou = () => {
   const navigate = useNavigate();
   const state = location.state as ThankYouState | null;
   
+  const urlParams = new URLSearchParams(location.search);
   const organizationName = state?.organizationName || 'our team';
   const hasVoiceAgent = state?.hasVoiceAgent ?? false;
   const logoUrl = state?.logoUrl;
-  const applicationId = state?.applicationId;
+  const applicationId = state?.applicationId || urlParams.get('app_id');
   const formData = state?.formData;
 
   const handleContinueToFullApplication = () => {
