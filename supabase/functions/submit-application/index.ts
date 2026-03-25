@@ -702,7 +702,9 @@ async function sendConfirmationEmail(
   jobTitle: string | null,
   clientName: string | null,
   organizationName: string,
-  clientLogoUrl: string | null = null
+  clientLogoUrl: string | null = null,
+  applicationId: string | null = null,
+  jobListingId: string | null = null
 ): Promise<void> {
   // Use client name for applicant emails (privacy), fallback to org name
   const companyName = clientName || organizationName || 'Company';
