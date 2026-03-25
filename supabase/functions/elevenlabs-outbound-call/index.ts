@@ -125,6 +125,10 @@ serve(async (req) => {
             if (!durationSeconds || durationSeconds <= 0) {
               mappedStatus = 'no_answer';
               logger.info(`Call ${call.id} ended with no duration - marking as no_answer`);
+            } else if (durationSeconds < 15) {
+              // Short-duration calls likely hit voicemail — treat as no_answer
+              mappedStatus = 'no_answer';
+              logger.info(`Call ${call.id} ended with short duration (${durationSeconds}s < 15s) - likely voicemail, marking as no_answer`);
             } else {
               mappedStatus = 'completed';
             }
@@ -380,7 +384,7 @@ serve(async (req) => {
                     .eq('id', fullCall.application_id)
                     .single();
 
-                  if (appData && appData.consent_to_sms === 'yes' && appData.phone) {
+                  if (appData && appData.consent_to_sms !== 'no' && appData.phone) {
                     // Check if already enriched (has detailed form data)
                     const isEnriched = (
                       (appData.employment_history && (Array.isArray(appData.employment_history) ? (appData.employment_history as unknown[]).length > 0 : true)) ||
