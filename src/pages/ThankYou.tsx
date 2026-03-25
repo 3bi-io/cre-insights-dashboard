@@ -112,7 +112,7 @@ const ThankYou = () => {
               </div>
 
               {/* Continue to Full Application CTA */}
-              {formData && (
+              {(formData || applicationId) && (
                 <div className="bg-primary/5 border border-primary/20 rounded-lg p-6">
                   <div className="flex items-center justify-center gap-2 mb-3">
                     <ClipboardList className="h-5 w-5 text-primary" />
