@@ -7,6 +7,55 @@
 import { BaseATSAdapter } from './base-adapter.ts';
 import type { ApplicationData, ATSResponse, AdapterConfig } from './types.ts';
 
+// ============ Double Nickel OAuth Token Cache ============
+interface CachedToken {
+  access_token: string;
+  expires_at: number;
+}
+
+const dnTokenCache = new Map<string, CachedToken>();
+
+async function getDoubleNickelToken(
+  credentials: Record<string, unknown>,
+  mode: string
+): Promise<string> {
+  const isTest = mode === 'test' || mode === 'TEST';
+  const cacheKey = `${credentials.client_id}_${isTest ? 'test' : 'prod'}`;
+
+  const cached = dnTokenCache.get(cacheKey);
+  if (cached && cached.expires_at > Date.now() + 60_000) {
+    return cached.access_token;
+  }
+
+  const authDomain = isTest
+    ? 'https://double-nickel-test.us.auth0.com/oauth/token'
+    : 'https://double-nickel.us.auth0.com/oauth/token';
+
+  const res = await fetch(authDomain, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      client_id: credentials.client_id || credentials.clientId,
+      client_secret: credentials.client_secret,
+      audience: credentials.audience,
+      grant_type: 'client_credentials',
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Double Nickel Auth0 token error (${res.status}): ${errText}`);
+  }
+
+  const data = await res.json();
+  dnTokenCache.set(cacheKey, {
+    access_token: data.access_token,
+    expires_at: Date.now() + (data.expires_in || 86400) * 1000,
+  });
+
+  return data.access_token;
+}
+
 export class RESTJSONAdapter extends BaseATSAdapter {
   constructor(config: AdapterConfig) {
     super(config);
