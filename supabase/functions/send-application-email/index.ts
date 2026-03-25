@@ -25,6 +25,8 @@ interface EmailRequest {
   jobTitle: string;
   companyName?: string;
   clientLogoUrl?: string;
+  applicationId?: string;
+  jobListingId?: string;
   type: 'application_received' | 'status_update' | 'interview_invitation' | 'offer' | 'rejection';
   additionalData?: {
     status?: string;
@@ -71,7 +73,7 @@ function getPreheader(type: string, jobTitle: string, status?: string): string {
 }
 
 const getEmailTemplate = (request: EmailRequest): string => {
-  const { type, candidateName, jobTitle, companyName = "Company", clientLogoUrl, additionalData } = request;
+  const { type, candidateName, jobTitle, companyName = "Company", clientLogoUrl, applicationId, jobListingId, additionalData } = request;
   
   // Sanitize all inputs
   const safeName = sanitizeInput(candidateName);
