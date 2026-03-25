@@ -100,7 +100,7 @@ const handler = async (req: Request): Promise<Response> => {
               <li style="margin-bottom: 8px;">📊 <strong>Analytics</strong> - Insights and reporting</li>
             </ul>
             
-            <p style="font-size: 16px; margin-top: 30px; color: #6b7280;">
+            <p style="font-size: 16px; margin-top: 30px; color: #374151;">
               Need help? Reply to this email or contact our support team at <a href="mailto:support@applyai.jobs" style="color: #3b82f6;">support@applyai.jobs</a>
             </p>
             

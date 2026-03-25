@@ -136,21 +136,21 @@ export const getUnsubscribeSection = (options?: {
     : options?.preferencesUrl || `${EMAIL_CONFIG.brand.website}/email-preferences`;
   
   return `
-    <div style="text-align: center; padding: 16px; color: #9ca3af; font-size: 11px;">
+    <div style="text-align: center; padding: 16px; color: #666666; font-size: 11px;">
       ${isMarketing ? `
         <p style="margin: 0 0 8px 0;">
-          <a href="${unsubscribeUrl}" style="color: #6b7280; text-decoration: underline;">
+          <a href="${unsubscribeUrl}" style="color: #555555; text-decoration: underline;">
             Unsubscribe from these emails
           </a>
           &nbsp;|&nbsp;
-          <a href="${preferencesUrl}" style="color: #6b7280; text-decoration: underline;">
+          <a href="${preferencesUrl}" style="color: #555555; text-decoration: underline;">
             Manage email preferences
           </a>
         </p>
       ` : ''}
       <p style="margin: 0;">
         ${EMAIL_CONFIG.footer.address} • 
-        <a href="${EMAIL_CONFIG.brand.website}" style="color: #6b7280; text-decoration: none;">
+        <a href="${EMAIL_CONFIG.brand.website}" style="color: #555555; text-decoration: none;">
           ${EMAIL_CONFIG.brand.website.replace('https://', '')}
         </a>
       </p>
@@ -171,16 +171,16 @@ export const getEmailFooter = (options?: {
   const company = options?.companyName || EMAIL_CONFIG.brand.name;
   
   return `
-    <div style="text-align: center; padding: 20px; color: #999; font-size: 12px; border-top: 1px solid #e5e7eb; margin-top: 30px;">
+    <div style="text-align: center; padding: 20px; color: #666666; font-size: 12px; border-top: 1px solid #e5e7eb; margin-top: 30px;">
       <p style="margin: 5px 0;">© ${EMAIL_CONFIG.brand.year} ${company}. All rights reserved.</p>
-      <p style="margin: 5px 0; color: #9ca3af;">
+      <p style="margin: 5px 0; color: #666666;">
         Powered by <a href="${EMAIL_CONFIG.brand.website}" style="color: #3b82f6; text-decoration: none;">Apply AI</a>
       </p>
       ${options?.showUnsubscribe ? getUnsubscribeSection({
         unsubscribeUrl: options.unsubscribeUrl,
         emailType: options.emailType
       }) : `
-        <p style="margin: 8px 0 0 0; font-size: 11px; color: #9ca3af;">
+        <p style="margin: 8px 0 0 0; font-size: 11px; color: #666666;">
           ${EMAIL_CONFIG.footer.unsubscribeText}
         </p>
       `}
@@ -227,7 +227,8 @@ export const getEmailHeader = (
 export const baseEmailStyles = `
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   line-height: 1.6;
-  color: #333;
+  color: #333333;
+  background-color: #ffffff;
   max-width: 600px;
   margin: 0 auto;
   padding: 20px;
@@ -237,7 +238,8 @@ export const baseEmailStyles = `
  * Content container styles
  */
 export const contentStyles = `
-  background: white;
+  background-color: #ffffff;
+  color: #333333;
   padding: 30px;
   border: 1px solid #e1e8ed;
   border-top: none;
@@ -251,11 +253,12 @@ export const buttonStyles = `
   display: inline-block;
   padding: 14px 28px;
   background-color: #3b82f6;
-  color: white;
+  color: #ffffff;
   text-decoration: none;
   border-radius: 8px;
   font-weight: 600;
   margin: 16px 0;
+  mso-line-height-rule: exactly;
 `;
 
 /**

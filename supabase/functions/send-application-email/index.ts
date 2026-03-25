@@ -102,7 +102,7 @@ const getEmailTemplate = (request: EmailRequest): string => {
               <p style="font-size: 16px; margin-bottom: 20px;">Thank you for applying for the <strong>${safeJobTitle}</strong> position at ${safeCompany}!</p>
               <p style="font-size: 16px; margin-bottom: 20px;">We have received your application and our team is currently reviewing it. We appreciate your interest in joining our team.</p>
               <div style="background: #f7f9fc; padding: 20px; border-radius: 8px; margin: 25px 0;">
-                <p style="margin: 0; font-size: 14px; color: #666;">
+                <p style="margin: 0; font-size: 14px; color: #374151;">
                   <strong>What's Next?</strong><br>
                   • Our team will review your application within 2-3 business days<br>
                   • You'll receive an email update on your application status<br>
@@ -111,9 +111,9 @@ const getEmailTemplate = (request: EmailRequest): string => {
               </div>
               ${applicationId ? `
               <div style="background: #f0f9ff; border: 2px solid #3b82f6; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
-                <p style="margin: 0 0 10px 0; font-size: 16px; font-weight: 600; color: #1e40af;">⚡ Speed Up Your Hiring Process</p>
-                <p style="margin: 0 0 15px 0; font-size: 14px; color: #475569;">Complete your full application with work history and additional details. Your information has been pre-filled to save you time.</p>
-                <a href="https://applyai.jobs/apply/detailed?${jobListingId ? `job_id=${jobListingId}&` : ''}app_id=${applicationId}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 15px;">Complete Your Full Application</a>
+                <p style="margin: 0 0 10px 0; font-size: 16px; font-weight: 600; color: #1e3a5f;">⚡ Speed Up Your Hiring Process</p>
+                <p style="margin: 0 0 15px 0; font-size: 14px; color: #333333;">Complete your full application with work history and additional details. Your information has been pre-filled to save you time.</p>
+                <a href="https://applyai.jobs/apply/detailed?${jobListingId ? `job_id=${jobListingId}&` : ''}app_id=${applicationId}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 15px;">Complete Your Full Application</a>
               </div>
               ` : ''}
               <p style="font-size: 16px; margin-bottom: 20px;">If you have any questions, feel free to reply to this email.</p>
@@ -140,8 +140,8 @@ const getEmailTemplate = (request: EmailRequest): string => {
             <div style="${contentStyles}">
               <p style="font-size: 16px; margin-bottom: 20px;">Dear ${safeName},</p>
               <p style="font-size: 16px; margin-bottom: 20px;">We have an update regarding your application for the <strong>${safeJobTitle}</strong> position.</p>
-              <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
-                <p style="margin: 0; font-size: 16px; color: #1e40af;">
+              <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
+                <p style="margin: 0; font-size: 16px; color: #1e3a5f;">
                   <strong>Status:</strong> ${safeStatus || 'Under Review'}
                 </p>
               </div>
@@ -235,7 +235,7 @@ const getEmailTemplate = (request: EmailRequest): string => {
               <p style="font-size: 16px; margin-bottom: 20px;">Thank you for your interest in the <strong>${safeJobTitle}</strong> position at ${safeCompany} and for taking the time to interview with our team.</p>
               <p style="font-size: 16px; margin-bottom: 20px;">After careful consideration, we have decided to move forward with other candidates whose qualifications more closely match our current needs.</p>
               <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 25px 0;">
-                <p style="margin: 0; font-size: 14px; color: #6b7280;">
+                <p style="margin: 0; font-size: 14px; color: #374151;">
                   We were impressed by your background and encourage you to apply for future opportunities that match your skills and experience. We'll keep your application on file for consideration for other positions.
                 </p>
               </div>

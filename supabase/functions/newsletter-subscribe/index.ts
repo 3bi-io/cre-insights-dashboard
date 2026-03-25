@@ -39,7 +39,7 @@ const generateWelcomeEmail = (): string => {
         ${getEmailHeader("Welcome to the Newsletter! 📬", { showLogo: true, logoAlt: "Apply AI - Newsletter" })}
         <div style="${contentStyles}">
           <p style="font-size: 16px; margin-bottom: 20px;">Thanks for subscribing to the Apply AI newsletter!</p>
-          <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">
+          <p style="font-size: 14px; color: #374151; margin-bottom: 20px;">
             You'll receive the latest insights on AI-powered recruitment, hiring strategies, and product updates directly in your inbox.
           </p>
           <div style="text-align: center; margin: 30px 0;">
