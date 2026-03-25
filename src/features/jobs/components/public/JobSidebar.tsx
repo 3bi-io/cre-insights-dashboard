@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
 import { DollarSign, MapPin, ExternalLink, Mic } from 'lucide-react';
+import { ReadinessBadges } from '@/components/shared';
 import { JobShareActions } from './JobShareActions';
 import type { JobLocationVariant } from '@/utils/aspenviewJobGrouping';
 
@@ -59,7 +60,8 @@ export const JobSidebar = ({
                 )}
               </LogoAvatar>
               <h3 className="font-semibold text-lg">{title}</h3>
-              <p className="text-sm text-muted-foreground">{company}</p>
+              <p className="text-sm text-muted-foreground mb-3">{company}</p>
+              <ReadinessBadges showVoiceApply={!!showVoiceButton && !isMultiLocation} />
             </div>
 
             {salary && (

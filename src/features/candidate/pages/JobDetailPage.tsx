@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
- import { CompanyLogo } from '@/components/shared';
+ import { CompanyLogo, ReadinessBadges } from '@/components/shared';
 import { 
   MapPin, 
   DollarSign, 
@@ -175,6 +175,8 @@ const JobDetailPage = () => {
                   </Badge>
                 )}
               </div>
+
+              <ReadinessBadges showVoiceApply={false} className="mt-3" />
 
               <div className="flex gap-2 mt-6">
                 <Button onClick={handleApply} size="lg" className="flex-1">

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
 import { MapPin, DollarSign, Building2, Clock, Briefcase, ArrowLeft, Mic, ExternalLink } from 'lucide-react';
+import { ReadinessBadges } from '@/components/shared';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildJobPostingSchema, buildBreadcrumbSchema, getSalaryUnitText } from '@/components/StructuredData';
 import { useJobDetails } from '@/hooks/useJobDetails';
@@ -193,11 +194,12 @@ const JobDetailsContent: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 leading-tight">{displayTitle}</h1>
                     <p className="text-base lg:text-lg text-muted-foreground mb-3">{companyName}</p>
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="flex gap-2 flex-wrap mb-3">
                       {job.job_categories?.name && <Badge variant="secondary">{job.job_categories.name}</Badge>}
                       {job.job_type && <Badge variant="outline">{job.job_type}</Badge>}
                       {job.experience_level && <Badge variant="outline">{job.experience_level}</Badge>}
                     </div>
+                    <ReadinessBadges showVoiceApply={!isExternalApply && !isMultiLocation} />
                   </div>
                 </div>
 

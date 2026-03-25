@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, DollarSign, Building2, Clock, ExternalLink, Mic, Info, Sparkles } from 'lucide-react';
 import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
+import { ReadinessBadges } from '@/components/shared';
 import { JobContext } from '@/features/elevenlabs';
 import { sanitizers } from '@/utils/validation';
 import { renderJobDescription } from '@/utils/markdownRenderer';
@@ -130,28 +131,7 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
           );
         })()}
 
-        {/* Readiness pipeline badges */}
-        <div className="flex flex-wrap gap-1.5">
-          {[
-            { label: 'Manual Apply Ready', active: true },
-            { label: 'AI Under Human Review', active: !!showVoiceButton },
-            { label: 'AI Approved', active: !!showVoiceButton },
-            { label: 'Voice Apply Enabled', active: !!showVoiceButton },
-          ].map(({ label, active }) => (
-            <Badge
-              key={label}
-              variant="outline"
-              className={`text-[9px] font-medium px-1.5 py-0.5 ${
-                active
-                  ? 'bg-success/10 text-success border-success/30'
-                  : 'bg-muted/50 text-muted-foreground/50 border-border/50'
-              }`}
-            >
-              <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${active ? 'bg-success' : 'bg-muted-foreground/30'}`} />
-              {label}
-            </Badge>
-          ))}
-        </div>
+        <ReadinessBadges showVoiceApply={!!showVoiceButton} />
 
         <div className="space-y-2">
           {isMultiLocation ? (
