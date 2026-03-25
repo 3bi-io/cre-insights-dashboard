@@ -130,6 +130,29 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
           );
         })()}
 
+        {/* Readiness pipeline badges */}
+        <div className="flex flex-wrap gap-1.5">
+          {[
+            { label: 'Manual Apply Ready', active: true },
+            { label: 'AI Needs Human Review', active: hasVoiceAgent },
+            { label: 'AI Approved', active: hasVoiceAgent },
+            { label: 'Apply with Voice', active: hasVoiceAgent },
+          ].map(({ label, active }) => (
+            <Badge
+              key={label}
+              variant="outline"
+              className={`text-[9px] font-medium px-1.5 py-0.5 ${
+                active
+                  ? 'bg-success/10 text-success border-success/30'
+                  : 'bg-muted/50 text-muted-foreground/50 border-border/50'
+              }`}
+            >
+              <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${active ? 'bg-success' : 'bg-muted-foreground/30'}`} />
+              {label}
+            </Badge>
+          ))}
+        </div>
+
         <div className="space-y-2">
           {isMultiLocation ? (
             <div className="space-y-1">
