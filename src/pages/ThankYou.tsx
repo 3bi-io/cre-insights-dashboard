@@ -37,15 +37,19 @@ const ThankYou = () => {
   const navigate = useNavigate();
   const state = location.state as ThankYouState | null;
   
+  const urlParams = new URLSearchParams(location.search);
   const organizationName = state?.organizationName || 'our team';
   const hasVoiceAgent = state?.hasVoiceAgent ?? false;
   const logoUrl = state?.logoUrl;
-  const applicationId = state?.applicationId;
+  const applicationId = state?.applicationId || urlParams.get('app_id');
   const formData = state?.formData;
 
   const handleContinueToFullApplication = () => {
     const jobId = formData?.job_listing_id || formData?.job_id;
-    const searchParams = jobId ? `?job_id=${jobId}` : '';
+    const params = new URLSearchParams();
+    if (jobId) params.set('job_id', jobId);
+    if (applicationId) params.set('app_id', applicationId);
+    const searchParams = params.toString() ? `?${params.toString()}` : '';
     navigate(`/apply/detailed${searchParams}`, {
       state: { prefill: { ...formData, applicationId } }
     });
@@ -108,7 +112,7 @@ const ThankYou = () => {
               </div>
 
               {/* Continue to Full Application CTA */}
-              {formData && (
+              {(formData || applicationId) && (
                 <div className="bg-primary/5 border border-primary/20 rounded-lg p-6">
                   <div className="flex items-center justify-center gap-2 mb-3">
                     <ClipboardList className="h-5 w-5 text-primary" />
