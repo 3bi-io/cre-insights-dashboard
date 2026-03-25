@@ -344,3 +344,6 @@ verify_jwt = false
 
 [functions.google-indexing-weekly]
 verify_jwt = false
+
+[functions.get-application-prefill]
+verify_jwt = false
