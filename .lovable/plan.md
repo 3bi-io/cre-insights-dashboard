@@ -1,86 +1,85 @@
 
 
-## Double Nickel ATS Integration Plan
+## Analysis: Broken "Full Application" Link
 
-### What is Double Nickel?
-Double Nickel is a REST-based ATS for the trucking industry. Their API uses Auth0 OAuth tokens (client_credentials grant) with a 24-hour TTL, and exposes a single `POST /applicants` endpoint.
+### Root Cause Found
 
-### Key API Details
+There are **two distinct issues** causing the link to not work for applicants:
 
-```text
-Auth:     Auth0 client_credentials → Bearer token (24h TTL, must cache)
-Test URL: https://dashboard-test.getdoublenickel.com/api/applicants
-Prod URL: https://dashboard.getdoublenickel.com/api/applicants
-Rate:     5 req/sec
+---
 
-Required fields: firstName, lastName, phone, email, trackingLinkId, companyId
-Optional fields: middleName, cdlExperience, zipCode
+### Issue 1: RLS Blocks Anonymous Pre-fill (SMS Link Flow)
+
+When an applicant receives an SMS with a link like:
+```
+https://applyai.jobs/apply/detailed?job_id=xxx&app_id=yyy
 ```
 
-### Integration Architecture
+The `useDetailedApplicationForm` hook (line 284) tries to fetch the existing application data from the `applications` table using the **anonymous Supabase client**:
 
-The platform already has a well-structured ATS adapter system (`BaseATSAdapter` → `RESTJSONAdapter`). Double Nickel fits naturally as a `rest_json` adapter with one twist: it requires an OAuth token exchange before each call (cached for 24 hours), unlike the simpler API-key-based adapters.
-
-### Implementation Steps
-
-**1. Register Double Nickel in the adapter factory**
-- Add `doublenickel` to `getSystemBySlug()` in `supabase/functions/_shared/ats-adapters/index.ts`
-- Category: `trucking`, API type: `rest_json`, supports test mode: `true`
-- Base endpoints for test and production environments
-
-**2. Add Double Nickel request builders to `RESTJSONAdapter`**
-- `buildDoubleNickelHeaders()` — constructs `Authorization: Bearer <token>` + `auth-provider: auth0`
-- `buildDoubleNickelPayload()` — maps internal `ApplicationData` fields to Double Nickel's camelCase format (`firstName`, `lastName`, `phone`, `email`, `cdlExperience`, `zipCode`, `trackingLinkId`, `companyId`)
-- Add cases to `buildTestRequest()`, `buildApplicationRequest()`, and `extractExternalId()` for the `doublenickel` slug
-
-**3. OAuth token caching layer**
-- Add a helper function `getDoubleNickelToken(credentials, mode)` that:
-  - Calls the appropriate Auth0 token URL (`double-nickel-test.us.auth0.com` or `double-nickel.us.auth0.com`)
-  - Posts `client_id`, `client_secret`, `audience` from the connection credentials
-  - Caches the token in memory with its expiry (24h) to avoid unnecessary token requests
-- Integrate this into the header builder so tokens are fetched/reused automatically
-
-**4. Credential schema definition**
-- Define the credential fields that admins will fill in when setting up a Double Nickel connection:
-  - `client_id` (string, required) — Auth0 client ID
-  - `client_secret` (password, required) — Auth0 client secret
-  - `audience` (string, required) — Auth0 audience
-  - `companyId` (string, required) — Double Nickel company ID
-  - `trackingLinkId` (string, required) — Source tracking identifier
-
-**5. Add to frontend platform config** (optional)
-- Add `doublenickel` to `ORGANIZATION_PLATFORMS` in `organizationPlatforms.config.ts` under the Trucking category
-- Add to `PlatformKey` type if clients should be able to enable/disable it
-
-**6. Field mapping**
-```text
-Internal Field        →  Double Nickel Field
-─────────────────────────────────────────────
-first_name            →  firstName
-middle_name           →  middleName
-last_name             →  lastName
-phone                 →  phone
-applicant_email       →  email
-driving_experience    →  cdlExperience (float)
-zip                   →  zipCode
-(from credentials)    →  trackingLinkId
-(from credentials)    →  companyId
+```typescript
+const { data, error } = await supabase
+  .from('applications')
+  .select('first_name, last_name, ...')
+  .eq('id', appIdFromUrl)
+  .single();
 ```
 
-**7. Fix existing dead code**
-- Remove the duplicate `return new RESTJSONAdapter(config);` line in the `default` case of `createATSAdapter()` (line 44 of `index.ts`)
+However, **all RLS policies on `applications` require `authenticated` role**. There is no `anon` SELECT policy. The query silently fails, returning no data — so the form loads completely empty with no pre-fill, making it appear "broken" or pointless to the applicant.
 
-### Files to Create/Modify
+### Issue 2: Thank You Page Button Relies on Ephemeral Router State
 
-| File | Action |
-|------|--------|
-| `supabase/functions/_shared/ats-adapters/index.ts` | Add `doublenickel` to system configs, fix dead code |
-| `supabase/functions/_shared/ats-adapters/rest-json-adapter.ts` | Add DN header/payload builders and switch cases |
-| `supabase/functions/_shared/ats-adapters/types.ts` | Add DN-specific credential fields if needed |
-| `src/features/organizations/config/organizationPlatforms.config.ts` | Add `doublenickel` platform entry |
-| `src/features/organizations/types/platforms.types.ts` | Add `'doublenickel'` to `PlatformKey` union |
+The "Complete Your Full Application" button on `/thank-you` uses `navigate()` with React Router `state`:
 
-### Secrets Required
-Three secrets will need to be stored per connection in the `ats_connections.credentials` JSON column (not as edge function secrets):
-- `client_id`, `client_secret`, `audience` — all provided by Double Nickel per environment
+```typescript
+navigate(`/apply/detailed${searchParams}`, {
+  state: { prefill: { ...formData, applicationId } }
+});
+```
+
+This **only works during the same browser session**. If the applicant:
+- Closes the tab and reopens it later
+- Shares the URL
+- Bookmarks it
+- Gets the link via email or SMS
+
+...the `location.state` is `null`, so no pre-fill data is available. Combined with Issue 1, the form is completely blank.
+
+### Issue 3: Confirmation Email Has No Link to Detailed App
+
+The `application_received` email template contains no CTA or link to the detailed application form. The only way to reach it is through the ephemeral Thank You page button or the SMS flow (which is blocked by RLS).
+
+---
+
+### Proposed Fix
+
+#### 1. Create a public edge function for application pre-fill
+A new edge function `get-application-prefill` that accepts an `app_id` and returns only the safe, non-sensitive fields needed for pre-fill (name, email, phone, city, state, zip, CDL info). This bypasses RLS by using the service role key server-side while only exposing limited data.
+
+#### 2. Update `useDetailedApplicationForm` to call the edge function
+Replace the direct Supabase client query (which is blocked by RLS) with a call to the new edge function.
+
+#### 3. Add detailed application link to confirmation email
+Include a "Complete Your Full Application" CTA button in the `application_received` email template, linking to `/apply/detailed?job_id=xxx&app_id=yyy`.
+
+#### 4. (Optional) Add link validation
+Add a lightweight token or hash to the `app_id` URL parameter to prevent enumeration attacks (e.g., `app_id=uuid&token=hmac_hash`).
+
+---
+
+### Technical Details
+
+**New edge function: `get-application-prefill`**
+- Input: `{ app_id: string }`
+- Output: Limited fields only (first_name, last_name, email, phone, city, state, zip, cdl, cdl_class, cdl_endorsements, exp, over_21, veteran)
+- Uses service role to bypass RLS
+- Rate-limited by app_id to prevent abuse
+
+**Email template change** (`send-application-email/index.ts`):
+- Add a CTA button after the "What's Next?" section
+- URL format: `https://applyai.jobs/apply/detailed?job_id={jobListingId}&app_id={applicationId}`
+- Requires passing `applicationId` and `jobListingId` to the email function
+
+**Hook update** (`useDetailedApplicationForm.ts`, lines 282-322):
+- Replace `supabase.from('applications').select(...)` with `fetch` to the new edge function
 
