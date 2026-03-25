@@ -65,6 +65,13 @@ export class RESTJSONAdapter extends BaseATSAdapter {
     const startTime = Date.now();
     
     try {
+      const slug = this.config.system.slug;
+
+      // Double Nickel: async token + custom test
+      if (slug === 'doublenickel') {
+        return await this.testDoubleNickelConnection();
+      }
+
       const { url, headers } = this.buildTestRequest();
       
       this.log('info', 'Testing connection', { endpoint: url });
@@ -110,6 +117,8 @@ export class RESTJSONAdapter extends BaseATSAdapter {
     const startTime = Date.now();
     
     try {
+      const slug = this.config.system.slug;
+
       // Apply field mappings
       const mappedData = this.applyFieldMappings(application, this.config.fieldMapping);
       
@@ -120,6 +129,11 @@ export class RESTJSONAdapter extends BaseATSAdapter {
           `Missing required fields: ${validation.missingFields.join(', ')}`,
           'VALIDATION_ERROR'
         );
+      }
+
+      // Double Nickel: async token + custom endpoint
+      if (slug === 'doublenickel') {
+        return await this.sendDoubleNickelApplication(mappedData as ApplicationData);
       }
       
       // Build request based on ATS type
