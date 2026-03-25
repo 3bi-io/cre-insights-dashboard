@@ -616,4 +616,100 @@ export class RESTJSONAdapter extends BaseATSAdapter {
 
     return undefined;
   }
+
+  // ============ Double Nickel Methods ============
+
+  private getDoubleNickelBaseUrl(): string {
+    const mode = this.config.connection.mode;
+    const isTest = mode === 'test' || mode === 'TEST';
+    return isTest
+      ? 'https://dashboard-test.getdoublenickel.com/api/applicants'
+      : 'https://dashboard.getdoublenickel.com/api/applicants';
+  }
+
+  private async buildDoubleNickelHeaders(): Promise<Record<string, string>> {
+    const token = await getDoubleNickelToken(
+      this.credentials as Record<string, unknown>,
+      this.config.connection.mode
+    );
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'auth-provider': 'auth0',
+    };
+  }
+
+  private buildDoubleNickelPayload(app: ApplicationData): Record<string, unknown> {
+    const creds = this.credentials;
+    return {
+      firstName: app.first_name,
+      middleName: app.middle_name || undefined,
+      lastName: app.last_name,
+      phone: this.formatPhone(app.phone),
+      email: app.applicant_email || app.email,
+      zipCode: app.zip || undefined,
+      cdlExperience: app.driving_experience_years != null
+        ? Number(app.driving_experience_years)
+        : undefined,
+      trackingLinkId: String(creds.trackingLinkId || creds.tracking_link_id || ''),
+      companyId: String(creds.companyId || creds.company_id || ''),
+    };
+  }
+
+  private async testDoubleNickelConnection(): Promise<ATSResponse> {
+    const startTime = Date.now();
+    try {
+      const headers = await this.buildDoubleNickelHeaders();
+      this.log('info', 'Double Nickel: OAuth token acquired, connection test passed');
+      return {
+        success: true,
+        message: 'Auth0 token acquired successfully — connection is valid',
+        duration_ms: Date.now() - startTime,
+      };
+    } catch (error) {
+      return this.createErrorResponse(error as Error, 'AUTH_FAILED');
+    }
+  }
+
+  private async sendDoubleNickelApplication(app: ApplicationData): Promise<ATSResponse> {
+    const startTime = Date.now();
+    try {
+      const headers = await this.buildDoubleNickelHeaders();
+      const url = this.getDoubleNickelBaseUrl();
+      const body = this.buildDoubleNickelPayload(app);
+
+      this.log('info', 'Sending application to Double Nickel', { endpoint: url, application_id: app.id });
+
+      const response = await this.executeWithRetry(
+        async () => fetch(url, { method: 'POST', headers, body: JSON.stringify(body) }),
+        'sendApplication'
+      );
+
+      const duration = Date.now() - startTime;
+      const responseData = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: responseData.message || responseData.error || `HTTP ${response.status}`,
+          error_code: `HTTP_${response.status}`,
+          duration_ms: duration,
+          raw_response: responseData,
+        };
+      }
+
+      const externalId = this.extractExternalId(responseData);
+      this.log('info', 'Double Nickel application sent', { external_id: externalId, duration_ms: duration });
+
+      return {
+        success: true,
+        message: 'Application sent to Double Nickel successfully',
+        external_id: externalId,
+        data: responseData,
+        duration_ms: duration,
+      };
+    } catch (error) {
+      return this.createErrorResponse(error as Error, 'SEND_FAILED');
+    }
+  }
 }
