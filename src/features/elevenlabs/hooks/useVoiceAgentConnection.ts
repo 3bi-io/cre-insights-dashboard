@@ -11,7 +11,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { parseVoiceAgentError, getErrorTitle, getUserFriendlyErrorMessage } from '../utils/errorHandling';
 import { checkBrowserCompatibility } from '../utils/browserCompatibility';
-import { createAgentOverrides } from '../utils/agentConfig';
 import { SignedUrlResponse, LiveTranscriptMessage, ConnectionProgress, JobContext } from '../types';
 
 const MAX_RETRIES = 2;
