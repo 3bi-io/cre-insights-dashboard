@@ -1,0 +1,1 @@
+ALTER TABLE public.outbound_calls ADD COLUMN IF NOT EXISTS voicemail_detected boolean NOT NULL DEFAULT false;
