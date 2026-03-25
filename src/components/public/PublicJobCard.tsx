@@ -134,9 +134,9 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
         <div className="flex flex-wrap gap-1.5">
           {[
             { label: 'Manual Apply Ready', active: true },
-            { label: 'AI Needs Human Review', active: hasVoiceAgent },
-            { label: 'AI Approved', active: hasVoiceAgent },
-            { label: 'Apply with Voice', active: hasVoiceAgent },
+            { label: 'AI Needs Human Review', active: !!showVoiceButton },
+            { label: 'AI Approved', active: !!showVoiceButton },
+            { label: 'Apply with Voice', active: !!showVoiceButton },
           ].map(({ label, active }) => (
             <Badge
               key={label}
