@@ -5614,6 +5614,7 @@ export type Database = {
           status: string
           updated_at: string
           voice_agent_id: string | null
+          voicemail_detected: boolean
         }
         Insert: {
           application_id?: string | null
@@ -5633,6 +5634,7 @@ export type Database = {
           status?: string
           updated_at?: string
           voice_agent_id?: string | null
+          voicemail_detected?: boolean
         }
         Update: {
           application_id?: string | null
@@ -5652,6 +5654,7 @@ export type Database = {
           status?: string
           updated_at?: string
           voice_agent_id?: string | null
+          voicemail_detected?: boolean
         }
         Relationships: [
           {

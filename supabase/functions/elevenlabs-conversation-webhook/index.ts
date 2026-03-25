@@ -133,6 +133,7 @@ interface ElevenLabsWebhookPayload {
   analysis?: {
     data_collection_results?: Record<string, unknown>;
     transcript_summary?: string;
+    tool_calls?: Array<Record<string, unknown>>;
   };
   transcript?: Array<{
     role: string;
@@ -231,6 +232,152 @@ serve(async (req) => {
       .join('\n');
 
     const fallbackData = extractFromTranscript(formattedTranscript);
+
+    // --- Real-time Voicemail Detection ---
+    // 1. Check ElevenLabs voicemail_detection tool call
+    const toolCalls = payload.analysis?.tool_calls || [];
+    const vmToolTriggered = Array.isArray(toolCalls) && toolCalls.some(
+      (tc: Record<string, unknown>) => tc.tool_name === 'voicemail_detection' || tc.name === 'voicemail_detection'
+    );
+    // 2. Transcript keyword fallback
+    const transcriptLower = formattedTranscript.toLowerCase();
+    const vmPhrases = [
+      'leave a message', 'leave your message', 'after the tone', 'after the beep',
+      'not available', 'unavailable right now', 'please record your message',
+      'voicemail', 'mailbox', 'press one', 'press 1 for',
+      'at the tone', 'cannot take your call', 'can\'t come to the phone',
+      'not able to take', 'record a message', 'leave your name',
+    ];
+    const vmTranscriptMatch = vmPhrases.some(phrase => transcriptLower.includes(phrase));
+    const voicemailDetected = vmToolTriggered || vmTranscriptMatch;
+
+    if (voicemailDetected) {
+      logger.info('Voicemail detected in webhook', {
+        conversationId: payload.conversation_id,
+        vmTool: vmToolTriggered,
+        vmTranscript: vmTranscriptMatch,
+        duration: payload.call_duration_secs,
+      });
+
+      // Find the outbound_call record linked to this conversation
+      const { data: outboundCall } = await supabase
+        .from('outbound_calls')
+        .select('id, application_id, organization_id, phone_number, retry_count, metadata, status, sms_followup_sent')
+        .eq('elevenlabs_conversation_id', payload.conversation_id)
+        .maybeSingle();
+
+      if (outboundCall) {
+        // Update outbound call: mark voicemail + no_answer
+        await supabase
+          .from('outbound_calls')
+          .update({
+            status: 'no_answer',
+            voicemail_detected: true,
+            duration_seconds: payload.call_duration_secs || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', outboundCall.id);
+
+        logger.info(`Outbound call ${outboundCall.id} marked as voicemail/no_answer via webhook`);
+
+        // Trigger immediate SMS follow-up (first attempt only, not already sent)
+        if ((outboundCall.retry_count || 0) === 0 && !outboundCall.sms_followup_sent && outboundCall.application_id) {
+          try {
+            const { data: appData } = await supabase
+              .from('applications')
+              .select('first_name, last_name, city, state, cdl, cdl_class, exp, phone, consent_to_sms, job_listing_id, enrichment_status, employment_history, ssn, date_of_birth, emergency_contact_name, convicted_felony, military_service, medical_card_expiration')
+              .eq('id', outboundCall.application_id)
+              .single();
+
+            if (appData && appData.consent_to_sms !== 'no' && appData.phone) {
+              const isEnriched = (
+                (appData.employment_history && (Array.isArray(appData.employment_history) ? (appData.employment_history as unknown[]).length > 0 : true)) ||
+                appData.ssn || appData.date_of_birth || appData.emergency_contact_name ||
+                appData.convicted_felony || appData.military_service || appData.medical_card_expiration ||
+                appData.enrichment_status === 'enriched'
+              );
+
+              if (!isEnriched) {
+                // Fetch client name
+                let clientName = 'our company';
+                let jobTitle = 'driver';
+                if (appData.job_listing_id) {
+                  const { data: jobData } = await supabase
+                    .from('job_listings')
+                    .select('title, job_title, client_id, clients(name)')
+                    .eq('id', appData.job_listing_id)
+                    .single();
+                  if (jobData?.clients && typeof jobData.clients === 'object' && 'name' in jobData.clients) {
+                    clientName = (jobData.clients as { name: string }).name;
+                  }
+                  if (jobData) {
+                    jobTitle = jobData.title || jobData.job_title || 'driver';
+                  }
+                }
+
+                // Check org SMS feature toggle
+                let smsFollowupEnabled = true;
+                if (outboundCall.organization_id) {
+                  const { data: orgFeature } = await supabase
+                    .from('organization_features')
+                    .select('enabled')
+                    .eq('organization_id', outboundCall.organization_id)
+                    .eq('feature_name', 'sms_followup')
+                    .maybeSingle();
+                  if (orgFeature && orgFeature.enabled === false) {
+                    smsFollowupEnabled = false;
+                  }
+                }
+
+                if (smsFollowupEnabled) {
+                  const firstName = appData.first_name || 'there';
+                  const lastName = appData.last_name || '';
+                  const location = [appData.city, appData.state].filter(Boolean).join(', ') || 'Not provided';
+                  const cdlInfo = appData.cdl_class ? `Class ${appData.cdl_class}` : (appData.cdl || 'Not provided');
+                  const experience = appData.exp || 'Not provided';
+
+                  const verificationMsg = `Hi ${firstName}! We tried reaching you about your ${jobTitle} application with ${clientName}.\n\nHere's what we have:\n• Name: ${firstName} ${lastName}\n• Location: ${location}\n• CDL: ${cdlInfo}\n• Experience: ${experience}\n\nReply YES to confirm or EDIT to update.\nReply STOP to opt out.`;
+
+                  const { sendSms: sendTwilioSms, hasTwilioCredentials } = await import('../_shared/twilio-client.ts');
+
+                  if (hasTwilioCredentials()) {
+                    const smsResult = await sendTwilioSms(appData.phone, verificationMsg);
+
+                    if (smsResult.success) {
+                      logger.info(`Immediate voicemail SMS sent for call ${outboundCall.id}`, { twilio_sid: smsResult.sid });
+
+                      const digits = appData.phone.replace(/[^\d]/g, '');
+                      const sessionPhone = digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : digits;
+
+                      await supabase.from('sms_verification_sessions').insert({
+                        application_id: outboundCall.application_id,
+                        outbound_call_id: outboundCall.id,
+                        phone_number: sessionPhone,
+                        status: 'pending_confirmation',
+                        verification_message: verificationMsg,
+                        client_name: clientName,
+                        job_listing_id: appData.job_listing_id,
+                        applicant_first_name: appData.first_name || null,
+                        job_title: jobTitle,
+                      });
+
+                      await supabase
+                        .from('outbound_calls')
+                        .update({ sms_followup_sent: true, updated_at: new Date().toISOString() })
+                        .eq('id', outboundCall.id);
+                    } else {
+                      logger.error(`Failed to send voicemail SMS for call ${outboundCall.id}`, { error: smsResult.error });
+                    }
+                  }
+                }
+              }
+            }
+          } catch (smsErr) {
+            logger.error(`Error sending webhook voicemail SMS for call ${outboundCall.id}`, { error: (smsErr as Error).message });
+          }
+        }
+      }
+    }
 
     // Extract applicant information
     const firstName = getValue(dataCollectionResults, ['GivenName', 'first_name', 'FirstName', 'given_name', 'firstName', 'name', 'caller_first_name']);
