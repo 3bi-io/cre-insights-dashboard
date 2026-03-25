@@ -109,6 +109,13 @@ const getEmailTemplate = (request: EmailRequest): string => {
                   • If selected, we'll reach out to schedule an interview
                 </p>
               </div>
+              ${applicationId ? `
+              <div style="background: #f0f9ff; border: 2px solid #3b82f6; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
+                <p style="margin: 0 0 10px 0; font-size: 16px; font-weight: 600; color: #1e40af;">⚡ Speed Up Your Hiring Process</p>
+                <p style="margin: 0 0 15px 0; font-size: 14px; color: #475569;">Complete your full application with work history and additional details. Your information has been pre-filled to save you time.</p>
+                <a href="https://applyai.jobs/apply/detailed?${jobListingId ? `job_id=${jobListingId}&` : ''}app_id=${applicationId}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 15px;">Complete Your Full Application</a>
+              </div>
+              ` : ''}
               <p style="font-size: 16px; margin-bottom: 20px;">If you have any questions, feel free to reply to this email.</p>
               <p style="font-size: 16px; margin-bottom: 5px;">Best regards,</p>
               <p style="font-size: 16px; font-weight: 600; margin-top: 0;">${safeCompany} Recruitment Team</p>
