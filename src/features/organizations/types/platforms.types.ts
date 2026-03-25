@@ -16,7 +16,8 @@ export type PlatformKey =
   | 'ats_explorer'
   | 'import_applications'
   | 'adzuna'
-  | 'talroo';
+  | 'talroo'
+  | 'doublenickel';
 
 /**
  * Platform category for grouping

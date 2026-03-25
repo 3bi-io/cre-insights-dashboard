@@ -100,6 +100,13 @@ export const ORGANIZATION_PLATFORMS: Record<PlatformKey, PlatformConfig> = {
     category: 'General Platforms',
     icon: 'TrendingUp',
   },
+  doublenickel: {
+    key: 'doublenickel',
+    name: 'Double Nickel',
+    description: 'Trucking ATS with Auth0 OAuth integration',
+    category: 'Trucking Platforms',
+    icon: 'Truck',
+  },
 };
 
 /**
