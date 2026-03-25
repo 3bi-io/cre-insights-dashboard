@@ -391,8 +391,8 @@ serve(async (req) => {
             }
 
             // === SMS VERIFICATION FOLLOW-UP ===
-            // On first no_answer, send verification SMS with application details
-            if (mappedStatus === 'no_answer' && ((fullCall.retry_count as number) || 0) === 0) {
+            // On first no_answer or voicemail detection, send verification SMS
+            if ((mappedStatus === 'no_answer' || voicemailDetected) && ((fullCall.retry_count as number) || 0) === 0) {
               try {
                 // Check if SMS followup already sent
                 const { data: callRecord } = await supabase
