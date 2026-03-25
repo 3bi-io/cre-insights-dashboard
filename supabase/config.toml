@@ -347,3 +347,6 @@ verify_jwt = false
 
 [functions.get-application-prefill]
 verify_jwt = false
+
+[functions.test-sms]
+verify_jwt = false
