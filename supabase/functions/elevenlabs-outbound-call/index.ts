@@ -1147,12 +1147,16 @@ async function processOutboundCall(
       dynamic_variables: dynamicVariables
     };
 
+    // Per-agent delay: check voice_agent metadata, fallback to 2000ms for stable telephony startup
+    const agentDelay = (voiceAgent.metadata as Record<string, unknown>)?.first_message_delay_ms as number
+      || 2000;
+
     const elevenLabsPayload: Record<string, unknown> = {
       agent_id: voiceAgent.elevenlabs_agent_id,
       agent_phone_number_id: voiceAgent.agent_phone_number_id,
       to_number: normalizedPhone,
       conversation_initiation_client_data: conversationInitData,
-      first_message_delay_ms: 1500  // Wait 1.5s after Twilio connects before speaking to prevent clipped/garbled greeting
+      first_message_delay_ms: agentDelay  // Default 2s; tunable per agent via voice_agents.metadata.first_message_delay_ms
     };
 
     const elevenLabsResponse = await fetch(
