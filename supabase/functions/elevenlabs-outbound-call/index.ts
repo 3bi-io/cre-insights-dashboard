@@ -3,7 +3,6 @@
  * Handles outbound voice calls using ElevenLabs Conversational AI
  */
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders } from "../_shared/cors-config.ts";
 import { successResponse, errorResponse } from "../_shared/response.ts";
 import { createLogger } from "../_shared/logger.ts";
@@ -41,7 +40,7 @@ interface ProcessQueueResult {
   results: Array<{ call_id: string; status: string; error?: string }>;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const origin = req.headers.get('origin') || '*';
   const corsHeaders = getCorsHeaders(origin);
 

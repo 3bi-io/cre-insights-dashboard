@@ -3,7 +3,6 @@
  * Proxy for ElevenLabs API operations with proper error handling
  */
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { wrapHandler, ValidationError, ExternalAPIError } from '../_shared/error-handler.ts';
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { successResponse, errorResponse } from '../_shared/response.ts';
@@ -136,4 +135,4 @@ const handler = wrapHandler(async (req: Request) => {
   }
 }, { context: 'ElevenLabsAPI', logRequests: true });
 
-serve(handler);
+Deno.serve(handler);
