@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { 
   Select, 
   SelectContent, 
@@ -9,7 +10,7 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, X } from 'lucide-react';
 import type { CredentialFieldSchema } from '@/services/atsConnectionsService';
 
 interface DynamicCredentialsFormProps {
@@ -26,19 +27,40 @@ export const DynamicCredentialsForm: React.FC<DynamicCredentialsFormProps> = ({
   disabled = false,
 }) => {
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+  const [tagInput, setTagInput] = useState<Record<string, string>>({});
 
   const togglePasswordVisibility = (key: string) => {
-    setVisiblePasswords(prev => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+    setVisiblePasswords(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleFieldChange = (key: string, value: string) => {
-    onChange({
-      ...values,
-      [key]: value,
-    });
+    onChange({ ...values, [key]: value });
+  };
+
+  const parseTagsValue = (raw: string | undefined): string[] => {
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return raw ? [raw] : [];
+    }
+  };
+
+  const handleAddTag = (key: string) => {
+    const input = (tagInput[key] || '').trim();
+    if (!input) return;
+    const existing = parseTagsValue(values[key]);
+    if (!existing.includes(input)) {
+      handleFieldChange(key, JSON.stringify([...existing, input]));
+    }
+    setTagInput(prev => ({ ...prev, [key]: '' }));
+  };
+
+  const handleRemoveTag = (key: string, index: number) => {
+    const existing = parseTagsValue(values[key]);
+    existing.splice(index, 1);
+    handleFieldChange(key, existing.length > 0 ? JSON.stringify(existing) : '');
   };
 
   const sortedFields = Object.entries(schema).sort(([, a], [, b]) => {
@@ -82,6 +104,52 @@ export const DynamicCredentialsForm: React.FC<DynamicCredentialsFormProps> = ({
                 ))}
               </SelectContent>
             </Select>
+          ) : field.type === 'tags' ? (
+            <div className="space-y-2">
+              {parseTagsValue(values[key]).length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {parseTagsValue(values[key]).map((tag, idx) => (
+                    <Badge key={idx} variant="secondary" className="gap-1 pr-1">
+                      {tag}
+                      {!disabled && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(key, idx)}
+                          className="ml-1 rounded-full hover:bg-muted-foreground/20 p-0.5"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Input
+                  id={`credential-${key}`}
+                  type="text"
+                  value={tagInput[key] || ''}
+                  onChange={(e) => setTagInput(prev => ({ ...prev, [key]: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddTag(key);
+                    }
+                  }}
+                  placeholder="Type and press Enter to add..."
+                  disabled={disabled}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddTag(key)}
+                  disabled={disabled || !(tagInput[key] || '').trim()}
+                >
+                  Add
+                </Button>
+              </div>
+            </div>
           ) : field.type === 'password' ? (
             <div className="relative">
               <Input

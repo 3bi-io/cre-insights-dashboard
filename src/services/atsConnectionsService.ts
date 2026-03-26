@@ -20,7 +20,7 @@ export interface ATSSystem {
 
 export interface CredentialFieldSchema {
   label: string;
-  type: 'string' | 'password' | 'select';
+  type: 'string' | 'password' | 'select' | 'tags';
   required: boolean;
   description?: string;
   options?: string[];
