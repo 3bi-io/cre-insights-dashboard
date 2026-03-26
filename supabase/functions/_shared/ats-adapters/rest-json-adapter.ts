@@ -639,6 +639,24 @@ export class RESTJSONAdapter extends BaseATSAdapter {
     };
   }
 
+  private resolveTrackingLinkId(creds: Record<string, unknown>): string {
+    // Priority 1: New multi-value tracking_link_ids (JSON array string)
+    const rawIds = creds.tracking_link_ids;
+    if (rawIds && typeof rawIds === 'string') {
+      try {
+        const parsed = JSON.parse(rawIds);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return String(parsed[0]);
+        }
+      } catch {
+        // Not valid JSON, treat as single value
+        return String(rawIds);
+      }
+    }
+    // Priority 2: Legacy single trackingLinkId
+    return String(creds.trackingLinkId || creds.tracking_link_id || '');
+  }
+
   private buildDoubleNickelPayload(app: ApplicationData): Record<string, unknown> {
     const creds = this.credentials;
     return {
@@ -651,7 +669,7 @@ export class RESTJSONAdapter extends BaseATSAdapter {
       cdlExperience: app.driving_experience_years != null
         ? Number(app.driving_experience_years)
         : undefined,
-      trackingLinkId: String(creds.trackingLinkId || creds.tracking_link_id || ''),
+      trackingLinkId: this.resolveTrackingLinkId(creds),
       companyId: String(creds.companyId || creds.company_id || ''),
     };
   }
