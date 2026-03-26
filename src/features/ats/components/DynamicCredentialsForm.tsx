@@ -27,19 +27,40 @@ export const DynamicCredentialsForm: React.FC<DynamicCredentialsFormProps> = ({
   disabled = false,
 }) => {
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+  const [tagInput, setTagInput] = useState<Record<string, string>>({});
 
   const togglePasswordVisibility = (key: string) => {
-    setVisiblePasswords(prev => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+    setVisiblePasswords(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleFieldChange = (key: string, value: string) => {
-    onChange({
-      ...values,
-      [key]: value,
-    });
+    onChange({ ...values, [key]: value });
+  };
+
+  const parseTagsValue = (raw: string | undefined): string[] => {
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return raw ? [raw] : [];
+    }
+  };
+
+  const handleAddTag = (key: string) => {
+    const input = (tagInput[key] || '').trim();
+    if (!input) return;
+    const existing = parseTagsValue(values[key]);
+    if (!existing.includes(input)) {
+      handleFieldChange(key, JSON.stringify([...existing, input]));
+    }
+    setTagInput(prev => ({ ...prev, [key]: '' }));
+  };
+
+  const handleRemoveTag = (key: string, index: number) => {
+    const existing = parseTagsValue(values[key]);
+    existing.splice(index, 1);
+    handleFieldChange(key, existing.length > 0 ? JSON.stringify(existing) : '');
   };
 
   const sortedFields = Object.entries(schema).sort(([, a], [, b]) => {
