@@ -276,6 +276,69 @@ serve(async (req) => {
                 logger.error('Failed to sync conversation', upsertError);
               } else {
                 logger.info('Synced conversation', { conversationId: call.elevenlabs_conversation_id });
+                
+                // Auto-fetch transcript from ElevenLabs API and cache locally
+                try {
+                  const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
+                  if (ELEVENLABS_API_KEY) {
+                    // Get the DB conversation ID from the upserted record
+                    const { data: convoRow } = await supabase
+                      .from("elevenlabs_conversations")
+                      .select("id")
+                      .eq("conversation_id", call.elevenlabs_conversation_id)
+                      .maybeSingle();
+
+                    if (convoRow?.id) {
+                      const elResponse = await fetch(
+                        `https://api.elevenlabs.io/v1/convai/conversations/${call.elevenlabs_conversation_id}`,
+                        { headers: { 'xi-api-key': ELEVENLABS_API_KEY } }
+                      );
+
+                      if (elResponse.ok) {
+                        const elData = await elResponse.json();
+                        const transcript = elData.transcript || [];
+
+                        if (transcript.length > 0) {
+                          const transcriptRows = transcript.map((msg: any, index: number) => ({
+                            conversation_id: convoRow.id,
+                            speaker: msg.role === 'agent' ? 'agent' : 'user',
+                            message: msg.message || '',
+                            timestamp: new Date().toISOString(),
+                            sequence_number: index + 1,
+                          }));
+
+                          const { error: txError } = await supabase
+                            .from('elevenlabs_transcripts')
+                            .upsert(transcriptRows, { onConflict: 'conversation_id,sequence_number' });
+
+                          if (txError) {
+                            logger.warn('Failed to cache transcripts', { error: txError.message });
+                          } else {
+                            logger.info('Cached transcripts from ElevenLabs', { count: transcriptRows.length, conversationId: call.elevenlabs_conversation_id });
+
+                            // Store formatted transcript on application record
+                            if (call.application_id) {
+                              const formattedTranscript = transcriptRows
+                                .map((r: any) => `${r.speaker === 'agent' ? 'Agent' : 'Caller'}: ${r.message}`)
+                                .join('\n');
+                              await supabase
+                                .from('applications')
+                                .update({
+                                  elevenlabs_call_transcript: formattedTranscript,
+                                  updated_at: new Date().toISOString()
+                                })
+                                .eq('id', call.application_id);
+                            }
+                          }
+                        }
+                      } else {
+                        logger.warn('ElevenLabs transcript fetch failed', { status: elResponse.status });
+                      }
+                    }
+                  }
+                } catch (txFetchError) {
+                  logger.warn('Transcript auto-fetch error', { error: txFetchError instanceof Error ? txFetchError.message : 'Unknown' });
+                }
               }
             }
           } catch (syncError) {

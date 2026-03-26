@@ -1147,12 +1147,16 @@ async function processOutboundCall(
       dynamic_variables: dynamicVariables
     };
 
+    // Per-agent delay: check voice_agent metadata, fallback to 2000ms for stable telephony startup
+    const agentDelay = (voiceAgent.metadata as Record<string, unknown>)?.first_message_delay_ms as number
+      || 2000;
+
     const elevenLabsPayload: Record<string, unknown> = {
       agent_id: voiceAgent.elevenlabs_agent_id,
       agent_phone_number_id: voiceAgent.agent_phone_number_id,
       to_number: normalizedPhone,
       conversation_initiation_client_data: conversationInitData,
-      first_message_delay_ms: 1500  // Wait 1.5s after Twilio connects before speaking to prevent clipped/garbled greeting
+      first_message_delay_ms: agentDelay  // Default 2s; tunable per agent via voice_agents.metadata.first_message_delay_ms
     };
 
     const elevenLabsResponse = await fetch(
@@ -1508,8 +1512,8 @@ function buildDynamicVariables(
       vars.experience_disqualification_note = '';
     } else {
       vars.meets_minimum_experience = 'no';
-      const companyName = (organization?.name as string) || 'the company';
-      vars.experience_disqualification_note = `IMPORTANT: This candidate has ${applicantMonths} months of driving experience but this position requires a minimum of ${vars.minimum_experience_required}. Politely let them know they don't currently meet the minimum experience requirement for this position, but that ${companyName} would love for them to apply again once they have more experience. Be encouraging and wish them well. Do NOT attempt to transfer this call to a recruiter.`;
+      const shortfall = `${applicantMonths} months vs ${vars.minimum_experience_required} required`;
+      vars.experience_disqualification_note = `Candidate does not meet minimum experience (${shortfall}).`;
     }
   } else {
     vars.meets_minimum_experience = 'unknown';
@@ -1580,17 +1584,13 @@ function buildDynamicVariables(
   
   // Business hours note — varies based on both time AND calendar availability
   if (isWithinBusinessHours) {
-    if (hasCalendar === 'yes') {
-      vars.business_hours_note = `Currently within business hours (${orgStart} - ${orgEnd} ${tzLabel}). Recruiter transfer is available. You can use the scheduling tools to book a callback.`;
-    } else {
-      vars.business_hours_note = `Currently within business hours (${orgStart} - ${orgEnd} ${tzLabel}). No recruiter calendars are connected. Do NOT attempt to transfer to a recruiter. Let the candidate know a recruiter will reach out to them directly. Complete the screening and gather their information.`;
-    }
+    vars.business_hours_note = hasCalendar === 'yes'
+      ? `Business hours (${orgStart}-${orgEnd} ${tzLabel}). Recruiter transfer available. Calendar scheduling available.`
+      : `Business hours (${orgStart}-${orgEnd} ${tzLabel}). No recruiter calendars connected.`;
   } else {
-    if (hasCalendar === 'yes') {
-      vars.business_hours_note = `Currently outside business hours (${orgStart} - ${orgEnd} ${tzLabel}). Do NOT transfer the call live to a recruiter. However, you CAN use the scheduling tools (check_availability / book_callback) to find the recruiter's next available slot and schedule a callback for the candidate. Offer to book a specific time on the recruiter's calendar. Complete the screening and gather their information.`;
-    } else {
-      vars.business_hours_note = `Currently outside business hours (${orgStart} - ${orgEnd} ${tzLabel}). Do NOT attempt to transfer to a recruiter. Instead, let the candidate know a recruiter will call them back during business hours on the next business day. Complete the screening and gather their information.`;
-    }
+    vars.business_hours_note = hasCalendar === 'yes'
+      ? `After hours (${orgStart}-${orgEnd} ${tzLabel}). No live transfers. Calendar scheduling available.`
+      : `After hours (${orgStart}-${orgEnd} ${tzLabel}). No live transfers. Recruiter will call back next business day.`;
   }
 
   // Trucking-specific job context inference
