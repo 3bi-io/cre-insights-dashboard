@@ -1,59 +1,48 @@
 
-## Plan: Remove the last ATS.me branding from the Lovable preview login experience
+
+## Analysis: Voice Agent Start-of-Call Glitches
 
 ### What I found
-The actual `/auth` page in the app already renders as Apply AI:
-- page title: `Sign In | Access Your Dashboard - Apply AI`
-- visible logo/brand: `Apply AI`
-- canonical/site config already point to `https://applyai.jobs`
 
-So if you still see `ats.me` in Lovable preview, it is likely coming from a remaining metadata/cached branding surface rather than the visible auth page component itself.
+After reviewing the last 10 outbound calls and the full codebase:
 
-### Likely causes
-1. **Old browser/app metadata being cached in preview**
-   - favicon / touch icon / page metadata can linger in preview tabs
-2. **A leftover hardcoded brand string outside the main auth page**
-   - older auth page, route wrapper, or shared metadata surface
-3. **Preview shell behavior**
-   - Lovable preview can preserve older tab/session branding even after app UI is updated
+- **Server-side code is clean**: The `elevenlabs-outbound-call` edge function sends only `dynamic_variables` — no `first_message`, `overrides`, or `voiceId` overrides that could conflict with the dashboard agent
+- **Client-side code is clean**: The previous fix already removed `firstMessage` overrides from `useVoiceAgentConnection`
+- **No errors in logs**: Edge function logs show only normal `process_queue` and `sync_initiated` cycles
+- **Recent calls look healthy**: Completed calls had good durations (84s, 102s, 210s, 85s)
 
-### Implementation plan
+### Root cause
 
-**1. Audit all brand surfaces tied to login/auth**
-- Check auth routes, shared layout wrappers, favicon/icon references, SEO defaults, and any alternate auth page still in the repo
-- Verify there is only one active auth experience and no stale fallback page still referencing old branding
+The start-of-call glitches (stuttering, clipped first words) are happening at the **ElevenLabs/Twilio WebSocket handshake layer**, not in our code. When Twilio connects the call to ElevenLabs, there's a brief delay before audio streaming stabilizes. The agent's first message starts playing before the audio path is fully ready, causing the first 1-2 seconds to sound garbled.
 
-**2. Normalize all app metadata to Apply AI**
-- Ensure `index.html` title/meta remain Apply AI-only
-- Verify favicon/apple-touch/icon assets and related tags are aligned with Apply AI branding
-- Remove or replace any legacy ATS.me text in client-facing metadata/config files
+### Recommended fix
 
-**3. Eliminate stale auth page confusion**
-- Confirm which auth page is actually routed (`src/pages/Auth.tsx` vs `src/features/auth/pages/AuthPage.tsx`)
-- If both exist, keep the active one consistent and either retire or fully rebrand the unused legacy variant so preview never surfaces mixed branding
+Add a **`first_message_delay_ms`** parameter to the ElevenLabs outbound call payload. This tells ElevenLabs to wait a brief moment after the call connects before speaking, giving the Twilio-ElevenLabs audio bridge time to stabilize.
 
-**4. Check preview-specific branding touchpoints**
-- Review any preview-only or embedded auth/login flows that may still inherit old site labels
-- If the remaining label is outside the app itself, I’ll isolate it and avoid changing working auth logic unnecessarily
+### Changes
 
-**5. Verification**
-- Re-test the preview auth route after changes
-- Confirm these surfaces all say Apply AI:
-  - auth page title
-  - visible logo/header
-  - favicon-linked brand surfaces
-  - any auth/login card text
-  - published site auth page
+**File: `supabase/functions/elevenlabs-outbound-call/index.ts`** (lines ~1146-1155)
 
-### Technical notes
-- Current app code already shows Apply AI on `/auth`, so this is probably a **metadata/duplicate-page/cache cleanup** task, not a full auth rebuild.
-- I will focus on:
-  - `src/pages/Auth.tsx`
-  - `src/features/auth/pages/AuthPage.tsx`
-  - `src/components/common/Brand.tsx`
-  - `src/config/siteConfig.ts`
-  - `index.html`
-- I will not change Supabase auth logic unless I find branding hardcoded inside an auth callback flow.
+Add a small startup delay to the conversation initiation data:
 
-### Expected outcome
-After cleanup, the login experience should consistently show **Apply AI** in preview and published contexts, with no user-facing ATS.me branding left in the auth flow.
+```typescript
+const conversationInitData: Record<string, unknown> = {
+  dynamic_variables: dynamicVariables
+};
+
+const elevenLabsPayload: Record<string, unknown> = {
+  agent_id: voiceAgent.elevenlabs_agent_id,
+  agent_phone_number_id: voiceAgent.agent_phone_number_id,
+  to_number: normalizedPhone,
+  conversation_initiation_client_data: conversationInitData,
+  first_message_delay_ms: 1500  // Wait 1.5s after connect before speaking
+};
+```
+
+This 1.5-second delay lets Twilio's audio stream fully establish before the agent starts its greeting, eliminating the clipped/garbled first words.
+
+### Also recommended (ElevenLabs dashboard)
+
+- In the agent's first message, add a brief filler like "Hello!" before the main greeting. This gives additional buffer so if any clipping occurs, it's on a throwaway word rather than the candidate's name.
+- Example: `Hello! Hi {{applicant_first_name}}, this is the recruiting assistant from {{company_name}}...`
+
