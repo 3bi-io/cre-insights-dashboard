@@ -104,6 +104,52 @@ export const DynamicCredentialsForm: React.FC<DynamicCredentialsFormProps> = ({
                 ))}
               </SelectContent>
             </Select>
+          ) : field.type === 'tags' ? (
+            <div className="space-y-2">
+              {parseTagsValue(values[key]).length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {parseTagsValue(values[key]).map((tag, idx) => (
+                    <Badge key={idx} variant="secondary" className="gap-1 pr-1">
+                      {tag}
+                      {!disabled && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(key, idx)}
+                          className="ml-1 rounded-full hover:bg-muted-foreground/20 p-0.5"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Input
+                  id={`credential-${key}`}
+                  type="text"
+                  value={tagInput[key] || ''}
+                  onChange={(e) => setTagInput(prev => ({ ...prev, [key]: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddTag(key);
+                    }
+                  }}
+                  placeholder="Type and press Enter to add..."
+                  disabled={disabled}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddTag(key)}
+                  disabled={disabled || !(tagInput[key] || '').trim()}
+                >
+                  Add
+                </Button>
+              </div>
+            </div>
           ) : field.type === 'password' ? (
             <div className="relative">
               <Input
