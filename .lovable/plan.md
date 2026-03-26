@@ -1,86 +1,69 @@
 
 
-## ElevenLabs Production Audit & Refactoring Plan
+## Support Multiple Tracking Link IDs for Double Nickel
 
-### Audit Summary
+### Problem
+Double Nickel uses tracking link IDs to pull jobs into their platform. Currently the system stores a single `trackingLinkId` in the connection credentials. Clients can have many tracking links (one per job posting, region, or campaign), and we need to support all of them.
 
-After reviewing all 7 ElevenLabs edge functions, the client-side hooks, and the shared utilities, the infrastructure is in strong shape for production. Here is what I found and what needs cleanup:
+### Approach
 
-### What is working correctly
+**Frontend: Multi-value tracking link input**
 
-- **No esm.sh imports** across any ElevenLabs function -- all use `npm:` specifiers or `deno.land/std`
-- **No client-side firstMessage/voiceId overrides** in `useVoiceAgentConnection` -- prompts are dashboard-managed
-- **Dynamic variables** are injected correctly for both web (client-side) and outbound (server-side) channels
-- **Per-agent delay** (`first_message_delay_ms`) is tunable via `voice_agents.metadata`, defaulting to 2000ms
-- **Transcript auto-fetch** on terminal call status is implemented in `elevenlabs-call-status`
-- **Voicemail detection** (tool call + transcript keyword fallback) triggers SMS follow-up in the conversation webhook
-- **Organization isolation** is enforced in `elevenlabs-agent` (org validation, rate limiting)
-- **Conversation upsert** with `onConflict: "conversation_id"` prevents duplicates
-- **Retry logic** with transient/permanent error distinction in outbound call function
-- **CORS** uses `getCorsHeaders(origin)` consistently across all functions (except `elevenlabs-conversation-webhook` which uses a static `*` -- acceptable for an external webhook endpoint)
+In the `DynamicCredentialsForm`, add support for a new field type `tags` (or `multi-string`). When the Double Nickel credential schema declares `tracking_link_ids` with `type: "tags"`, the form renders a tag-style input where users can:
+- Type a tracking link ID and press Enter to add it
+- See all added IDs as removable chips/badges
+- Add as many as needed
 
-### Issues found -- refactoring needed
+The values are stored as a JSON array string in the credentials object (e.g., `tracking_link_ids: '["abc123","def456","ghi789"]'`).
 
-1. **Dead code: `agentConfig.ts`**
-   - `createFirstMessage()` and `createAgentOverrides()` are exported and documented in the README but **never imported** by any live code path. They generate `firstMessage` and `voiceId` overrides -- the exact pattern we removed to fix glitches.
-   - **Action**: Remove these two functions and their type (`AgentOverrides`) from `agentConfig.ts`. Keep `normalizeAgentId` and `validateAgentId`. Update barrel exports and README.
+**Database: Update credential schema**
 
-2. **Dead type: `AgentOverrides` in `types/index.ts`**
-   - The `AgentOverrides` interface supports the removed override pattern. No live code references it.
-   - **Action**: Remove the `AgentOverrides` interface from the types barrel.
+Update the Double Nickel `ats_systems` row's `credential_schema` to replace the single `trackingLinkId` field with a new `tracking_link_ids` field of type `tags`. Keep backward compatibility by still reading the old `trackingLinkId` if present.
 
-3. **README is stale**
-   - `src/features/elevenlabs/README.md` documents `createAgentOverrides` usage patterns that no longer apply.
-   - **Action**: Update README to reflect current architecture (dynamic variables only, no overrides).
+**Backend: Adapter resolution**
 
-4. **`elevenlabs-conversation-webhook` uses `serve()` from deno.land instead of `Deno.serve()`**
-   - All newer functions use `Deno.serve()`. The webhook still uses `import { serve } from "https://deno.land/std@0.168.0/http/server.ts"`. This works but is inconsistent.
-   - Same applies to `elevenlabs-outbound-call`, `elevenlabs-call-status`, `elevenlabs-conversations`, and `elevenlabs-api`.
-   - **Action**: Migrate these 5 functions from `serve()` to `Deno.serve()` to match the pattern in `elevenlabs-agent`. This is a low-risk, one-line change per file that removes an unnecessary import.
-
-5. **`elevenlabs-conversations` has an unused `createClient` import**
-   - Line 2: `import { createClient } from "npm:@supabase/supabase-js@2.50.0"` is imported at the top level but only used inside a conditional block (for auth). It should use a dynamic import like `elevenlabs-agent` does, or keep it but it's harmless.
-   - **Action**: No change needed -- the static import is fine and avoids dynamic import overhead.
-
-6. **`elevenlabs-outbound-call` is 1864 lines**
-   - The file contains the main handler, queue processing, single call execution, `buildDynamicVariables`, and 15+ inference helper functions.
-   - **Action**: No split needed for this cycle. The function deploys and executes correctly. A future refactor could extract `buildDynamicVariables` and inference helpers into `_shared/`, but that risks deployment issues for no immediate benefit.
+Update `buildDoubleNickelPayload` in `rest-json-adapter.ts` to:
+1. Parse `tracking_link_ids` from credentials (JSON array string)
+2. Fall back to legacy single `trackingLinkId` if the array is not present
+3. When submitting an application, use the first tracking link by default, or match by job metadata if a mapping exists
 
 ### Files to change
 
 | File | Change |
 |------|--------|
-| `src/features/elevenlabs/utils/agentConfig.ts` | Remove `createFirstMessage`, `createAgentOverrides`. Keep `normalizeAgentId`, `validateAgentId`. |
-| `src/features/elevenlabs/types/index.ts` | Remove `AgentOverrides` interface |
-| `src/features/elevenlabs/index.ts` | Remove `AgentOverrides` from exports if explicitly listed |
-| `src/features/elevenlabs/README.md` | Update to reflect current dynamic-variables-only architecture |
-| `supabase/functions/elevenlabs-api/index.ts` | Replace `serve()` import with `Deno.serve()` |
-| `supabase/functions/elevenlabs-call-status/index.ts` | Replace `serve()` import with `Deno.serve()` |
-| `supabase/functions/elevenlabs-conversations/index.ts` | Replace `serve()` import with `Deno.serve()` |
-| `supabase/functions/elevenlabs-conversation-webhook/index.ts` | Replace `serve()` import with `Deno.serve()` |
-| `supabase/functions/elevenlabs-outbound-call/index.ts` | Replace `serve()` import with `Deno.serve()` |
+| `src/features/ats/components/DynamicCredentialsForm.tsx` | Add `tags` field type with add/remove chip UI |
+| `src/services/atsConnectionsService.ts` | Add `'tags'` to the `CredentialFieldSchema.type` union |
+| `supabase/functions/_shared/ats-adapters/rest-json-adapter.ts` | Update `buildDoubleNickelPayload` to parse array of tracking link IDs |
+| DB: `ats_systems` row for `doublenickel` | Update `credential_schema` JSON to use new `tracking_link_ids` tags field |
 
-### What does NOT need changing
-
-- `useVoiceAgentConnection.ts` -- clean, no overrides, proper retry/timeout logic
-- `useElevenLabsVoice.tsx` -- uses `connect()` without overrides correctly
-- `buildDynamicVariables()` -- already trimmed in previous iteration
-- `elevenlabs-agent/index.ts` -- already uses `Deno.serve()`, proper org isolation
-- Transcript enrichment utility -- correct multi-layer sync strategy
-- Twilio client -- centralized, E.164 normalization
-
-### Technical details
-
-The `serve()` to `Deno.serve()` migration is a simple pattern swap:
+### UI mockup
 
 ```text
-// Before
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-serve(async (req) => { ... });
-
-// After  
-Deno.serve(async (req) => { ... });
+┌─────────────────────────────────────────┐
+│ Tracking Link IDs                       │
+│ ┌─────────┐ ┌─────────┐ ┌─────────┐    │
+│ │ abc123 ✕│ │ def456 ✕│ │ ghi789 ✕│    │
+│ └─────────┘ └─────────┘ └─────────┘    │
+│ ┌─────────────────────────────────────┐ │
+│ │ Type and press Enter to add...      │ │
+│ └─────────────────────────────────────┘ │
+└─────────────────────────────────────────┘
 ```
 
-This removes an external dependency, slightly improves boot time, and aligns with the pattern already used in `elevenlabs-agent`.
+### Backend logic
+
+```text
+credentials.tracking_link_ids = '["link1","link2","link3"]'
+
+buildDoubleNickelPayload():
+  1. Parse tracking_link_ids array from creds
+  2. If empty, fall back to creds.trackingLinkId (legacy)
+  3. Use first link as default, or match to job if mapping exists
+  4. Set trackingLinkId in payload
+```
+
+### Backward compatibility
+- Existing connections with a single `trackingLinkId` continue to work unchanged
+- The adapter checks both the new array and the legacy single value
+- No data migration required -- old credentials are read as-is
 
