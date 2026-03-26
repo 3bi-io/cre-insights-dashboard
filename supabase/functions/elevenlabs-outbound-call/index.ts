@@ -1151,7 +1151,8 @@ async function processOutboundCall(
       agent_id: voiceAgent.elevenlabs_agent_id,
       agent_phone_number_id: voiceAgent.agent_phone_number_id,
       to_number: normalizedPhone,
-      conversation_initiation_client_data: conversationInitData
+      conversation_initiation_client_data: conversationInitData,
+      first_message_delay_ms: 1500  // Wait 1.5s after Twilio connects before speaking to prevent clipped/garbled greeting
     };
 
     const elevenLabsResponse = await fetch(
