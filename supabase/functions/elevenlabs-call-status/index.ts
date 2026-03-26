@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createLogger } from '../_shared/logger.ts';
 import { autoPostToATS } from '../_shared/ats-adapters/auto-post-engine.ts';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-config.ts';
@@ -65,7 +64,7 @@ async function generateHmacSignature(payload: string, secret: string): Promise<s
     .join('');
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const preflightResponse = handleCorsPreflightIfNeeded(req);
   if (preflightResponse) return preflightResponse;
 

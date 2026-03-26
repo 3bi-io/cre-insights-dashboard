@@ -15,7 +15,6 @@
  * - transcript: Array of conversation messages
  */
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { getServiceClient } from "../_shared/supabase-client.ts";
 import { normalizeSpokenEmail, isValidEmail } from "../_shared/email-utils.ts";
@@ -142,7 +141,7 @@ interface ElevenLabsWebhookPayload {
   metadata?: Record<string, unknown>;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }

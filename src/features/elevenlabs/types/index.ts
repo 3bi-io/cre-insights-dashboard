@@ -139,21 +139,6 @@ export interface ConversationSession {
   jobContext?: JobContext;
 }
 
-// ============= Agent Configuration =============
-
-export interface AgentOverrides {
-  agent: {
-    prompt?: {
-      prompt: string;
-    };
-    firstMessage: string;
-    language?: string;
-  };
-  tts?: {
-    voiceId: string;
-  };
-}
-
 // ============= LLM Model Options =============
 
 export type LLMModel = 

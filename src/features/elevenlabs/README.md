@@ -17,76 +17,39 @@ elevenlabs/
 │   └── index.ts          # Barrel export
 ├── utils/
 │   ├── errorHandling.ts  # Error parsing and user-friendly messages
-│   ├── agentConfig.ts    # Agent configuration helpers
+│   ├── agentConfig.ts    # Agent ID validation helpers
 │   └── index.ts          # Barrel export
 ├── index.ts              # Main barrel export
 └── README.md             # This file
 ```
 
-## 🎯 Key Improvements
+## 🎯 Architecture
 
-### 1. **Centralized Type Safety**
-All types are now defined in one place (`types/index.ts`), ensuring consistency across the application.
+### Dashboard-Managed Prompts
 
-```typescript
-import { VoiceAgent, JobContext, LLMModel } from '@/features/elevenlabs';
-```
+Agent prompts, first messages, and voice settings are managed exclusively in the **ElevenLabs dashboard**. The client does **not** send `firstMessage`, `voiceId`, or prompt overrides — this prevents initialization glitches and "double greeting" issues.
 
-### 2. **Reusable Connection Hook**
-The `useVoiceAgentConnection` hook handles all connection lifecycle logic:
+### Dynamic Variables
+
+Personalization is achieved via `dynamicVariables` injected at connection time:
 
 ```typescript
-const { isConnected, isConnecting, isSpeaking, connect, disconnect } = 
-  useVoiceAgentConnection({
-    onConnect: () => logger.info('Voice agent connected'),
-    onDisconnect: () => logger.info('Voice agent disconnected'),
-    onError: (error) => logger.error('Voice agent error', error)
-  });
+// Web channel — injected client-side
+await conversation.startSession({
+  agentId: agent.elevenlabs_agent_id,
+  dynamicVariables: {
+    candidate_name: 'John',
+    job_title: 'CDL Driver',
+    company_name: 'Acme Trucking',
+  },
+});
+
+// Outbound phone channel — injected server-side in edge function
 ```
 
-### 3. **Improved Error Handling**
-Error parsing and user-friendly messaging are centralized:
+### Per-Agent Telephony Tuning
 
-```typescript
-import { parseVoiceAgentError, getErrorTitle } from '@/features/elevenlabs';
-
-try {
-  await connect(agentId);
-} catch (error) {
-  const parsedError = parseVoiceAgentError(error);
-  logger.info('Voice error', { title: getErrorTitle(parsedError) }); // "Microphone Access Required"
-}
-```
-
-### 4. **Reusable UI Components**
-
-#### VoiceConnectionStatus
-```typescript
-<VoiceConnectionStatus 
-  isConnected={isConnected} 
-  isSpeaking={isSpeaking}
-/>
-```
-
-#### LLMModelSelect
-```typescript
-<LLMModelSelect
-  value={selectedModel}
-  onValueChange={setSelectedModel}
-  label="AI Model"
-  description="Choose the model for your agent"
-/>
-```
-
-### 5. **Agent Configuration Utilities**
-Helper functions for creating agent configurations:
-
-```typescript
-import { createAgentOverrides, createJobContextPrompt } from '@/features/elevenlabs';
-
-const overrides = createAgentOverrides(jobContext);
-const prompt = createJobContextPrompt(jobContext);
-```
+The `first_message_delay_ms` (default 2000ms) is tunable per agent via the `metadata` JSON field in the `voice_agents` table. This stabilizes the audio path during the Twilio-ElevenLabs WebSocket handshake.
 
 ## 📝 Usage Examples
 
@@ -106,32 +69,6 @@ function MyComponent() {
       <Button onClick={disconnect}>Disconnect</Button>
     </>
   );
-}
-```
-
-### Voice Agent with Job Context
-
-```typescript
-import { useVoiceAgentConnection, createAgentOverrides, JobContext } from '@/features/elevenlabs';
-
-function JobApplicationVoice() {
-  const [job, setJob] = useState<JobContext | null>(null);
-  
-  const overrides = useMemo(() => 
-    job ? createAgentOverrides(job) : undefined,
-    [job]
-  );
-
-  const { connect } = useVoiceAgentConnection({
-    agentOverrides: overrides
-  });
-
-  const startApplication = async (jobData: JobContext) => {
-    setJob(jobData);
-    await connect('agent_id', { jobContext: jobData });
-  };
-
-  return <Button onClick={() => startApplication(jobData)}>Apply</Button>;
 }
 ```
 
@@ -163,16 +100,12 @@ function VoiceAgentForm() {
 ## 🔧 Available Exports
 
 ### Types
-- `VoiceAgent`
-- `CreateVoiceAgentData`
-- `UpdateVoiceAgentData`
-- `Conversation`
-- `Transcript`
-- `Audio`
-- `JobContext`
-- `LLMModel`
-- `LLM_MODEL_OPTIONS`
+- `VoiceAgent`, `CreateVoiceAgentData`, `UpdateVoiceAgentData`
+- `Conversation`, `Transcript`, `Audio`
+- `JobContext`, `ConnectionProgress`
+- `LLMModel`, `LLM_MODEL_OPTIONS`
 - `VoiceAgentError`
+- `LiveTranscriptMessage`, `StreamingTranscriptState`
 
 ### Hooks
 - `useVoiceAgentConnection`
@@ -185,10 +118,8 @@ function VoiceAgentForm() {
 - `parseVoiceAgentError`
 - `getUserFriendlyErrorMessage`
 - `getErrorTitle`
-- `createJobContextPrompt`
-- `createFirstMessage`
-- `createAgentOverrides`
 - `validateAgentId`
+- `normalizeAgentId`
 
 ## 🎨 Design Patterns
 
@@ -206,45 +137,6 @@ try {
 }
 ```
 
-### Configuration Pattern
-```typescript
-const agentConfig = useMemo(() => {
-  if (!context) return undefined;
-  return createAgentOverrides(context);
-}, [context]);
-```
-
-## 🚀 Migration Guide
-
-### Before (Old Pattern)
-```typescript
-// Scattered types
-interface VoiceAgent { ... }
-
-// Inline error handling
-catch (error) {
-  if (error.includes('microphone')) {
-    toast({ title: "Microphone error" });
-  }
-}
-
-// Duplicate UI code
-<div className={isConnected ? 'bg-green' : 'bg-gray'}/>
-```
-
-### After (New Pattern)
-```typescript
-// Centralized types
-import { VoiceAgent } from '@/features/elevenlabs';
-
-// Unified error handling
-const parsedError = parseVoiceAgentError(error);
-toast({ title: getErrorTitle(parsedError) });
-
-// Reusable components
-<VoiceConnectionStatus isConnected={isConnected} />
-```
-
 ## 🧪 Testing
 
 The refactored code is more testable due to:
@@ -252,14 +144,6 @@ The refactored code is more testable due to:
 2. Pure utility functions
 3. Consistent error types
 4. Mockable dependencies
-
-## 📚 Future Enhancements
-
-- [ ] Add conversation history management
-- [ ] Implement real-time transcript display
-- [ ] Add voice agent analytics
-- [ ] Create agent performance metrics
-- [ ] Add multi-language support utilities
 
 ## 🤝 Contributing
 
@@ -272,13 +156,4 @@ When adding new ElevenLabs functionality:
 5. **Export** through barrel files
 6. **Document** in this README
 
-## ⚠️ Breaking Changes
-
-This refactor maintains **100% backward compatibility** with existing code. All existing components will continue to work while gradually adopting the new patterns.
-
-## 📞 Support
-
-For issues or questions about the ElevenLabs feature module, please check:
-- The existing implementations in `/components/voice/`
-- The edge function at `/supabase/functions/elevenlabs-agent/`
-- The database schema for `voice_agents` table
+**Important**: Do NOT add client-side prompt/voice overrides. All agent behavior is managed in the ElevenLabs dashboard. Use `dynamicVariables` for personalization only.
