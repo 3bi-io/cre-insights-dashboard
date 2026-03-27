@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown, DollarSign, Mic, Link2, Sparkles, Calendar, Activity, Globe } from 'lucide-react';
+import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown, DollarSign, Mic, Link2, Sparkles, Calendar, Activity, Globe, ExternalLink, Copy } from 'lucide-react';
+import { SITE_URL } from '@/config/siteConfig';
 import { CopyApplyLinkButton } from './CopyApplyLinkButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -473,6 +474,21 @@ const JobTable: React.FC<JobTableProps> = ({
                                 Apply with Voice
                               </DropdownMenuItem>
                             )}
+                            <DropdownMenuItem onClick={() => {
+                              const url = `${SITE_URL}/jobs/${job.id}`;
+                              navigator.clipboard.writeText(url).then(() => {
+                                toast({ title: 'Copied!', description: 'Preview link copied to clipboard' });
+                              });
+                            }}>
+                              <Copy className="w-4 h-4 mr-2" />
+                              Copy Preview Link
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                              window.open(`${SITE_URL}/jobs/${job.id}`, '_blank');
+                            }}>
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              Open on Live Site
+                            </DropdownMenuItem>
                             <DropdownMenuItem>
                               <Edit className="w-4 h-4 mr-2" />
                               Edit Job
