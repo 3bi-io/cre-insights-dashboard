@@ -105,11 +105,24 @@ function normalizeInlineHeaders(text: string): string {
 }
 
 /**
+ * Detects whether a string contains HTML tags.
+ */
+function looksLikeHtml(text: string): boolean {
+  return /<(p|div|ul|ol|li|br|h[1-6]|strong|em|span|table|tr|td|th|a)\b/i.test(text);
+}
+
+/**
  * Renders content as HTML, automatically detecting markdown vs HTML input.
- * Converts sentence-dense paragraphs to bullet lists, then sanitizes with DOMPurify.
+ * If content is already HTML, it skips all markdown preprocessing and only sanitizes.
+ * For plain text / markdown, it converts sentence-dense paragraphs to bullet lists, then sanitizes.
  */
 export function renderJobDescription(text: string, skipBulletConversion = false): string {
   if (!text) return '';
+
+  // If the content is already HTML, just sanitize and return — no preprocessing
+  if (looksLikeHtml(text)) {
+    return DOMPurify.sanitize(text);
+  }
 
   // Pre-process: ensure inline markdown headers get their own lines
   let processed = normalizeInlineHeaders(text);
