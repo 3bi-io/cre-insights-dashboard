@@ -462,7 +462,7 @@ const JobTable: React.FC<JobTableProps> = ({
                               <span className="sr-only">Open menu</span>
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
                             <DropdownMenuItem onClick={() => onViewAnalytics(job)}>
                               <Eye className="w-4 h-4 mr-2" />
                               View Details
