@@ -1,35 +1,29 @@
 
 
-## Fix: UI locks up after closing job view/edit dialogs
+## Add Shareable Job Preview Link for Client Approval
 
-### Root cause
+### What we're building
 
-Two issues in `JobTable.tsx` and `JobsPage.tsx` combine to freeze the page:
+A "Share Preview" action in the admin jobs dashboard that gives you a copyable link to the job on the live site (`applyai.jobs/jobs/{job_id}`). This lets you send clients a direct link to see exactly how their job listing looks on the public site before or after publishing.
 
-1. **Radix DropdownMenu + Dialog focus conflict**: When "View Details" or "Edit Job" is clicked from the `DropdownMenu`, the dropdown closes and tries to return focus to the trigger button. Simultaneously, the Dialog tries to trap focus. This creates a focus deadlock that makes the page unresponsive. This is a [known Radix UI issue](https://github.com/radix-ui/primitives/issues/1241).
+### Current state
 
-2. **`selectedJob` never cleared on dialog close**: In `JobsPage.tsx` line 287, the analytics dialog is conditionally rendered with `{selectedJob && (`. When the dialog closes, `showAnalyticsDialog` becomes `false` but `selectedJob` stays set, leaving a hidden `Dialog` mounted with `open={false}`. Radix's body scroll/pointer-events lock can linger.
-
-3. **"Edit Job" has no handler**: The "Edit Job" dropdown item (line 476-479 in `JobTable.tsx`) has no `onClick` — it's a dead button.
+- The public route `/jobs/:id` already exists and renders `JobDetailsPage` — this is the live preview.
+- The `CopyApplyLinkButton` component already handles copying various apply links but doesn't include a "preview on live site" link.
+- The `JobTable.tsx` dropdown menu has placeholder "Edit Job" and "Delete Job" items.
 
 ### Changes
 
 **`src/components/jobs/JobTable.tsx`**
-- Add `onCloseAutoFocus={(e) => e.preventDefault()}` to `DropdownMenuContent` — prevents the focus return that conflicts with dialogs
-- Wire up "Edit Job" dropdown item with a proper callback (or remove it if not needed)
+- Add a new dropdown menu item: **"Copy Preview Link"** with an `ExternalLink` icon
+- On click, copies `https://applyai.jobs/jobs/{job.id}` to clipboard with a toast confirmation
+- Add a second item: **"Open on Live Site"** that opens the link in a new tab
+- Both use the production domain `applyai.jobs` (not the preview/staging URL)
 
-**`src/features/jobs/pages/JobsPage.tsx`**
-- Clear `selectedJob` when the analytics dialog closes:
-  ```tsx
-  const handleAnalyticsOpenChange = (open: boolean) => {
-    setShowAnalyticsDialog(open);
-    if (!open) setSelectedJob(null);
-  };
-  ```
-- Pass `handleAnalyticsOpenChange` instead of `setShowAnalyticsDialog` to `JobAnalyticsDialog`
+**`src/components/jobs/CopyApplyLinkButton.tsx`**
+- Add a "Live Preview" option to the existing dropdown for consistency when this button is used elsewhere
 
-### What this fixes
-- No more frozen/locked screen after closing the job details dialog
-- Clean unmount of the dialog component when closed
-- Focus returns properly to the page instead of getting trapped
+### Implementation detail
+
+The live site base URL will be defined as a constant (`https://applyai.jobs`) matching the existing `BASE_URL` in `exportJobUrls.ts`. The copy action uses `navigator.clipboard.writeText()` with the existing toast pattern already used throughout the codebase.
 
