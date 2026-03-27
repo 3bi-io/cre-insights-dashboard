@@ -1,29 +1,65 @@
 
+Fix the public job description renderer so live job pages match the dashboard exactly.
 
-## Add Shareable Job Preview Link for Client Approval
+1. Confirmed root cause
+- The live site is current and public, so this is not a stale publish issue.
+- The job records I checked store the formatted content in `job_summary`, often as full HTML (`<p>`, `<ul>`, `<strong>`), with `job_description` empty.
+- The public page renders that content through `renderJobDescription(displayDescription)`.
+- `renderJobDescription` always runs header normalization, sentence-to-bullet conversion, and first-line bolding before deciding whether the content is markdown or HTML.
+- That transformation is safe for plain text/markdown, but it can corrupt already-formatted HTML and create the “jumbled up” result you’re seeing.
 
-### What we're building
+2. What to change
+- Update `src/utils/markdownRenderer.ts` so it first detects HTML content and, when HTML is present, skips all markdown/bullet preprocessing and only sanitizes it.
+- Keep the current markdown enhancement behavior for plain text and markdown-only descriptions.
+- Optionally tighten detection with a dedicated `looksLikeHtml()` helper instead of relying only on markdown detection.
 
-A "Share Preview" action in the admin jobs dashboard that gives you a copyable link to the job on the live site (`applyai.jobs/jobs/{job_id}`). This lets you send clients a direct link to see exactly how their job listing looks on the public site before or after publishing.
+3. Align field usage
+- In `src/pages/public/JobDetailsPage.tsx`, keep using the same primary source the dashboard shows for these jobs: `job_summary` when it contains the full formatted description, with `job_description` only used when it is truly the richer field.
+- Review the same pattern in:
+  - `src/components/JobAnalyticsDialog.tsx`
+  - `src/components/public/PublicJobCard.tsx`
+  - `src/components/jobs/JobTable.tsx`
+- Remove references to `description` on `job_listings` where they are misleading, since the database query confirms that column does not exist in this table.
 
-### Current state
+4. Expected result
+- Public `/jobs/:id` pages will preserve paragraph breaks, bold section titles, and bullet lists exactly like the dashboard preview for HTML-backed jobs.
+- Plain-text and markdown-fed jobs will still get the improved formatting logic.
 
-- The public route `/jobs/:id` already exists and renders `JobDetailsPage` — this is the live preview.
-- The `CopyApplyLinkButton` component already handles copying various apply links but doesn't include a "preview on live site" link.
-- The `JobTable.tsx` dropdown menu has placeholder "Edit Job" and "Delete Job" items.
+5. Files to update
+- `src/utils/markdownRenderer.ts`
+- `src/pages/public/JobDetailsPage.tsx`
+- `src/components/JobAnalyticsDialog.tsx` if needed for consistency
+- Any admin/public job components still preferring nonexistent `description` over real job fields
 
-### Changes
+Technical details
 
-**`src/components/jobs/JobTable.tsx`**
-- Add a new dropdown menu item: **"Copy Preview Link"** with an `ExternalLink` icon
-- On click, copies `https://applyai.jobs/jobs/{job.id}` to clipboard with a toast confirmation
-- Add a second item: **"Open on Live Site"** that opens the link in a new tab
-- Both use the production domain `applyai.jobs` (not the preview/staging URL)
+```text
+Current flow
+HTML in job_summary
+  -> normalizeInlineHeaders()
+  -> convertSentencesToBullets()
+  -> boldFirstBullet()
+  -> maybe parse as markdown
+  -> sanitize
+  => HTML can be mangled
 
-**`src/components/jobs/CopyApplyLinkButton.tsx`**
-- Add a "Live Preview" option to the existing dropdown for consistency when this button is used elsewhere
+Proposed flow
+if looksLikeHtml(text):
+  sanitize(text) and return
+else:
+  normalize/convert/bold
+  parse markdown if needed
+  sanitize
+```
 
-### Implementation detail
+Why I’m confident this is the issue
+- The live site and published site content match.
+- The database contains rich HTML in `job_summary`.
+- The renderer currently preprocesses all text before deciding whether it is HTML or markdown.
+- The dashboard dialog and the public page both use the renderer, but the public page is the place where the full public-facing job body is most exposed to this mismatch.
 
-The live site base URL will be defined as a constant (`https://applyai.jobs`) matching the existing `BASE_URL` in `exportJobUrls.ts`. The copy action uses `navigator.clipboard.writeText()` with the existing toast pattern already used throughout the codebase.
-
+Validation after implementation
+- Open a job whose `job_summary` contains `<p>` and `<ul>` markup.
+- Compare dashboard preview vs live `/jobs/{id}` page.
+- Verify bullets, spacing, bold labels, and paragraph breaks match.
+- Verify a markdown-based job still renders headings/lists correctly.
