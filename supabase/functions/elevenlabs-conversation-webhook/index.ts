@@ -426,9 +426,28 @@ Deno.serve(async (req) => {
     }
 
     // Find appropriate job listing
+    // 1. Check metadata for specific job_listing_id (passed from web voice sessions)
     let jobListingId: string | null = null;
+    const metadataJobId = payload.metadata?.job_listing_id as string | undefined
+      || payload.metadata?.jobId as string | undefined;
 
-    if (voiceAgent.client_id) {
+    if (metadataJobId) {
+      // Verify the job exists and is active
+      const { data: metaJob } = await supabase
+        .from('job_listings')
+        .select('id')
+        .eq('id', metadataJobId)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (metaJob) {
+        jobListingId = metaJob.id;
+        logger.info('Using job_listing_id from metadata', { jobListingId });
+      }
+    }
+
+    // 2. Fall back to client-level lookup
+    if (!jobListingId && voiceAgent.client_id) {
       const { data: clientJob } = await supabase
         .from('job_listings')
         .select('id')
@@ -443,6 +462,7 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 3. Fall back to org-level lookup
     if (!jobListingId) {
       const { data: fallbackJob } = await supabase
         .from('job_listings')

@@ -199,7 +199,7 @@ const JobDetailsContent: React.FC = () => {
                       {job.job_type && <Badge variant="outline">{job.job_type}</Badge>}
                       {job.experience_level && <Badge variant="outline">{job.experience_level}</Badge>}
                     </div>
-                    <ReadinessBadges showVoiceApply={!isExternalApply && !isMultiLocation} />
+                    <ReadinessBadges showVoiceApply={!isMultiLocation && (!isExternalApply || isAspenViewJob(job.client_id))} />
                   </div>
                 </div>
 
@@ -287,7 +287,7 @@ const JobDetailsContent: React.FC = () => {
             canonicalUrl={canonicalUrl}
             onVoiceApply={handleVoiceApply}
             isVoiceConnected={isConnected}
-            showVoiceButton={!isExternalApply && !isMultiLocation}
+            showVoiceButton={!isMultiLocation && (!isExternalApply || isAspenViewJob(job.client_id))}
             locationVariants={isMultiLocation ? locationVariants : undefined}
           />
         </div>
@@ -336,7 +336,7 @@ const JobDetailsContent: React.FC = () => {
             </div>
           </div>
         ) : (
-          <StickyApplyCTA applyUrl={applyUrl} isExternalApply={isExternalApply} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={!isExternalApply} />
+          <StickyApplyCTA applyUrl={applyUrl} isExternalApply={isExternalApply} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={!isExternalApply || isAspenViewJob(job.client_id)} />
         )}
       </div>
     </div>
