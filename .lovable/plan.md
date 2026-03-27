@@ -1,65 +1,35 @@
 
-Fix the public job description renderer so live job pages match the dashboard exactly.
 
-1. Confirmed root cause
-- The live site is current and public, so this is not a stale publish issue.
-- The job records I checked store the formatted content in `job_summary`, often as full HTML (`<p>`, `<ul>`, `<strong>`), with `job_description` empty.
-- The public page renders that content through `renderJobDescription(displayDescription)`.
-- `renderJobDescription` always runs header normalization, sentence-to-bullet conversion, and first-line bolding before deciding whether the content is markdown or HTML.
-- That transformation is safe for plain text/markdown, but it can corrupt already-formatted HTML and create the “jumbled up” result you’re seeing.
+## Fix: Show actual client name and logo on public job detail page
 
-2. What to change
-- Update `src/utils/markdownRenderer.ts` so it first detects HTML content and, when HTML is present, skips all markdown/bullet preprocessing and only sanitizes it.
-- Keep the current markdown enhancement behavior for plain text and markdown-only descriptions.
-- Optionally tighten detection with a dedicated `looksLikeHtml()` helper instead of relying only on markdown detection.
+### Problem
+The public job detail page (`/jobs/:id`) shows "Company" and a generic icon instead of the real client name and logo. This is because `useJobDetails` joins the `clients` table directly, which is blocked by RLS for unauthenticated visitors. The data comes back as `null`.
 
-3. Align field usage
-- In `src/pages/public/JobDetailsPage.tsx`, keep using the same primary source the dashboard shows for these jobs: `job_summary` when it contains the full formatted description, with `job_description` only used when it is truly the richer field.
-- Review the same pattern in:
-  - `src/components/JobAnalyticsDialog.tsx`
-  - `src/components/public/PublicJobCard.tsx`
-  - `src/components/jobs/JobTable.tsx`
-- Remove references to `description` on `job_listings` where they are misleading, since the database query confirms that column does not exist in this table.
+### Root cause
+- `useJobDetails` query: `clients(id, name, logo_url)` — this join hits the `clients` table, which has RLS that blocks public access.
+- Every other public-facing component (jobs list, apply page, clients page, related jobs) correctly uses the `public_client_info` view instead.
 
-4. Expected result
-- Public `/jobs/:id` pages will preserve paragraph breaks, bold section titles, and bullet lists exactly like the dashboard preview for HTML-backed jobs.
-- Plain-text and markdown-fed jobs will still get the improved formatting logic.
+### Fix
 
-5. Files to update
-- `src/utils/markdownRenderer.ts`
-- `src/pages/public/JobDetailsPage.tsx`
-- `src/components/JobAnalyticsDialog.tsx` if needed for consistency
-- Any admin/public job components still preferring nonexistent `description` over real job fields
+**`src/hooks/useJobDetails.tsx`**
+- After fetching the job listing (which returns `client_id`), make a second query to `public_client_info` to get `name` and `logo_url` — the same pattern used in `useApplyContext` and `RelatedJobs`.
+- Merge the client info into the returned object so the rest of the page works unchanged.
+- Remove `clients(id, name, logo_url)` from the join since it fails for public users anyway.
 
-Technical details
+**No other files need changes** — `JobDetailsPage.tsx` already reads `job.clients?.name` and `job.clients?.logo_url`, so we just need to populate that object from the public view instead.
+
+### Technical detail
 
 ```text
-Current flow
-HTML in job_summary
-  -> normalizeInlineHeaders()
-  -> convertSentencesToBullets()
-  -> boldFirstBullet()
-  -> maybe parse as markdown
-  -> sanitize
-  => HTML can be mangled
+Current (broken for public):
+  job_listings.select('*, clients(id, name, logo_url), ...')
+  → clients = null due to RLS
 
-Proposed flow
-if looksLikeHtml(text):
-  sanitize(text) and return
-else:
-  normalize/convert/bold
-  parse markdown if needed
-  sanitize
+Fixed:
+  1. job_listings.select('*, job_categories(id, name)') — drop clients join
+  2. public_client_info.select('id, name, logo_url').eq('id', data.client_id)
+  3. Return { ...data, clients: clientInfo } 
 ```
 
-Why I’m confident this is the issue
-- The live site and published site content match.
-- The database contains rich HTML in `job_summary`.
-- The renderer currently preprocesses all text before deciding whether it is HTML or markdown.
-- The dashboard dialog and the public page both use the renderer, but the public page is the place where the full public-facing job body is most exposed to this mismatch.
+Single file change, same pattern already proven in 5+ other components.
 
-Validation after implementation
-- Open a job whose `job_summary` contains `<p>` and `<ul>` markup.
-- Compare dashboard preview vs live `/jobs/{id}` page.
-- Verify bullets, spacing, bold labels, and paragraph breaks match.
-- Verify a markdown-based job still renders headings/lists correctly.
