@@ -288,7 +288,10 @@ const JobsPage = () => {
           <JobAnalyticsDialog
             job={selectedJob}
             open={showAnalyticsDialog}
-            onOpenChange={setShowAnalyticsDialog}
+            onOpenChange={(open) => {
+              setShowAnalyticsDialog(open);
+              if (!open) setSelectedJob(null);
+            }}
           />
         )}
 
