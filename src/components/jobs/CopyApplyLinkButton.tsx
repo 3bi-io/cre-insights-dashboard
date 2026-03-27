@@ -7,9 +7,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Link2, Copy, Check, ExternalLink, Twitter } from 'lucide-react';
+import { Link2, Copy, Check, ExternalLink, Twitter, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useJobShortLinks } from '@/hooks/useJobShortLinks';
+import { SITE_URL } from '@/config/siteConfig';
 
 interface CopyApplyLinkButtonProps {
   jobId: string;
@@ -97,6 +98,17 @@ export const CopyApplyLinkButton: React.FC<CopyApplyLinkButtonProps> = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem onClick={() => {
+          const url = `${SITE_URL}/jobs/${jobId}`;
+          copyToClipboard(url, 'Live Preview');
+        }}>
+          <Eye className="w-4 h-4 mr-2" />
+          Live Preview Link
+          {copiedType === 'Live Preview' && <Check className="w-4 h-4 ml-auto text-green-500" />}
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
         <DropdownMenuItem onClick={handleCopyStandard}>
           <Copy className="w-4 h-4 mr-2" />
           Standard Apply Link
