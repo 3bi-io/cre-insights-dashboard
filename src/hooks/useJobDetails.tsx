@@ -50,7 +50,6 @@ export const useJobDetails = (jobId: string | undefined) => {
         .from('job_listings')
         .select(`
           *,
-          clients(id, name, logo_url),
           job_categories(id, name)
         `)
         .eq('id', jobId)
@@ -61,11 +60,20 @@ export const useJobDetails = (jobId: string | undefined) => {
       if (error) throw error;
       if (!data) return null;
 
-      // Global voice agent available for all jobs
-      // Note: Organization info is not fetched for privacy
+      // Fetch client info from public view (avoids RLS blocking on clients table)
+      let clientInfo: { id: string; name: string; logo_url: string | null } | null = null;
+      if (data.client_id) {
+        const { data: ci } = await supabase
+          .from('public_client_info')
+          .select('id, name, logo_url')
+          .eq('id', data.client_id)
+          .maybeSingle();
+        clientInfo = ci;
+      }
+
       const voiceAgent = { global: true };
 
-      return { ...data, voiceAgent } as unknown as JobDetails;
+      return { ...data, clients: clientInfo, voiceAgent } as unknown as JobDetails;
     },
     enabled: !!jobId,
     staleTime: 5 * 60 * 1000, // 5 minutes
