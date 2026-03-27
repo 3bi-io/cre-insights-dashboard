@@ -1,63 +1,25 @@
 
 
-## Pull R.E. Garrison Jobs from Double Nickel API
+## Fix: Remove "Sign In" from public header & confirm Apply AI branding
 
-### Problem
-R.E. Garrison's jobs should be imported from Double Nickel using the tracking link IDs stored in the connection credentials. Currently the Double Nickel adapter only supports `test_connection` and `send_application` -- there is no `get_jobs` implementation.
+### What's happening
 
-### Challenge
-Double Nickel does not publish API documentation. We need to discover the correct endpoint for fetching jobs. The existing integration authenticates via Auth0 `client_credentials` flow against `dashboard.getdoublenickel.com`.
+The screenshot shows the **old** ATS.ME branding and a "Sign In" button on the homepage. After investigating the codebase:
 
-### Approach
+1. **Branding is already correct in code** — the `Brand` component renders "Aᴘᴘʟʏ Aɪ", `index.html` references "Apply AI" everywhere, and `hero.content.ts` uses "Interview Everyone". The ATS.ME screenshot appears to be from the **published site** (`ats-me.lovable.app`) which hasn't been republished with the latest code.
 
-**Step 1: Probe the Double Nickel API for job endpoints**
+2. **"Sign In" is still in the Header** — `Header.tsx` has `showAuth={true}` by default, rendering "Sign In" and "Get Started Free" buttons on all public pages (lines 169-188, plus mobile drawer lines 239-248).
 
-Using the existing R.E. Garrison production credentials, make authenticated GET requests to likely endpoints:
-- `GET /api/jobs`
-- `GET /api/jobs?trackingLinkId={id}`
-- `GET /api/tracking-links/{id}`
-- `GET /api/tracking-links/{id}/jobs`
-- `GET /api/openings`
+### Changes
 
-This will be done via `supabase--curl_edge_functions` or a test edge function. Once we find the working endpoint and understand the response schema, we proceed.
+**`src/components/common/Header.tsx`**
+- Change `showAuth` default from `true` to `false` — this removes "Sign In" and "Get Started Free" from both desktop and mobile nav on all public pages
+- The auth buttons are still available when explicitly passed `showAuth={true}` for admin/internal layouts if needed
 
-**Step 2: Implement `getDoubleNickelJobs()` in the REST adapter**
+**After code changes**
+- Click **Publish → Update** to push the latest code to the published site, replacing the stale ATS.ME version
 
-Add a new private method to `rest-json-adapter.ts` that:
-1. Authenticates via existing Auth0 token flow
-2. Iterates over all `tracking_link_ids` from credentials
-3. Fetches jobs for each tracking link
-4. Returns normalized job data
-
-**Step 3: Wire up the `get_jobs` action**
-
-In `RESTJSONAdapter.sendApplication()` area, add a handler for `get_jobs` that routes Double Nickel to `getDoubleNickelJobs()`.
-
-**Step 4: Build a sync edge function or cron**
-
-Create a sync mechanism (similar to `sync-cdl-feeds`) that:
-1. Looks up the R.E. Garrison Double Nickel connection
-2. Calls `get_jobs` for each tracking link ID
-3. Upserts results into `job_listings` with proper `client_id`, `organization_id`
-4. Deactivates jobs no longer present in the API response
-
-### Technical details
-
-```text
-Flow:
-  Cron/Manual trigger
-    → get DN connection for R.E. Garrison (client_id: be8b645e...)
-    → Auth0 token (cached 24h)
-    → For each tracking_link_id:
-        GET /api/{endpoint}?trackingLinkId={id}
-    → Parse response → upsert job_listings
-    → Deactivate stale jobs
-```
-
-Files to modify:
-- `supabase/functions/_shared/ats-adapters/rest-json-adapter.ts` -- add `getDoubleNickelJobs()` method
-- New or existing edge function for the sync cron
-
-### First step requires discovery
-Before writing the sync code, I need to probe the API to find the correct endpoint. Do you know the Double Nickel API endpoint for fetching jobs, or should I try hitting common patterns with the existing credentials?
+### What this fixes
+- No more "Sign In" / "Get Started Free" buttons on the public homepage
+- Once republished, the published site will show "Apply AI" branding matching the current codebase
 
