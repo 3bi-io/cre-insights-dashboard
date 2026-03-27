@@ -96,13 +96,23 @@ function boldFirstBullet(text: string): string {
 }
 
 /**
+ * Ensures markdown headers (###) that appear inline mid-text get their own lines,
+ * so the markdown parser can detect and render them properly.
+ */
+function normalizeInlineHeaders(text: string): string {
+  // Insert a newline before any #{1,6} that isn't already at start of line
+  return text.replace(/([^\n])(\s*#{1,6}\s)/g, '$1\n\n$2');
+}
+
+/**
  * Renders content as HTML, automatically detecting markdown vs HTML input.
  * Converts sentence-dense paragraphs to bullet lists, then sanitizes with DOMPurify.
  */
 export function renderJobDescription(text: string, skipBulletConversion = false): string {
   if (!text) return '';
 
-  let processed = text;
+  // Pre-process: ensure inline markdown headers get their own lines
+  let processed = normalizeInlineHeaders(text);
 
   if (!skipBulletConversion) {
     // Pre-process: convert sentence-packed paragraphs to bullet lists first
