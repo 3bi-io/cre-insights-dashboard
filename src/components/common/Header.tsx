@@ -25,7 +25,7 @@ const megaMenuFeatures = [
 
 export const Header: React.FC<HeaderProps> = ({ 
   navigation = publicNavigation, 
-  showAuth = true,
+  showAuth = false,
   className 
 }) => {
   const location = useLocation();
