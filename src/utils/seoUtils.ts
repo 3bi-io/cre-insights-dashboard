@@ -147,7 +147,6 @@ export function shouldIndexUrl(path: string): boolean {
     '/api',
     '/auth/callback',
     '/applications',
-    '/jobs',
     '/platforms',
     '/ai-tools',
     '/organizations',
