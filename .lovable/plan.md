@@ -1,31 +1,111 @@
 
 
-# Create Zip-Level Job Listings for Werner, Hub Group, and TMC
+# App-Wide Resource Optimization Plan
 
-## Summary
-Resolve each target zip code to its city/state, then insert one job listing per zip for each client — cloned from the parent national listing.
+## Current State Assessment
 
-## File → Client Mapping (confirmed)
-| File | Client | Parent Job ID | Zips |
-|------|--------|---------------|------|
-| `4802-targets.csv` | Werner Enterprises | `861bce97-7740-4207-bd4e-bffa16352699` | 100 |
-| `6023-targets.csv` | Hub Group | `923781c4-57f3-4e88-919d-34ed641d5aa8` | 89 |
-| `7891-targets.csv` | TMC Transportation | `3212c229-c1f6-42aa-8ae5-6350c562c09f` | 110 |
+The app has **90+ lazy-loaded routes** in `AppRoutes.tsx` which is good, but several significant resource waste patterns exist across the codebase.
 
-**Total: 299 new listings**
+---
 
-## Approach
-Run a one-time Python script that:
+## Optimization Areas
 
-1. **Reads** all 3 CSV files
-2. **Resolves** each zip code to city + state via the Zippopotam.us API (with rate limiting)
-3. **Fetches** the parent job's metadata (salary, category, org, etc.) from the database
-4. **Inserts** one `job_listings` row per zip, with:
-   - `title`: `"{Parent Title} | {City}, {State}"` (e.g., "CDL-A Flatbed Drivers | Atlanta, GA")
-   - `city` / `state` / `location`: resolved from zip
-   - All other fields (salary, client_id, org_id, category_id, status, apply_url, etc.) cloned from parent
-5. **Reports** success count and any failed zip lookups
+### 1. Static Imports in AppRoutes That Should Be Lazy
 
-## No schema changes needed
-The `job_listings` table already has all required columns. This is purely a data insert operation.
+Five public pages are **statically imported** in `AppRoutes.tsx` (lines 7-11), meaning they are bundled into the initial chunk even if the user never visits them:
+
+- `JobsPage`
+- `PublicClientsPage`
+- `FeaturesPage`
+- `ContactPage`
+- `ResourcesPage`
+
+**Fix**: Convert these to `React.lazy()` like every other page. The memory note says "static imports to bypass suspense" but the `RouteWrapper` with `Suspense` is already in place and the skeleton fallback is fast enough.
+
+### 2. ChatBot Eagerly Loaded in Layout
+
+`Layout.tsx` line 8 statically imports `ChatBot` (MobileChatBot), which includes the ElevenLabs SDK and chat UI. This loads for **every authenticated page load** even for non-admin users who never see it.
+
+**Fix**: Lazy-load ChatBot and only render it when the role check passes:
+```tsx
+const ChatBot = React.lazy(() => import('@/components/chat/MobileChatBot'));
+```
+
+### 3. Aggressive Polling — 12+ Queries at 10-30s Intervals
+
+Multiple queries poll every 10-30 seconds regardless of whether the user is on the relevant page:
+
+| Hook/Component | Interval | Page |
+|---|---|---|
+| `usePlatformData` | 30s | Platforms |
+| `usePlatforms` | 30s | Multiple |
+| `SpendChart` | 30s | Dashboard |
+| `PlatformBreakdown` | 30s | Dashboard |
+| `JobPerformanceTable` | 30s | Dashboard |
+| `RecentActivityFeed` | 30s | Dashboard |
+| `useSocialInteractions` | 30s | Social |
+| `useElevenLabsConversations` | 30s | Voice |
+| `useTenstreetNotifications` | 30s | ATS |
+| `TenstreetSyncDashboard` | 10s | Sync |
+| `DriverReachSyncDashboard` | 10s | Sync |
+| `useFeedSyncStatus` | 60s | Feeds |
+
+**Fix**: 
+- Increase default polling to **60s** for non-critical data (platforms, spend, breakdown, activity)
+- Use **visibility-aware polling** — only poll when the browser tab is active (`refetchIntervalInBackground: false` is already set in some, but not all)
+- For sync dashboards (10s), use conditional polling that stops when no active operations exist (some already do this, standardize the pattern)
+- Add `enabled` guards so queries only run when their component is mounted/visible
+
+### 4. Duplicate Lazy Component Definitions
+
+`src/components/optimized/LazyComponents.tsx` defines lazy versions of Dashboard, Applications, Platforms, Settings, Auth, Apply, etc. — but `AppRoutes.tsx` defines its **own** lazy imports for the same pages. The `LazyComponents.tsx` file appears unused.
+
+**Fix**: Delete `LazyComponents.tsx` entirely (verify no imports first) to reduce dead code.
+
+### 5. `useOptimizedQuery` Hook Has Stale Memoization
+
+The `memoizedQueryFn` in `useOptimizedQuery.tsx` uses `useCallback(queryFn, [])` with an **empty dependency array**, meaning the query function never updates even if its closure variables change. This is a correctness bug that also causes stale data fetches.
+
+**Fix**: Either remove the hook (let consumers use `useQuery` directly with proper options) or fix the dependency array to `[queryFn]`.
+
+### 6. Route-Level Code Splitting for Feature Modules
+
+Several feature modules (`@/features/candidate`, `@/features/applications`, etc.) are imported via `.then(m => ({ default: m.X }))` patterns. This means the **entire feature barrel export** is loaded to extract one component.
+
+**Fix**: Use direct file path imports instead of barrel re-exports for lazy routes:
+```tsx
+// Before: loads entire feature module
+React.lazy(() => import("@/features/candidate").then(m => ({ default: m.CandidateDashboard })))
+
+// After: loads only the specific page
+React.lazy(() => import("@/features/candidate/pages/CandidateDashboard"))
+```
+
+### 7. Dashboard Component Conditional Loading
+
+`DashboardPage.tsx` imports `SuperAdminDashboard`, `RegularUserDashboard`, `DashboardLayout`, and `ClientPortalDashboard` statically — but only **one** renders per user role.
+
+**Fix**: Lazy-load each dashboard variant so only the user's actual dashboard is fetched:
+```tsx
+const SuperAdminDashboard = React.lazy(() => import('../components/SuperAdminDashboard'));
+const ClientPortalDashboard = React.lazy(() => import('../components/ClientPortalDashboard'));
+// etc.
+```
+
+---
+
+## Implementation Priority
+
+1. **Polling intervals** (highest impact — reduces ongoing Supabase load by ~50%)
+2. **Lazy-load ChatBot** in Layout (removes heavy SDK from non-admin bundles)
+3. **Static → lazy** for 5 public pages in AppRoutes
+4. **Direct path imports** for feature module lazy routes
+5. **Dashboard role-based lazy loading**
+6. **Fix/remove `useOptimizedQuery`** stale memoization
+7. **Delete unused `LazyComponents.tsx`**
+
+## Technical Notes
+- All lazy conversions use existing `RouteWrapper`/`Suspense` infrastructure
+- Polling changes are configuration-only (no new code patterns needed)
+- Feature module splitting requires verifying each component's actual file path
 
