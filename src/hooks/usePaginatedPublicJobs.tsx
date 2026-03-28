@@ -189,21 +189,18 @@ async function enrichJobs(jobs: any[]): Promise<any[]> {
     .in('organization_id', orgIds.length > 0 ? orgIds : ['__none__'])
     .eq('is_active', true);
 
-  // Build a set of "orgId" and "orgId:clientId" keys that have agents
+  // Build a set of "orgId:clientId" keys — only client-specific agents (no org-level fallback)
   const agentKeys = new Set<string>();
   agentData?.forEach(a => {
     if (a.client_id) {
       agentKeys.add(`${a.organization_id}:${a.client_id}`);
-    } else {
-      agentKeys.add(a.organization_id);
     }
   });
 
   return jobs.map(job => {
     const client = job.client_id ? clientMap.get(job.client_id) : null;
-    // Check client-specific agent first, then org-level
-    const hasAgent = (job.organization_id && job.client_id && agentKeys.has(`${job.organization_id}:${job.client_id}`))
-      || (job.organization_id && agentKeys.has(job.organization_id));
+    // Only client-specific agents trigger voice CTA (no org-level fallback)
+    const hasAgent = job.organization_id && job.client_id && agentKeys.has(`${job.organization_id}:${job.client_id}`);
     return {
       ...job,
       clients: client,
