@@ -283,7 +283,7 @@ Deno.serve(async (req) => {
       total_delta_jobs: totalDelta,
       total_submitted: totalSubmitted,
       total_failed: totalFailed,
-      quota_remaining: quotaRemaining,
+      max_per_run: MAX_PER_RUN,
       rate_limited: rateLimited,
       elapsed_ms: elapsed,
       organizations: orgSummaries,
@@ -294,7 +294,7 @@ Deno.serve(async (req) => {
       delta: totalDelta,
       submitted: totalSubmitted,
       failed: totalFailed,
-      quotaRemaining,
+      maxPerRun: MAX_PER_RUN,
       rateLimited,
       elapsed,
     });
