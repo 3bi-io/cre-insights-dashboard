@@ -219,7 +219,7 @@ Deno.serve(async (req) => {
               const errorBody = await response.text();
               summary.failed++;
               summary.errors.push(`${job.id}: HTTP ${response.status} - ${errorBody.substring(0, 300)}`);
-              logger.error('Google Indexing API error', { jobId: job.id, status: response.status, body: errorBody.substring(0, 500) });
+              logger.error('Google Indexing API error', new Error(`HTTP ${response.status}: ${errorBody.substring(0, 500)}`), { jobId: job.id, status: response.status });
             } else {
               // Consume response body
               await response.text();
