@@ -119,12 +119,12 @@ Deno.serve(async (req) => {
     }
 
     // 5. Process each organization - fetch delta jobs and submit
-    let quotaRemaining = GOOGLE_DAILY_QUOTA;
+    let totalSubmittedSoFar = 0;
     let rateLimited = false;
     const orgSummaries: OrgSummary[] = [];
 
     for (const orgId of orgIds) {
-      if (rateLimited || quotaRemaining <= 0) {
+      if (rateLimited || totalSubmittedSoFar >= MAX_PER_RUN) {
         orgSummaries.push({
           organization_id: orgId,
           organization_name: orgNameMap.get(orgId) || 'Unknown',
@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
           submitted: 0,
           failed: 0,
           skipped_quota: 1,
-          errors: ['Skipped: daily quota exhausted or rate limited'],
+          errors: ['Skipped: max per run reached or rate limited'],
         });
         continue;
       }
