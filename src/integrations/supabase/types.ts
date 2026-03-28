@@ -4271,6 +4271,7 @@ export type Database = {
           job_title: string | null
           job_type: string | null
           jobreferrer: string | null
+          last_google_indexed_at: string | null
           last_tenstreet_sync: string | null
           location: string | null
           min_experience_months: number | null
@@ -4317,6 +4318,7 @@ export type Database = {
           job_title?: string | null
           job_type?: string | null
           jobreferrer?: string | null
+          last_google_indexed_at?: string | null
           last_tenstreet_sync?: string | null
           location?: string | null
           min_experience_months?: number | null
@@ -4363,6 +4365,7 @@ export type Database = {
           job_title?: string | null
           job_type?: string | null
           jobreferrer?: string | null
+          last_google_indexed_at?: string | null
           last_tenstreet_sync?: string | null
           location?: string | null
           min_experience_months?: number | null

@@ -6,13 +6,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Base URL for job pages - configurable via environment variable
 const BASE_URL = Deno.env.get('SITE_BASE_URL') || 'https://applyai.jobs';
-
 const logger = createLogger('google-jobs-xml');
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -23,55 +20,52 @@ Deno.serve(async (req) => {
 
   try {
     const supabase = getServiceClient();
-
-    // Get user_id from query params
     const url = new URL(req.url);
     const userId = url.searchParams.get('user_id');
     const organizationId = url.searchParams.get('organization_id');
-    
-    if (!userId && !organizationId) {
-      return new Response('Missing user_id or organization_id parameter', { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'text/plain' } 
+    const globalMode = url.searchParams.get('mode') === 'global';
+
+    // Allow global mode (no user_id/org_id needed) for internal cron use
+    if (!userId && !organizationId && !globalMode) {
+      return new Response('Missing user_id, organization_id, or mode=global parameter', {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'text/plain' },
       });
     }
 
-    logger.info('Generating Google Jobs XML sitemap', { userId, organizationId });
+    logger.info('Generating Google Jobs XML sitemap', { userId, organizationId, globalMode });
 
-    // Build query based on parameters
     let query = supabase
       .from('job_listings')
-      .select(`
-        id,
-        updated_at,
-        created_at,
-        status
-      `)
+      .select('id, updated_at, created_at, status, title, location')
       .eq('status', 'active')
       .eq('is_hidden', false)
+      .not('title', 'is', null)
+      .not('location', 'is', null)
+      .neq('location', '')
       .order('created_at', { ascending: false });
 
-    if (organizationId) {
-      query = query.eq('organization_id', organizationId);
-    } else if (userId) {
-      query = query.eq('user_id', userId);
+    if (!globalMode) {
+      if (organizationId) {
+        query = query.eq('organization_id', organizationId);
+      } else if (userId) {
+        query = query.eq('user_id', userId);
+      }
     }
 
     const { data: jobListings, error } = await query;
 
     if (error) {
       logger.error('Error fetching job listings', error);
-      return new Response('Error fetching job listings', { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'text/plain' } 
+      return new Response('Error fetching job listings', {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'text/plain' },
       });
     }
 
     logger.info('Found active job listings', { count: jobListings?.length || 0 });
 
-    // Generate XML sitemap
     const xmlContent = generateGoogleJobsSitemap(jobListings || []);
-
     const responseTime = Date.now() - startTime;
 
     // Get organization_id for logging
@@ -86,41 +80,38 @@ Deno.serve(async (req) => {
     }
 
     // Log feed access (non-blocking)
-    supabase.from('feed_access_logs').insert({
-      organization_id: orgId,
-      user_id: userId,
-      feed_type: 'google-jobs-sitemap',
-      platform: 'google',
-      request_ip: requestIp,
-      user_agent: userAgent,
-      job_count: jobListings?.length || 0,
-      response_time_ms: responseTime
-    }).then(({ error: logErr }) => {
-      if (logErr) logger.error('Failed to log feed access', logErr);
-    });
+    if (orgId) {
+      supabase.from('feed_access_logs').insert({
+        organization_id: orgId,
+        user_id: userId,
+        feed_type: 'google-jobs-sitemap',
+        platform: 'google',
+        request_ip: requestIp,
+        user_agent: userAgent,
+        job_count: jobListings?.length || 0,
+        response_time_ms: responseTime,
+      }).then(({ error: logErr }) => {
+        if (logErr) logger.error('Failed to log feed access', logErr);
+      });
+    }
 
     return new Response(xmlContent, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/xml; charset=utf-8',
-        'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+        'Cache-Control': 'public, max-age=3600',
       },
     });
-
   } catch (error) {
     logger.error('Error in google-jobs-xml function', error);
-    return new Response('Internal server error', { 
-      status: 500, 
-      headers: { ...corsHeaders, 'Content-Type': 'text/plain' } 
+    return new Response('Internal server error', {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'text/plain' },
     });
   }
 });
 
-/**
- * Generates a Google-compliant XML Sitemap for job listings
- * Each URL points to a job detail page that contains JobPosting JSON-LD
- */
-function generateGoogleJobsSitemap(jobListings: Array<{ id: string; updated_at: string; created_at: string }>): string {
+function generateGoogleJobsSitemap(jobListings: Array<{ id: string; updated_at: string; created_at: string; title?: string; location?: string }>): string {
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -145,7 +136,6 @@ function generateGoogleJobsSitemap(jobListings: Array<{ id: string; updated_at: 
   });
 
   xml += `</urlset>`;
-
   return xml;
 }
 

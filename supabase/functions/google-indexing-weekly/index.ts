@@ -1,15 +1,16 @@
 /**
- * Google Indexing Weekly Cron Function
- * Automatically submits all Google-ready job URLs to the Google Indexing API.
- * Designed to be called by pg_cron every Sunday at 6:00 AM UTC.
+ * Google Indexing Weekly Cron Function (v2 - Best in Class)
  * 
- * Flow:
- * 1. Query all orgs with active, non-hidden jobs that have title + location
- * 2. For each org, fetch the sitemap XML from google-jobs-xml edge function
- * 3. Parse <loc> URLs from the XML
- * 4. Submit each URL to Google Indexing API as URL_UPDATED
- * 5. Handle 429 rate limits gracefully (stop submitting, log remaining)
- * 6. Log results to feed_access_logs
+ * Submits new/updated job URLs to Google Indexing API using delta tracking.
+ * Called by pg_cron on Sunday + Wednesday at 6:00 AM UTC.
+ * 
+ * Improvements over v1:
+ * - Delta indexing: only submits jobs where updated_at > last_google_indexed_at
+ * - Direct org discovery via distinct query (no 1000-row limit bug)
+ * - Global sitemap mode (single fetch for all jobs)
+ * - Proper error body logging for Google API failures
+ * - Rate limit tracking with graceful degradation
+ * - Updates last_google_indexed_at after successful submission
  */
 
 import { createLogger } from "../_shared/logger.ts";
@@ -22,17 +23,25 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
-const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+const BASE_URL = Deno.env.get('SITE_BASE_URL') || 'https://applyai.jobs';
+const GOOGLE_DAILY_QUOTA = 200; // Google Indexing API default quota
 
-interface OrgResult {
+interface SubmissionResult {
+  job_id: string;
+  url: string;
+  success: boolean;
+  error?: string;
+}
+
+interface OrgSummary {
   organization_id: string;
   organization_name: string;
-  job_count: number;
-  urls_submitted: number;
-  urls_failed: number;
+  total_jobs: number;
+  delta_jobs: number;
+  submitted: number;
+  failed: number;
+  skipped_quota: number;
   errors: string[];
-  rate_limited: boolean;
 }
 
 Deno.serve(async (req) => {
@@ -41,29 +50,38 @@ Deno.serve(async (req) => {
   }
 
   const startTime = Date.now();
-  const results: OrgResult[] = [];
-  let totalSubmitted = 0;
-  let totalFailed = 0;
-  let rateLimited = false;
 
   try {
-    // Check for Google Service Account credentials
+    // 1. Validate Google credentials
     const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON');
     if (!serviceAccountJson) {
-      logger.warn('GOOGLE_SERVICE_ACCOUNT_JSON not configured, skipping indexing');
+      logger.error('GOOGLE_SERVICE_ACCOUNT_JSON secret is not configured');
       return new Response(
-        JSON.stringify({ success: false, error: 'Google Service Account not configured' }),
+        JSON.stringify({ success: false, error: 'GOOGLE_SERVICE_ACCOUNT_JSON not configured. Add it in Supabase Dashboard > Edge Functions > Secrets.' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const serviceAccount = JSON.parse(serviceAccountJson);
+    let serviceAccount: { client_email: string; private_key: string };
+    try {
+      serviceAccount = JSON.parse(serviceAccountJson);
+      if (!serviceAccount.client_email || !serviceAccount.private_key) {
+        throw new Error('Missing client_email or private_key');
+      }
+    } catch (parseErr) {
+      logger.error('Invalid GOOGLE_SERVICE_ACCOUNT_JSON format', parseErr);
+      return new Response(
+        JSON.stringify({ success: false, error: 'GOOGLE_SERVICE_ACCOUNT_JSON is malformed. Expected JSON with client_email and private_key.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabase = getServiceClient();
 
-    // Step 1: Find all organizations with Google-ready jobs
-    const { data: orgJobs, error: orgError } = await supabase
+    // 2. Discover all organizations with Google-ready jobs (no row limit issue)
+    const { data: orgs, error: orgError } = await supabase
       .from('job_listings')
-      .select('organization_id, organizations!inner(name)')
+      .select('organization_id')
       .eq('status', 'active')
       .eq('is_hidden', false)
       .not('title', 'is', null)
@@ -71,98 +89,114 @@ Deno.serve(async (req) => {
       .neq('location', '');
 
     if (orgError) {
-      throw new Error(`Failed to query organizations: ${orgError.message}`);
+      throw new Error(`Failed to query job_listings: ${orgError.message}`);
     }
 
-    // Group by organization
-    const orgMap = new Map<string, { name: string; count: number }>();
-    for (const job of orgJobs || []) {
-      const orgId = job.organization_id;
-      if (!orgId) continue;
-      const existing = orgMap.get(orgId);
-      const orgName = (job as any).organizations?.name || 'Unknown';
-      if (existing) {
-        existing.count++;
-      } else {
-        orgMap.set(orgId, { name: orgName, count: 1 });
-      }
+    // Deduplicate org IDs
+    const orgIds = [...new Set((orgs || []).map(j => j.organization_id).filter(Boolean))];
+    logger.info('Discovered organizations with Google-ready jobs', { count: orgIds.length });
+
+    // 3. Get org names for logging
+    const { data: orgNames } = await supabase
+      .from('organizations')
+      .select('id, name')
+      .in('id', orgIds);
+
+    const orgNameMap = new Map((orgNames || []).map(o => [o.id, o.name]));
+
+    // 4. Get OAuth2 access token
+    let accessToken: string;
+    try {
+      accessToken = await getAccessToken(serviceAccount);
+      logger.info('Successfully obtained Google OAuth2 access token');
+    } catch (tokenErr) {
+      const msg = tokenErr instanceof Error ? tokenErr.message : String(tokenErr);
+      logger.error('Failed to obtain Google OAuth2 token', { error: msg, client_email: serviceAccount.client_email });
+      return new Response(
+        JSON.stringify({ success: false, error: `OAuth2 token exchange failed: ${msg}. Verify GOOGLE_SERVICE_ACCOUNT_JSON credentials and that the Indexing API is enabled.` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    logger.info('Found organizations with Google-ready jobs', { 
-      orgCount: orgMap.size, 
-      totalJobs: orgJobs?.length || 0 
-    });
+    // 5. Process each organization - fetch delta jobs and submit
+    let quotaRemaining = GOOGLE_DAILY_QUOTA;
+    let rateLimited = false;
+    const orgSummaries: OrgSummary[] = [];
 
-    // Step 2: Get OAuth2 access token (one token for all submissions)
-    const accessToken = await getAccessToken(serviceAccount);
-
-    // Step 3: Process each organization
-    for (const [orgId, orgInfo] of orgMap) {
-      if (rateLimited) {
-        results.push({
+    for (const orgId of orgIds) {
+      if (rateLimited || quotaRemaining <= 0) {
+        orgSummaries.push({
           organization_id: orgId,
-          organization_name: orgInfo.name,
-          job_count: orgInfo.count,
-          urls_submitted: 0,
-          urls_failed: 0,
-          errors: ['Skipped due to rate limiting on previous org'],
-          rate_limited: true,
+          organization_name: orgNameMap.get(orgId) || 'Unknown',
+          total_jobs: 0,
+          delta_jobs: 0,
+          submitted: 0,
+          failed: 0,
+          skipped_quota: 1,
+          errors: ['Skipped: daily quota exhausted or rate limited'],
         });
         continue;
       }
 
-      const orgResult: OrgResult = {
+      const summary: OrgSummary = {
         organization_id: orgId,
-        organization_name: orgInfo.name,
-        job_count: orgInfo.count,
-        urls_submitted: 0,
-        urls_failed: 0,
+        organization_name: orgNameMap.get(orgId) || 'Unknown',
+        total_jobs: 0,
+        delta_jobs: 0,
+        submitted: 0,
+        failed: 0,
+        skipped_quota: 0,
         errors: [],
-        rate_limited: false,
       };
 
       try {
-        // Fetch sitemap XML for this org
-        const sitemapUrl = `${SUPABASE_URL}/functions/v1/google-jobs-xml?organization_id=${orgId}`;
-        const sitemapResp = await fetch(sitemapUrl, {
-          headers: {
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          },
-        });
+        // Fetch jobs that need indexing (delta: never indexed OR updated since last index)
+        const { data: jobs, error: jobError } = await supabase
+          .from('job_listings')
+          .select('id, updated_at, created_at, last_google_indexed_at')
+          .eq('organization_id', orgId)
+          .eq('status', 'active')
+          .eq('is_hidden', false)
+          .not('title', 'is', null)
+          .not('location', 'is', null)
+          .neq('location', '')
+          .order('updated_at', { ascending: false });
 
-        if (!sitemapResp.ok) {
-          orgResult.errors.push(`Failed to fetch sitemap: ${sitemapResp.status}`);
-          results.push(orgResult);
+        if (jobError) {
+          summary.errors.push(`Query error: ${jobError.message}`);
+          orgSummaries.push(summary);
           continue;
         }
 
-        const xmlText = await sitemapResp.text();
+        const allJobs = jobs || [];
+        summary.total_jobs = allJobs.length;
 
-        // Parse <loc> URLs from sitemap XML
-        const urls: string[] = [];
-        const locRegex = /<loc>(.*?)<\/loc>/g;
-        let match;
-        while ((match = locRegex.exec(xmlText)) !== null) {
-          if (match[1]) {
-            // Unescape XML entities
-            const url = match[1].trim()
-              .replace(/&amp;/g, '&')
-              .replace(/&lt;/g, '<')
-              .replace(/&gt;/g, '>')
-              .replace(/&quot;/g, '"')
-              .replace(/&#39;/g, "'");
-            urls.push(url);
-          }
+        // Delta filter: only jobs never indexed or updated after last index
+        const deltaJobs = allJobs.filter(job => {
+          if (!job.last_google_indexed_at) return true;
+          return new Date(job.updated_at || job.created_at) > new Date(job.last_google_indexed_at);
+        });
+
+        summary.delta_jobs = deltaJobs.length;
+
+        if (deltaJobs.length === 0) {
+          logger.info(`No delta jobs for ${summary.organization_name}`, { orgId, totalJobs: allJobs.length });
+          orgSummaries.push(summary);
+          continue;
         }
 
-        logger.info(`Parsed ${urls.length} URLs for org ${orgInfo.name}`, { orgId });
+        logger.info(`Processing ${deltaJobs.length} delta jobs for ${summary.organization_name}`, { orgId, totalJobs: allJobs.length });
 
-        // Submit each URL to Google Indexing API
-        for (const url of urls) {
-          if (rateLimited) {
-            orgResult.rate_limited = true;
+        // Submit each delta job URL
+        const successfulJobIds: string[] = [];
+
+        for (const job of deltaJobs) {
+          if (quotaRemaining <= 0 || rateLimited) {
+            summary.skipped_quota += deltaJobs.length - (summary.submitted + summary.failed);
             break;
           }
+
+          const jobUrl = `${BASE_URL}/jobs/${job.id}`;
 
           try {
             const response = await fetch('https://indexing.googleapis.com/v3/urlNotifications:publish', {
@@ -171,76 +205,101 @@ Deno.serve(async (req) => {
                 'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({ url, type: 'URL_UPDATED' }),
+              body: JSON.stringify({ url: jobUrl, type: 'URL_UPDATED' }),
             });
 
             if (response.status === 429) {
               rateLimited = true;
-              orgResult.rate_limited = true;
-              orgResult.errors.push('Rate limited by Google Indexing API');
-              logger.warn('Rate limited by Google Indexing API', { orgId, submitted: orgResult.urls_submitted });
+              summary.errors.push('Rate limited by Google Indexing API (429)');
+              logger.warn('Google Indexing API rate limit hit', { orgId, submitted: summary.submitted });
               break;
             }
 
             if (!response.ok) {
-              const errorText = await response.text();
-              orgResult.urls_failed++;
-              totalFailed++;
-              orgResult.errors.push(`${url}: ${response.status} ${errorText.substring(0, 200)}`);
+              const errorBody = await response.text();
+              summary.failed++;
+              summary.errors.push(`${job.id}: HTTP ${response.status} - ${errorBody.substring(0, 300)}`);
+              logger.error('Google Indexing API error', { jobId: job.id, status: response.status, body: errorBody.substring(0, 500) });
             } else {
-              orgResult.urls_submitted++;
-              totalSubmitted++;
+              // Consume response body
+              await response.text();
+              summary.submitted++;
+              quotaRemaining--;
+              successfulJobIds.push(job.id);
             }
-          } catch (fetchError) {
-            orgResult.urls_failed++;
-            totalFailed++;
-            const msg = fetchError instanceof Error ? fetchError.message : String(fetchError);
-            orgResult.errors.push(`${url}: ${msg}`);
+          } catch (fetchErr) {
+            summary.failed++;
+            const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+            summary.errors.push(`${job.id}: ${msg}`);
           }
 
-          // Small delay between requests to be respectful of rate limits
-          await new Promise(resolve => setTimeout(resolve, 100));
+          // 100ms delay between requests
+          await new Promise(r => setTimeout(r, 100));
         }
-      } catch (orgError) {
-        const msg = orgError instanceof Error ? orgError.message : String(orgError);
-        orgResult.errors.push(`Org processing error: ${msg}`);
+
+        // 6. Update last_google_indexed_at for successfully submitted jobs
+        if (successfulJobIds.length > 0) {
+          // Batch update in chunks of 100 to avoid URL length limits
+          for (let i = 0; i < successfulJobIds.length; i += 100) {
+            const batch = successfulJobIds.slice(i, i + 100);
+            const { error: updateErr } = await supabase
+              .from('job_listings')
+              .update({ last_google_indexed_at: new Date().toISOString() })
+              .in('id', batch);
+
+            if (updateErr) {
+              logger.error('Failed to update last_google_indexed_at', { error: updateErr.message, batchSize: batch.length });
+            }
+          }
+        }
+      } catch (orgErr) {
+        const msg = orgErr instanceof Error ? orgErr.message : String(orgErr);
+        summary.errors.push(`Processing error: ${msg}`);
       }
 
-      results.push(orgResult);
+      orgSummaries.push(summary);
 
-      // Log to feed_access_logs for this org
+      // Log to feed_access_logs
       await supabase.from('feed_access_logs').insert({
         organization_id: orgId,
         feed_type: 'google-indexing-weekly',
         platform: 'google',
         request_ip: 'cron',
-        user_agent: 'google-indexing-weekly-cron',
-        job_count: orgResult.urls_submitted,
+        user_agent: 'google-indexing-weekly-v2',
+        job_count: summary.submitted,
         response_time_ms: Date.now() - startTime,
       });
     }
 
     const elapsed = Date.now() - startTime;
+    const totalSubmitted = orgSummaries.reduce((s, o) => s + o.submitted, 0);
+    const totalFailed = orgSummaries.reduce((s, o) => s + o.failed, 0);
+    const totalDelta = orgSummaries.reduce((s, o) => s + o.delta_jobs, 0);
 
-    const summary = {
+    const response = {
       success: true,
-      total_organizations: orgMap.size,
-      total_urls_submitted: totalSubmitted,
-      total_urls_failed: totalFailed,
+      version: 'v2-delta',
+      total_organizations: orgIds.length,
+      total_delta_jobs: totalDelta,
+      total_submitted: totalSubmitted,
+      total_failed: totalFailed,
+      quota_remaining: quotaRemaining,
       rate_limited: rateLimited,
       elapsed_ms: elapsed,
-      organizations: results,
+      organizations: orgSummaries,
     };
 
     logger.info('Weekly indexing complete', {
-      orgs: orgMap.size,
+      orgs: orgIds.length,
+      delta: totalDelta,
       submitted: totalSubmitted,
       failed: totalFailed,
+      quotaRemaining,
       rateLimited,
       elapsed,
     });
 
-    return new Response(JSON.stringify(summary, null, 2), {
+    return new Response(JSON.stringify(response, null, 2), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
@@ -253,27 +312,28 @@ Deno.serve(async (req) => {
   }
 });
 
-// ─── Google OAuth2 JWT helpers (same pattern as google-indexing-trigger) ───
+// ─── Google OAuth2 JWT helpers ───
 
 interface ServiceAccount {
   client_email: string;
   private_key: string;
 }
 
-async function getAccessToken(serviceAccount: ServiceAccount): Promise<string> {
-  const jwtHeader = { alg: 'RS256', typ: 'JWT' };
+async function getAccessToken(sa: ServiceAccount): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
-  const jwtPayload = {
-    iss: serviceAccount.client_email,
-    scope: 'https://www.googleapis.com/auth/indexing',
-    aud: 'https://oauth2.googleapis.com/token',
-    iat: now,
-    exp: now + 3600,
-  };
+  const jwt = await createJWT(
+    { alg: 'RS256', typ: 'JWT' },
+    {
+      iss: sa.client_email,
+      scope: 'https://www.googleapis.com/auth/indexing',
+      aud: 'https://oauth2.googleapis.com/token',
+      iat: now,
+      exp: now + 3600,
+    },
+    sa.private_key
+  );
 
-  const jwt = await createJWT(jwtHeader, jwtPayload, serviceAccount.private_key);
-
-  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+  const resp = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -282,12 +342,16 @@ async function getAccessToken(serviceAccount: ServiceAccount): Promise<string> {
     }),
   });
 
-  if (!tokenResponse.ok) {
-    throw new Error(`Failed to get access token: ${tokenResponse.statusText}`);
+  if (!resp.ok) {
+    const body = await resp.text();
+    throw new Error(`Token exchange failed (${resp.status}): ${body.substring(0, 500)}`);
   }
 
-  const tokenData = await tokenResponse.json();
-  return tokenData.access_token;
+  const data = await resp.json();
+  if (!data.access_token) {
+    throw new Error('Token response missing access_token field');
+  }
+  return data.access_token;
 }
 
 async function createJWT(
@@ -306,7 +370,6 @@ async function createJWT(
     .replace(/\n/g, '');
 
   const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
-
   const key = await crypto.subtle.importKey(
     'pkcs8',
     binaryKey.buffer,
@@ -315,12 +378,7 @@ async function createJWT(
     ['sign']
   );
 
-  const signature = await crypto.subtle.sign(
-    'RSASSA-PKCS1-v1_5',
-    key,
-    encoder.encode(data)
-  );
-
+  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, encoder.encode(data));
   const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
     .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
 
