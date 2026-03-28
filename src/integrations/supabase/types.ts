@@ -9386,6 +9386,7 @@ export type Database = {
         Args: { _org_id: string; _platform_name: string }
         Returns: boolean
       }
+      renew_job_feed_dates: { Args: never; Returns: number }
       set_organization_platform_access: {
         Args: { _enabled: boolean; _org_id: string; _platform_name: string }
         Returns: undefined
