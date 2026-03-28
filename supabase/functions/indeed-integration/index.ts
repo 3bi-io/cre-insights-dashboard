@@ -1,14 +1,21 @@
 /**
  * Indeed Integration Edge Function
  * 
- * Handles analytics sync, stats retrieval, and job posting to Indeed.
- * Uses shared security utilities for authentication and audit logging.
+ * Implements Indeed's Sponsored Jobs API (v1) for programmatic campaign management.
+ * Base URL: https://apis.indeed.com/ads/v1/
+ * Auth: OAuth 2.0 Client Credentials (2-legged)
+ * 
+ * Actions:
+ *   Campaign CRUD: create_campaign, get_campaigns, get_campaign, update_campaign, delete_campaign
+ *   Job management: get_campaign_jobs, get_campaign_budget, update_campaign_budget
+ *   Analytics: sync_analytics, get_stats
+ *   Account: get_employer_info
  */
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { enforceAuth, logSecurityEvent, getClientInfo, createAuthenticatedClient } from '../_shared/serverAuth.ts'
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 import { createLogger } from '../_shared/logger.ts'
+import { getServiceClient } from '../_shared/supabase-client.ts'
 
 const logger = createLogger('indeed-integration')
 
@@ -17,12 +24,65 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Indeed API configuration
-const INDEED_API_BASE = 'https://apis.indeed.com'
+// Indeed Sponsored Jobs API v1
+const INDEED_ADS_API = 'https://apis.indeed.com/ads/v1'
+const INDEED_OAUTH_URL = 'https://apis.indeed.com/oauth/v2/tokens'
 
-// Request validation schemas
-const baseRequestSchema = z.object({
-  action: z.enum(['sync_analytics', 'get_stats', 'post_job', 'update_job', 'pause_job', 'resume_job']),
+// ─── Request Schemas ───
+
+const actionSchema = z.object({
+  action: z.enum([
+    'create_campaign', 'get_campaigns', 'get_campaign', 'update_campaign', 'delete_campaign',
+    'get_campaign_jobs', 'get_campaign_budget', 'update_campaign_budget',
+    'sync_analytics', 'get_stats', 'get_employer_info',
+    // Legacy compat
+    'post_job', 'update_job', 'pause_job', 'resume_job',
+  ]),
+})
+
+const createCampaignSchema = z.object({
+  action: z.literal('create_campaign'),
+  name: z.string().min(1).max(255),
+  status: z.enum(['PAUSED', 'ACTIVE']).default('PAUSED'),
+  objective: z.enum(['APPLY', 'BALANCED']).default('APPLY'),
+  jobsSourceId: z.string().min(1),
+  jobsToInclude: z.enum(['ALL', 'QUERY']).default('ALL'),
+  jobsQuery: z.string().optional(),
+  budgetMonthlyLimit: z.number().positive().optional(),
+  budgetOnetimeLimit: z.number().positive().optional(),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  trackingToken: z.string().optional(),
+})
+
+const getCampaignSchema = z.object({
+  action: z.literal('get_campaign'),
+  campaignId: z.string().min(1),
+})
+
+const updateCampaignSchema = z.object({
+  action: z.literal('update_campaign'),
+  campaignId: z.string().min(1),
+  updates: z.object({
+    name: z.string().optional(),
+    status: z.enum(['PAUSED', 'ACTIVE', 'ENDED']).optional(),
+    jobsQuery: z.string().optional(),
+    jobsToInclude: z.enum(['ALL', 'QUERY']).optional(),
+  }),
+})
+
+const deleteCampaignSchema = z.object({
+  action: z.literal('delete_campaign'),
+  campaignId: z.string().min(1),
+})
+
+const budgetSchema = z.object({
+  action: z.literal('update_campaign_budget'),
+  campaignId: z.string().min(1),
+  budget: z.object({
+    monthlyLimit: z.number().positive().optional(),
+    onetimeLimit: z.number().positive().optional(),
+  }),
 })
 
 const analyticsRequestSchema = z.object({
@@ -38,164 +98,365 @@ const statsRequestSchema = z.object({
   employerId: z.string().min(1),
 })
 
-const postJobRequestSchema = z.object({
-  action: z.literal('post_job'),
-  jobData: z.object({
-    title: z.string().min(1),
-    description: z.string().min(10),
-    company: z.string().min(1),
-    location: z.object({
-      city: z.string(),
-      state: z.string(),
-      country: z.string().default('US'),
-      postalCode: z.string().optional(),
+// ─── OAuth ───
+
+interface IndeedCredentials {
+  clientId: string;
+  clientSecret: string;
+}
+
+function getIndeedCredentials(): IndeedCredentials | null {
+  const clientId = Deno.env.get('INDEED_CLIENT_ID')
+  const clientSecret = Deno.env.get('INDEED_CLIENT_SECRET')
+  if (!clientId || !clientSecret) return null
+  return { clientId, clientSecret }
+}
+
+// Token cache (in-memory, per isolate)
+let cachedToken: { token: string; expiresAt: number } | null = null
+
+async function getAccessToken(
+  credentials: IndeedCredentials,
+  scopes: string[] = ['employer_access', 'employer.advertising.campaign', 'employer.advertising.campaign.read']
+): Promise<string> {
+  // Return cached token if valid
+  if (cachedToken && cachedToken.expiresAt > Date.now() + 60_000) {
+    return cachedToken.token
+  }
+
+  const response = await fetch(INDEED_OAUTH_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': `Basic ${btoa(`${credentials.clientId}:${credentials.clientSecret}`)}`,
+    },
+    body: new URLSearchParams({
+      grant_type: 'client_credentials',
+      scope: scopes.join(' '),
     }),
-    salary: z.object({
-      min: z.number().optional(),
-      max: z.number().optional(),
-      type: z.enum(['yearly', 'monthly', 'weekly', 'daily', 'hourly']).default('yearly'),
-    }).optional(),
-    jobType: z.enum(['fulltime', 'parttime', 'contract', 'temporary', 'internship']).optional(),
-    experienceLevel: z.enum(['entry', 'mid', 'senior', 'executive']).optional(),
-    applyUrl: z.string().url().optional(),
-    category: z.string().optional(),
-  }),
-})
+  })
 
-const jobActionRequestSchema = z.object({
-  action: z.enum(['update_job', 'pause_job', 'resume_job']),
-  jobId: z.string().min(1),
-  jobData: z.object({}).passthrough().optional(),
-})
+  if (!response.ok) {
+    const errText = await response.text()
+    logger.error('OAuth token error', new Error(errText))
+    throw new Error(`Indeed OAuth failed: ${response.status}`)
+  }
 
-serve(async (req) => {
+  const data = await response.json()
+  cachedToken = {
+    token: data.access_token,
+    expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
+  }
+  return cachedToken.token
+}
+
+// ─── API Helpers ───
+
+async function indeedApiCall(
+  method: string,
+  path: string,
+  token: string,
+  body?: Record<string, unknown>
+): Promise<{ ok: boolean; status: number; data: any }> {
+  const url = `${INDEED_ADS_API}${path}`
+  const opts: RequestInit = {
+    method,
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+  }
+  if (body && method !== 'GET') {
+    opts.body = JSON.stringify(body)
+  }
+
+  const response = await fetch(url, opts)
+  const responseText = await response.text()
+  let data: any
+  try {
+    data = JSON.parse(responseText)
+  } catch {
+    data = { raw: responseText }
+  }
+
+  return { ok: response.ok, status: response.status, data }
+}
+
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+}
+
+// ─── Main Handler ───
+
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    // SECURITY: Server-side JWT verification with role check
     const authContext = await enforceAuth(req, ['admin', 'super_admin'])
     if (authContext instanceof Response) return authContext
 
     const { userId, organizationId } = authContext
     const { ipAddress, userAgent } = getClientInfo(req)
-
-    // Parse request body
     const body = await req.json()
-    const { action } = baseRequestSchema.parse(body)
-    
+    const { action } = actionSchema.parse(body)
+
     logger.info(`Action: ${action}`, { userId })
 
-    // Create authenticated Supabase client
-    const supabaseClient = createAuthenticatedClient(req)
+    const supabase = createAuthenticatedClient(req)
 
-    // AUDIT LOGGING
-    await logSecurityEvent(supabaseClient, authContext, `INDEED_${action.toUpperCase()}`, {
-      table: 'indeed_analytics',
-      recordId: body.employerId || body.jobId || body.jobData?.title || 'n/a',
+    await logSecurityEvent(supabase, authContext, `INDEED_${action.toUpperCase()}`, {
+      table: 'indeed_campaigns',
+      recordId: body.campaignId || body.employerId || 'n/a',
       ipAddress,
-      userAgent
+      userAgent,
     })
 
+    const credentials = getIndeedCredentials()
+
     switch (action) {
+      // ─── Campaign CRUD ───
+
+      case 'create_campaign': {
+        const input = createCampaignSchema.parse(body)
+        if (!credentials) return jsonResponse({ success: false, error: 'INDEED_CLIENT_ID / INDEED_CLIENT_SECRET not configured' }, 503)
+
+        const token = await getAccessToken(credentials)
+        const apiBody: Record<string, unknown> = {
+          name: input.name,
+          status: input.status,
+          jobsSourceId: input.jobsSourceId,
+          jobsToInclude: input.jobsToInclude,
+        }
+        if (input.jobsQuery) apiBody.jobsQuery = input.jobsQuery
+        if (input.budgetMonthlyLimit) apiBody.budgetMonthlyLimit = input.budgetMonthlyLimit
+        if (input.budgetOnetimeLimit) apiBody.budgetOnetimeLimit = input.budgetOnetimeLimit
+        if (input.startDate) apiBody.startDate = input.startDate
+        if (input.endDate) apiBody.fixedEndDate = input.endDate
+        if (input.trackingToken) apiBody.trackingToken = input.trackingToken
+        apiBody.budgetOptimizationTarget = 'AUTOMATIC'
+
+        const result = await indeedApiCall('POST', '/campaigns', token, apiBody)
+
+        // Persist locally regardless of API result for tracking
+        const serviceClient = getServiceClient()
+        const { data: campaign, error: dbError } = await serviceClient
+          .from('indeed_campaigns')
+          .insert({
+            organization_id: organizationId,
+            campaign_id: result.ok ? (result.data.campaignId || result.data.id || null) : null,
+            name: input.name,
+            status: result.ok ? input.status : 'DRAFT',
+            objective: input.objective,
+            budget_monthly_limit: input.budgetMonthlyLimit || null,
+            budget_onetime_limit: input.budgetOnetimeLimit || null,
+            start_date: input.startDate || null,
+            end_date: input.endDate || null,
+            jobs_source_id: input.jobsSourceId,
+            jobs_query: input.jobsQuery || null,
+            jobs_to_include: input.jobsToInclude,
+            tracking_token: input.trackingToken || null,
+            metadata: result.ok ? result.data : { error: result.data, status: result.status },
+            created_by: userId,
+          })
+          .select()
+          .single()
+
+        if (dbError) logger.error('DB insert error', dbError)
+
+        return jsonResponse({
+          success: result.ok,
+          campaign: campaign || null,
+          indeedResponse: result.data,
+          message: result.ok
+            ? 'Campaign created on Indeed and tracked locally'
+            : `Indeed API returned ${result.status} — campaign saved locally as DRAFT`,
+        }, result.ok ? 201 : 207)
+      }
+
+      case 'get_campaigns': {
+        if (!credentials) {
+          // Return local campaigns only
+          const serviceClient = getServiceClient()
+          const { data } = await serviceClient
+            .from('indeed_campaigns')
+            .select('*')
+            .eq('organization_id', organizationId)
+            .order('created_at', { ascending: false })
+          return jsonResponse({ success: true, campaigns: data || [], source: 'local' })
+        }
+
+        const token = await getAccessToken(credentials)
+        const result = await indeedApiCall('GET', '/campaigns', token)
+        return jsonResponse({
+          success: result.ok,
+          campaigns: result.data?.campaigns || result.data || [],
+          source: 'indeed_api',
+        })
+      }
+
+      case 'get_campaign': {
+        const { campaignId } = getCampaignSchema.parse(body)
+        if (!credentials) return jsonResponse({ success: false, error: 'Credentials not configured' }, 503)
+
+        const token = await getAccessToken(credentials)
+        const result = await indeedApiCall('GET', `/campaigns/${campaignId}`, token)
+        return jsonResponse({ success: result.ok, campaign: result.data })
+      }
+
+      case 'update_campaign': {
+        const { campaignId, updates } = updateCampaignSchema.parse(body)
+        if (!credentials) return jsonResponse({ success: false, error: 'Credentials not configured' }, 503)
+
+        const token = await getAccessToken(credentials)
+        const result = await indeedApiCall('PATCH', `/campaigns/${campaignId}`, token, updates as Record<string, unknown>)
+
+        // Sync status locally
+        if (result.ok) {
+          const serviceClient = getServiceClient()
+          const updateFields: Record<string, unknown> = {}
+          if (updates.status) updateFields.status = updates.status
+          if (updates.name) updateFields.name = updates.name
+
+          if (Object.keys(updateFields).length > 0) {
+            await serviceClient
+              .from('indeed_campaigns')
+              .update(updateFields)
+              .eq('campaign_id', campaignId)
+              .eq('organization_id', organizationId)
+          }
+        }
+
+        return jsonResponse({ success: result.ok, campaign: result.data })
+      }
+
+      case 'delete_campaign': {
+        const { campaignId } = deleteCampaignSchema.parse(body)
+        if (!credentials) return jsonResponse({ success: false, error: 'Credentials not configured' }, 503)
+
+        const token = await getAccessToken(credentials)
+        const result = await indeedApiCall('DELETE', `/campaigns/${campaignId}`, token)
+
+        if (result.ok) {
+          const serviceClient = getServiceClient()
+          await serviceClient
+            .from('indeed_campaigns')
+            .update({ status: 'ENDED' })
+            .eq('campaign_id', campaignId)
+            .eq('organization_id', organizationId)
+        }
+
+        return jsonResponse({ success: result.ok, message: result.ok ? 'Campaign deleted' : 'Delete failed', details: result.data })
+      }
+
+      // ─── Budget ───
+
+      case 'get_campaign_budget': {
+        const { campaignId } = z.object({ action: z.string(), campaignId: z.string() }).parse(body)
+        if (!credentials) return jsonResponse({ success: false, error: 'Credentials not configured' }, 503)
+
+        const token = await getAccessToken(credentials)
+        const result = await indeedApiCall('GET', `/campaigns/${campaignId}/budget`, token)
+        return jsonResponse({ success: result.ok, budget: result.data })
+      }
+
+      case 'update_campaign_budget': {
+        const { campaignId, budget } = budgetSchema.parse(body)
+        if (!credentials) return jsonResponse({ success: false, error: 'Credentials not configured' }, 503)
+
+        const token = await getAccessToken(credentials)
+        const patchBody: Record<string, unknown> = {}
+        if (budget.monthlyLimit !== undefined) patchBody.budgetMonthlyLimit = budget.monthlyLimit
+        if (budget.onetimeLimit !== undefined) patchBody.budgetOnetimeLimit = budget.onetimeLimit
+
+        const result = await indeedApiCall('PATCH', `/campaigns/${campaignId}/budget`, token, patchBody)
+
+        if (result.ok) {
+          const serviceClient = getServiceClient()
+          const updateFields: Record<string, unknown> = {}
+          if (budget.monthlyLimit !== undefined) updateFields.budget_monthly_limit = budget.monthlyLimit
+          if (budget.onetimeLimit !== undefined) updateFields.budget_onetime_limit = budget.onetimeLimit
+
+          await serviceClient
+            .from('indeed_campaigns')
+            .update(updateFields)
+            .eq('campaign_id', campaignId)
+            .eq('organization_id', organizationId)
+        }
+
+        return jsonResponse({ success: result.ok, budget: result.data })
+      }
+
+      // ─── Campaign Jobs ───
+
+      case 'get_campaign_jobs': {
+        const { campaignId } = z.object({ action: z.string(), campaignId: z.string() }).parse(body)
+        if (!credentials) return jsonResponse({ success: false, error: 'Credentials not configured' }, 503)
+
+        const token = await getAccessToken(credentials)
+        const result = await indeedApiCall('GET', `/campaigns/${campaignId}/jobs`, token)
+        return jsonResponse({ success: result.ok, jobs: result.data?.jobs || result.data || [] })
+      }
+
+      // ─── Employer Info ───
+
+      case 'get_employer_info': {
+        if (!credentials) return jsonResponse({ success: false, error: 'Credentials not configured' }, 503)
+
+        const token = await getAccessToken(credentials)
+        const result = await indeedApiCall('GET', '/subaccounts', token)
+        return jsonResponse({ success: result.ok, employers: result.data })
+      }
+
+      // ─── Analytics (preserved from v1) ───
+
       case 'sync_analytics': {
         const { employerId, startDate, endDate, jobId } = analyticsRequestSchema.parse(body)
-        return await syncIndeedAnalytics(employerId, startDate, endDate, jobId, userId, organizationId, supabaseClient)
+        return await syncIndeedAnalytics(employerId, startDate, endDate, jobId, userId, organizationId, supabase, credentials)
       }
-      
+
       case 'get_stats': {
         const { employerId } = statsRequestSchema.parse(body)
-        return await getIndeedStats(employerId, userId, supabaseClient)
+        return await getIndeedStats(employerId, userId, supabase)
       }
-      
-      case 'post_job': {
-        const { jobData } = postJobRequestSchema.parse(body)
-        return await postJobToIndeed(jobData, userId, organizationId, supabaseClient)
-      }
-      
+
+      // ─── Legacy Compat (redirect to campaign-based approach) ───
+
+      case 'post_job':
       case 'update_job':
       case 'pause_job':
-      case 'resume_job': {
-        const { jobId, jobData } = jobActionRequestSchema.parse(body)
-        return await manageIndeedJob(action, jobId, jobData, userId, organizationId, supabaseClient)
-      }
-      
-      default:
-        throw new Error(`Unknown action: ${action}`)
-    }
+      case 'resume_job':
+        return jsonResponse({
+          success: false,
+          error: 'Legacy job-level actions are deprecated. Use campaign-based management instead.',
+          migration: {
+            create_campaign: 'POST with action: "create_campaign" — creates a sponsored campaign targeting jobs via jobsSourceId',
+            update_campaign: 'POST with action: "update_campaign" — update campaign status (PAUSED/ACTIVE/ENDED)',
+            get_campaigns: 'POST with action: "get_campaigns" — list all campaigns',
+          },
+        }, 410)
 
+      default:
+        return jsonResponse({ success: false, error: `Unknown action: ${action}` }, 400)
+    }
   } catch (error) {
     logger.error('Integration error', error)
-    
-    // Handle Zod validation errors
+
     if (error instanceof z.ZodError) {
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: 'Validation error',
-          details: error.errors 
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return jsonResponse({ success: false, error: 'Validation error', details: error.errors }, 400)
     }
-    
-    return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+
+    return jsonResponse({ success: false, error: error.message }, 500)
   }
 })
 
-/**
- * Get Indeed API credentials
- */
-function getIndeedCredentials(): { clientId: string; clientSecret: string } | null {
-  const clientId = Deno.env.get('INDEED_CLIENT_ID')
-  const clientSecret = Deno.env.get('INDEED_CLIENT_SECRET')
-  
-  if (!clientId || !clientSecret) {
-    logger.warn('API credentials not configured')
-    return null
-  }
-  
-  return { clientId, clientSecret }
-}
+// ─── Analytics Functions (preserved) ───
 
-/**
- * Get Indeed OAuth token (for Employer API)
- */
-async function getIndeedAccessToken(credentials: { clientId: string; clientSecret: string }): Promise<string | null> {
-  try {
-    // Indeed uses OAuth 2.0 for employer API access
-    const response = await fetch(`${INDEED_API_BASE}/oauth/v2/tokens`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${btoa(`${credentials.clientId}:${credentials.clientSecret}`)}`,
-      },
-      body: new URLSearchParams({
-        grant_type: 'client_credentials',
-        scope: 'employer_access',
-      }),
-    })
-    
-    if (!response.ok) {
-      logger.error('Failed to get access token', await response.text())
-      return null
-    }
-    
-    const data = await response.json()
-    return data.access_token
-  } catch (error) {
-    logger.error('OAuth error', error)
-    return null
-  }
-}
-
-/**
- * Fetch analytics from Indeed API (with fallback to simulated data)
- */
 async function syncIndeedAnalytics(
   employerId: string,
   startDate: string,
@@ -203,95 +464,58 @@ async function syncIndeedAnalytics(
   jobId: string | undefined,
   userId: string,
   organizationId: string | null,
-  supabaseClient: any
+  supabaseClient: any,
+  credentials: IndeedCredentials | null,
 ) {
   logger.info('Syncing analytics', { employerId, startDate, endDate })
-  
-  const credentials = getIndeedCredentials()
+
   let analyticsData: any[] = []
   let usedRealApi = false
-  
+
   if (credentials) {
-    const accessToken = await getIndeedAccessToken(credentials)
-    
-    if (accessToken) {
-      try {
-        // Indeed Analytics API endpoint
-        const url = new URL(`${INDEED_API_BASE}/v1/reporting/campaigns`)
-        url.searchParams.set('employerId', employerId)
-        url.searchParams.set('startDate', startDate)
-        url.searchParams.set('endDate', endDate)
-        
-        if (jobId) {
-          url.searchParams.set('jobId', jobId)
-        }
-        
-        const response = await fetch(url.toString(), {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        })
-        
-        if (response.ok) {
-          const data = await response.json()
-          analyticsData = transformIndeedAnalytics(data, userId, employerId, organizationId)
-          usedRealApi = true
-          logger.info('Successfully fetched analytics from API')
-        } else {
-          logger.warn('API returned non-OK status, using simulated data', { status: response.status })
-          analyticsData = generateAnalyticsData(employerId, startDate, endDate, jobId, userId, organizationId)
-        }
-      } catch (apiError) {
-        logger.error('API error, falling back to simulated data', apiError)
+    try {
+      const token = await getAccessToken(credentials)
+      const url = new URL(`${INDEED_ADS_API}/reporting/campaigns`)
+      url.searchParams.set('employerId', employerId)
+      url.searchParams.set('startDate', startDate)
+      url.searchParams.set('endDate', endDate)
+      if (jobId) url.searchParams.set('jobId', jobId)
+
+      const response = await fetch(url.toString(), {
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        analyticsData = transformIndeedAnalytics(data, userId, employerId, organizationId)
+        usedRealApi = true
+      } else {
+        await response.text() // consume body
         analyticsData = generateAnalyticsData(employerId, startDate, endDate, jobId, userId, organizationId)
       }
-    } else {
-      logger.info('Could not obtain access token - using simulated data')
+    } catch {
       analyticsData = generateAnalyticsData(employerId, startDate, endDate, jobId, userId, organizationId)
     }
   } else {
-    logger.info('No API credentials - using simulated analytics data')
     analyticsData = generateAnalyticsData(employerId, startDate, endDate, jobId, userId, organizationId)
   }
 
-  // Upsert analytics data
   const { error } = await supabaseClient
     .from('indeed_analytics')
-    .upsert(analyticsData, { 
-      onConflict: 'employer_id,date',
-      ignoreDuplicates: false 
-    })
+    .upsert(analyticsData, { onConflict: 'employer_id,date', ignoreDuplicates: false })
 
-  if (error) {
-    logger.error('Failed to upsert analytics', error)
-    throw error
-  }
+  if (error) throw error
 
-  return new Response(
-    JSON.stringify({
-      success: true,
-      message: `Synced ${analyticsData.length} days of Indeed analytics`,
-      recordsProcessed: analyticsData.length,
-      source: usedRealApi ? 'indeed_api' : 'simulated'
-    }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  )
+  return jsonResponse({
+    success: true,
+    message: `Synced ${analyticsData.length} days of Indeed analytics`,
+    recordsProcessed: analyticsData.length,
+    source: usedRealApi ? 'indeed_api' : 'simulated',
+  })
 }
 
-/**
- * Transform Indeed API response to our analytics format
- */
-function transformIndeedAnalytics(
-  apiData: any,
-  userId: string,
-  employerId: string,
-  organizationId: string | null
-): any[] {
-  // Transform Indeed's response format to our schema
-  // This would be customized based on actual Indeed API response structure
+function transformIndeedAnalytics(apiData: any, userId: string, employerId: string, organizationId: string | null): any[] {
   const results = apiData.campaigns || apiData.data || []
-  
   return results.map((item: any) => ({
     user_id: userId,
     organization_id: organizationId,
@@ -302,43 +526,28 @@ function transformIndeedAnalytics(
     clicks: item.clicks || 0,
     impressions: item.impressions || 0,
     applications: item.applies || item.applications || 0,
-    ctr: item.ctr || (item.impressions > 0 ? ((item.clicks / item.impressions) * 100) : 0),
-    cpc: item.cpc || (item.clicks > 0 ? (item.spend / item.clicks) : 0),
+    ctr: item.ctr || (item.impressions > 0 ? (item.clicks / item.impressions) * 100 : 0),
+    cpc: item.cpc || (item.clicks > 0 ? item.spend / item.clicks : 0),
     updated_at: new Date().toISOString(),
   }))
 }
 
-/**
- * Generate analytics data (simulated or from internal tracking)
- */
-function generateAnalyticsData(
-  employerId: string,
-  startDate: string,
-  endDate: string,
-  jobId: string | undefined,
-  userId: string,
-  organizationId: string | null
-): any[] {
+function generateAnalyticsData(employerId: string, startDate: string, endDate: string, jobId: string | undefined, userId: string, organizationId: string | null): any[] {
   const data: any[] = []
   const start = new Date(startDate)
   const end = new Date(endDate)
-  
-  // Indeed typically has higher volume than Adzuna
   let baseClicks = Math.floor(Math.random() * 80) + 40
-  
+
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const dateStr = d.toISOString().split('T')[0]
-    
-    // Add variance for realistic data
     const dayOfWeek = d.getDay()
     const weekendMultiplier = (dayOfWeek === 0 || dayOfWeek === 6) ? 0.5 : 1.0
     const variance = 0.75 + Math.random() * 0.5
-    
     const clicks = Math.floor(baseClicks * weekendMultiplier * variance)
     const impressions = clicks * (Math.floor(Math.random() * 3) + 4)
     const applications = Math.floor(clicks * (Math.random() * 0.06 + 0.04))
     const spend = clicks * (Math.random() * 1.8 + 0.9)
-    
+
     data.push({
       user_id: userId,
       organization_id: organizationId,
@@ -353,17 +562,13 @@ function generateAnalyticsData(
       cpc: Number((spend / clicks).toFixed(2)),
       updated_at: new Date().toISOString(),
     })
-    
-    // Trend adjustment
+
     baseClicks = Math.max(15, baseClicks + (Math.random() - 0.5) * 15)
   }
-  
+
   return data
 }
 
-/**
- * Get aggregated stats for an employer
- */
 async function getIndeedStats(employerId: string, userId: string, supabaseClient: any) {
   const { data, error } = await supabaseClient
     .from('indeed_analytics')
@@ -373,222 +578,31 @@ async function getIndeedStats(employerId: string, userId: string, supabaseClient
     .order('date', { ascending: false })
     .limit(30)
 
-  if (error) {
-    logger.error('Failed to fetch stats', error)
-    throw error
-  }
+  if (error) throw error
 
-  const totals = (data || []).reduce((acc: any, row: any) => ({
-    spend: acc.spend + (row.spend || 0),
-    clicks: acc.clicks + (row.clicks || 0),
-    impressions: acc.impressions + (row.impressions || 0),
-    applications: acc.applications + (row.applications || 0),
-  }), { spend: 0, clicks: 0, impressions: 0, applications: 0 })
-
-  return new Response(
-    JSON.stringify({
-      success: true,
-      data: data || [],
-      totals: {
-        ...totals,
-        ctr: totals.impressions > 0 ? Number(((totals.clicks / totals.impressions) * 100).toFixed(2)) : 0,
-        cpc: totals.clicks > 0 ? Number((totals.spend / totals.clicks).toFixed(2)) : 0,
-        cpa: totals.applications > 0 ? Number((totals.spend / totals.applications).toFixed(2)) : 0,
-      },
-      period: {
-        days: data?.length || 0,
-        from: data?.[data.length - 1]?.date || null,
-        to: data?.[0]?.date || null,
-      }
+  const totals = (data || []).reduce(
+    (acc: any, row: any) => ({
+      spend: acc.spend + (row.spend || 0),
+      clicks: acc.clicks + (row.clicks || 0),
+      impressions: acc.impressions + (row.impressions || 0),
+      applications: acc.applications + (row.applications || 0),
     }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    { spend: 0, clicks: 0, impressions: 0, applications: 0 }
   )
-}
 
-/**
- * Post a job to Indeed (requires API credentials)
- */
-async function postJobToIndeed(
-  jobData: any,
-  userId: string,
-  organizationId: string | null,
-  supabaseClient: any
-) {
-  const credentials = getIndeedCredentials()
-  
-  if (!credentials) {
-    logger.info('No API credentials - job posting simulated')
-    
-    await supabaseClient.from('audit_logs').insert({
-      user_id: userId,
-      organization_id: organizationId,
-      table_name: 'indeed_job_postings',
-      action: 'POST_JOB_SIMULATED',
-      record_id: `sim_${Date.now()}`,
-    })
-    
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Job posting simulated (no API credentials configured)',
-        jobId: `indeed_sim_${Date.now()}`,
-        warning: 'Configure INDEED_CLIENT_ID and INDEED_CLIENT_SECRET for real job posting'
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-
-  const accessToken = await getIndeedAccessToken(credentials)
-  
-  if (!accessToken) {
-    throw new Error('Failed to obtain Indeed API access token')
-  }
-
-  try {
-    // Indeed Job Posting API
-    const response = await fetch(`${INDEED_API_BASE}/v1/jobs`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title: jobData.title,
-        description: jobData.description,
-        company: jobData.company,
-        location: {
-          city: jobData.location.city,
-          state: jobData.location.state,
-          country: jobData.location.country,
-          postalCode: jobData.location.postalCode,
-        },
-        compensation: jobData.salary ? {
-          range: {
-            min: jobData.salary.min,
-            max: jobData.salary.max,
-          },
-          type: jobData.salary.type,
-        } : undefined,
-        jobType: jobData.jobType,
-        experienceLevel: jobData.experienceLevel,
-        applyUrl: jobData.applyUrl,
-      }),
-    })
-    
-    if (!response.ok) {
-      const errorText = await response.text()
-      logger.error('Job posting failed', new Error(errorText), { status: response.status })
-      throw new Error(`Indeed API error: ${response.status}`)
-    }
-    
-    const result = await response.json()
-    const externalJobId = result.jobId || result.id || `indeed_${Date.now()}`
-    
-    await supabaseClient.from('audit_logs').insert({
-      user_id: userId,
-      organization_id: organizationId,
-      table_name: 'indeed_job_postings',
-      action: 'POST_JOB',
-      record_id: externalJobId,
-    })
-    
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Job posted to Indeed successfully',
-        jobId: externalJobId,
-        jobData: {
-          title: jobData.title,
-          company: jobData.company,
-          location: `${jobData.location.city}, ${jobData.location.state}`,
-        }
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  } catch (apiError) {
-    logger.error('Job posting error', apiError)
-    throw new Error(`Failed to post job to Indeed: ${apiError.message}`)
-  }
-}
-
-/**
- * Manage existing Indeed job (update, pause, resume)
- */
-async function manageIndeedJob(
-  action: string,
-  jobId: string,
-  jobData: any,
-  userId: string,
-  organizationId: string | null,
-  supabaseClient: any
-) {
-  const credentials = getIndeedCredentials()
-  
-  if (!credentials) {
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: 'Indeed API credentials not configured',
-        hint: 'Add INDEED_CLIENT_ID and INDEED_CLIENT_SECRET secrets'
-      }),
-      { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-
-  const accessToken = await getIndeedAccessToken(credentials)
-  
-  if (!accessToken) {
-    throw new Error('Failed to obtain Indeed API access token')
-  }
-
-  try {
-    let endpoint = `${INDEED_API_BASE}/v1/jobs/${jobId}`
-    let method = 'PATCH'
-    let body: any = {}
-    
-    switch (action) {
-      case 'update_job':
-        body = jobData
-        break
-      case 'pause_job':
-        body = { status: 'paused' }
-        break
-      case 'resume_job':
-        body = { status: 'active' }
-        break
-    }
-    
-    const response = await fetch(endpoint, {
-      method,
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    })
-    
-    if (!response.ok) {
-      throw new Error(`Indeed API error: ${response.status}`)
-    }
-    
-    await supabaseClient.from('audit_logs').insert({
-      user_id: userId,
-      organization_id: organizationId,
-      table_name: 'indeed_job_postings',
-      action: action.toUpperCase(),
-      record_id: jobId,
-    })
-    
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: `Job ${action.replace('_job', '')}d successfully`,
-        jobId,
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  } catch (apiError) {
-    logger.error(`${action} error`, apiError)
-    throw new Error(`Failed to ${action.replace('_', ' ')}: ${apiError.message}`)
-  }
+  return jsonResponse({
+    success: true,
+    data: data || [],
+    totals: {
+      ...totals,
+      ctr: totals.impressions > 0 ? Number(((totals.clicks / totals.impressions) * 100).toFixed(2)) : 0,
+      cpc: totals.clicks > 0 ? Number((totals.spend / totals.clicks).toFixed(2)) : 0,
+      cpa: totals.applications > 0 ? Number((totals.spend / totals.applications).toFixed(2)) : 0,
+    },
+    period: {
+      days: data?.length || 0,
+      from: data?.[data.length - 1]?.date || null,
+      to: data?.[0]?.date || null,
+    },
+  })
 }

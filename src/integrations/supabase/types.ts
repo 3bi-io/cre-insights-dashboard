@@ -3944,6 +3944,156 @@ export type Database = {
           },
         ]
       }
+      indeed_campaign_jobs: {
+        Row: {
+          applies: number | null
+          campaign_id: string
+          clicks: number | null
+          created_at: string
+          id: string
+          impressions: number | null
+          indeed_job_key: string | null
+          job_listing_id: string
+          last_synced_at: string | null
+          spend: number | null
+          status: string | null
+        }
+        Insert: {
+          applies?: number | null
+          campaign_id: string
+          clicks?: number | null
+          created_at?: string
+          id?: string
+          impressions?: number | null
+          indeed_job_key?: string | null
+          job_listing_id: string
+          last_synced_at?: string | null
+          spend?: number | null
+          status?: string | null
+        }
+        Update: {
+          applies?: number | null
+          campaign_id?: string
+          clicks?: number | null
+          created_at?: string
+          id?: string
+          impressions?: number | null
+          indeed_job_key?: string | null
+          job_listing_id?: string
+          last_synced_at?: string | null
+          spend?: number | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indeed_campaign_jobs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "indeed_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indeed_campaign_jobs_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      indeed_campaigns: {
+        Row: {
+          budget_monthly_limit: number | null
+          budget_onetime_limit: number | null
+          campaign_id: string | null
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          id: string
+          jobs_query: string | null
+          jobs_source_id: string | null
+          jobs_to_include: string | null
+          last_synced_at: string | null
+          metadata: Json | null
+          name: string
+          objective: string | null
+          organization_id: string
+          start_date: string | null
+          status: string
+          total_applies: number | null
+          total_clicks: number | null
+          total_impressions: number | null
+          total_spend: number | null
+          tracking_token: string | null
+          updated_at: string
+        }
+        Insert: {
+          budget_monthly_limit?: number | null
+          budget_onetime_limit?: number | null
+          campaign_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          jobs_query?: string | null
+          jobs_source_id?: string | null
+          jobs_to_include?: string | null
+          last_synced_at?: string | null
+          metadata?: Json | null
+          name: string
+          objective?: string | null
+          organization_id: string
+          start_date?: string | null
+          status?: string
+          total_applies?: number | null
+          total_clicks?: number | null
+          total_impressions?: number | null
+          total_spend?: number | null
+          tracking_token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          budget_monthly_limit?: number | null
+          budget_onetime_limit?: number | null
+          campaign_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          jobs_query?: string | null
+          jobs_source_id?: string | null
+          jobs_to_include?: string | null
+          last_synced_at?: string | null
+          metadata?: Json | null
+          name?: string
+          objective?: string | null
+          organization_id?: string
+          start_date?: string | null
+          status?: string
+          total_applies?: number | null
+          total_clicks?: number | null
+          total_impressions?: number | null
+          total_spend?: number | null
+          tracking_token?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indeed_campaigns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indeed_campaigns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       industry_templates: {
         Row: {
           ai_prompt_hints: Json | null
