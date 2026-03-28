@@ -197,6 +197,7 @@ export const getNavigationGroups = (options: {
           { path: '/admin/ad-networks', label: 'Ad Networks', icon: Globe }
         ] : []),
         ...(isAdmin ? [
+          { path: '/admin/syndication', label: 'Syndication', icon: Antenna },
           { path: '/admin/webhook-management', label: 'Webhooks', icon: Webhook }
         ] : []),
         ...(isSuperAdmin ? [
