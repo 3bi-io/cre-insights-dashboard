@@ -1,12 +1,19 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { PageLayout } from '@/features/shared';
 import { useAuth } from '@/hooks/useAuth';
 import { hasRoleOrHigher } from '@/utils/roleUtils';
-import { SuperAdminDashboard } from '../components/SuperAdminDashboard';
-import { RegularUserDashboard } from '../components/RegularUserDashboard';
-import { DashboardLayout } from '../components/DashboardLayout';
-import { ClientPortalDashboard } from '../components/ClientPortalDashboard';
+
+const SuperAdminDashboard = React.lazy(() => import('../components/SuperAdminDashboard').then(m => ({ default: m.SuperAdminDashboard })));
+const RegularUserDashboard = React.lazy(() => import('../components/RegularUserDashboard').then(m => ({ default: m.RegularUserDashboard })));
+const DashboardLayout = React.lazy(() => import('../components/DashboardLayout').then(m => ({ default: m.DashboardLayout })));
+const ClientPortalDashboard = React.lazy(() => import('../components/ClientPortalDashboard').then(m => ({ default: m.ClientPortalDashboard })));
+
+const DashboardFallback = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+);
 
 const DashboardPage = () => {
   const { user, userRole, organization, loading } = useAuth();
@@ -14,9 +21,7 @@ const DashboardPage = () => {
   if (loading) {
     return (
       <PageLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
+        <DashboardFallback />
       </PageLayout>
     );
   }
@@ -35,23 +40,19 @@ const DashboardPage = () => {
     );
   }
 
-  // Super admin gets full platform dashboard
-  if (userRole === 'super_admin') {
-    return <SuperAdminDashboard />;
-  }
-
-  // Client role users get client-scoped portal
-  if (userRole === 'client') {
-    return <ClientPortalDashboard />;
-  }
-
-  // Admin, moderator, and recruiter get organization dashboard
-  if (hasRoleOrHigher(userRole, 'recruiter')) {
-    return <DashboardLayout organizationName={organization?.name} />;
-  }
-
-  // Regular users (viewer/user) get limited dashboard
-  return <RegularUserDashboard />;
+  return (
+    <Suspense fallback={<DashboardFallback />}>
+      {userRole === 'super_admin' ? (
+        <SuperAdminDashboard />
+      ) : userRole === 'client' ? (
+        <ClientPortalDashboard />
+      ) : hasRoleOrHigher(userRole, 'recruiter') ? (
+        <DashboardLayout organizationName={organization?.name} />
+      ) : (
+        <RegularUserDashboard />
+      )}
+    </Suspense>
+  );
 };
 
 export default DashboardPage;

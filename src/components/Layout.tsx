@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { Suspense, useEffect, useRef, useCallback } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import AppSidebar from './AppSidebar';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import ThemeToggle from './ThemeToggle';
 import { useIsMobile } from '@/hooks/use-mobile';
-import ChatBot from '@/components/chat/MobileChatBot';
+const ChatBot = React.lazy(() => import('@/components/chat/MobileChatBot'));
 import MobileHeader from './MobileHeader';
 import MobileBottomNav from './MobileBottomNav';
 import { useAuth } from '@/hooks/useAuth';
@@ -168,15 +168,17 @@ const LayoutContent = () => {
         
         {/* Global ChatBot - Only for Admin and Super Admin */}
         {(userRole === 'admin' || userRole === 'super_admin') && organization && (
-          <ChatBot 
-            page={getCurrentPage()} 
-            context={{
-              organizationId: organization.id,
-              organizationName: organization.name,
-              organizationSlug: organization.slug,
-              userRole: userRole,
-            }}
-          />
+          <Suspense fallback={null}>
+            <ChatBot 
+              page={getCurrentPage()} 
+              context={{
+                organizationId: organization.id,
+                organizationName: organization.name,
+                organizationSlug: organization.slug,
+                userRole: userRole,
+              }}
+            />
+          </Suspense>
         )}
       </div>
     </div>

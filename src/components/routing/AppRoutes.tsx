@@ -4,11 +4,11 @@ import Layout from "@/components/Layout";
 import PublicLayout from "@/components/public/PublicLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Skeleton } from "@/components/ui/skeleton";
-import JobsPage from "@/pages/public/JobsPage";
-import PublicClientsPage from "@/pages/public/ClientsPage";
-import FeaturesPage from "@/pages/public/FeaturesPage";
-import ContactPage from "@/pages/public/ContactPage";
-import ResourcesPage from "@/pages/public/ResourcesPage";
+const JobsPage = React.lazy(() => import("@/pages/public/JobsPage"));
+const PublicClientsPage = React.lazy(() => import("@/pages/public/ClientsPage"));
+const FeaturesPage = React.lazy(() => import("@/pages/public/FeaturesPage"));
+const ContactPage = React.lazy(() => import("@/pages/public/ContactPage"));
+const ResourcesPage = React.lazy(() => import("@/pages/public/ResourcesPage"));
 
 // Public pages
 const LandingPage = React.lazy(() => import("@/pages/public/LandingPage"));
@@ -49,42 +49,42 @@ const RecruiterCalendarPage = React.lazy(() => import("@/pages/RecruiterCalendar
 // Main application pages
 const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
 
-const CandidateDashboard = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.CandidateDashboard })));
-const CandidateLayout = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.CandidateLayout })));
-const MyApplicationsPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.MyApplicationsPage })));
-const JobSearchPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.JobSearchPage })));
-const SavedJobsPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.SavedJobsPage })));
+const CandidateDashboard = React.lazy(() => import("@/features/candidate/pages/CandidateDashboard"));
+const CandidateLayout = React.lazy(() => import("@/features/candidate/components/CandidateLayout"));
+const MyApplicationsPage = React.lazy(() => import("@/features/candidate/pages/MyApplicationsPage"));
+const JobSearchPage = React.lazy(() => import("@/features/candidate/pages/JobSearchPage"));
+const SavedJobsPage = React.lazy(() => import("@/features/candidate/pages/SavedJobsPage"));
 
-const ProfilePage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.ProfilePage })));
-const JobDetailPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.JobDetailPage })));
-const GrokChatPage = React.lazy(() => import("@/features/ai-chat").then(m => ({ default: m.GrokChatPage })));
-const Jobs = React.lazy(() => import("@/features/jobs").then(m => ({ default: m.JobsPage })));
-const Campaigns = React.lazy(() => import("@/features/campaigns").then(m => ({ default: m.CampaignsPage })));
+const ProfilePage = React.lazy(() => import("@/features/candidate/pages/ProfilePage"));
+const JobDetailPage = React.lazy(() => import("@/features/candidate/pages/JobDetailPage"));
+const GrokChatPage = React.lazy(() => import("@/features/ai-chat/pages/GrokChatPage").then(m => ({ default: m.GrokChatPage })));
+const Jobs = React.lazy(() => import("@/features/jobs/pages/JobsPage"));
+const Campaigns = React.lazy(() => import("@/features/campaigns/pages/CampaignsPage"));
 const JobGroups = React.lazy(() => import("@/pages/JobGroups"));
-const Applications = React.lazy(() => import("@/features/applications").then(m => ({ default: m.ApplicationsPage })));
+const Applications = React.lazy(() => import("@/features/applications/pages/ApplicationsPage"));
 const ImportApplications = React.lazy(() => import("@/pages/ImportApplications"));
-const AIAnalytics = React.lazy(() => import("@/features/ai-analytics").then(m => ({ default: m.AIAnalyticsPage })));
+const AIAnalytics = React.lazy(() => import("@/features/ai-analytics/pages/AIAnalyticsPage"));
 const AIImpactDashboard = React.lazy(() => import("@/pages/AIImpactDashboard"));
-const AITools = React.lazy(() => import("@/features/ai-tools").then(m => ({ default: m.AIToolsPage })));
+const AITools = React.lazy(() => import("@/features/ai-tools/pages/AIToolsPage").then(m => ({ default: m.AIToolsPage })));
 const VoiceAgent = React.lazy(() => import("@/pages/VoiceAgent"));
 const VoiceAgentDemo = React.lazy(() => import("@/pages/VoiceAgentDemo"));
 const ElevenLabsAdmin = React.lazy(() => import("@/pages/ElevenLabsAdmin"));
 
 // Consolidated pages
-const ATSCommandCenterPage = React.lazy(() => import("@/features/ats").then(m => ({ default: m.ATSCommandCenterPage })));
-const MetaAnalyticsPage = React.lazy(() => import("@/features/analytics").then(m => ({ default: m.MetaAnalyticsPage })));
-const AIConfigurationPage = React.lazy(() => import("@/features/settings").then(m => ({ default: m.AIConfigurationPage })));
-const SocialEngagementDashboard = React.lazy(() => import("@/features/social-engagement").then(m => ({ default: m.SocialEngagementDashboard })));
-const SuperAdminSocialBeacons = React.lazy(() => import("@/features/social-engagement").then(m => ({ default: m.SuperAdminSocialBeacons })));
+const ATSCommandCenterPage = React.lazy(() => import("@/features/ats/pages/ATSCommandCenterPage"));
+const MetaAnalyticsPage = React.lazy(() => import("@/features/analytics/pages/MetaAnalyticsPage"));
+const AIConfigurationPage = React.lazy(() => import("@/features/settings/pages/AIConfigurationPage"));
+const SocialEngagementDashboard = React.lazy(() => import("@/features/social-engagement/pages/SocialEngagementDashboard").then(m => ({ default: m.SocialEngagementDashboard })));
+const SuperAdminSocialBeacons = React.lazy(() => import("@/features/social-engagement/pages/SuperAdminSocialBeacons").then(m => ({ default: m.SuperAdminSocialBeacons })));
 
 // Remaining pages
 const TenstreetIntegration = React.lazy(() => import("@/pages/TenstreetIntegration"));
-const RoutesPage = React.lazy(() => import("@/features/routes").then(m => ({ default: m.RoutesPage })));
+const RoutesPage = React.lazy(() => import("@/features/routes/pages/RoutesPage"));
 const Platforms = React.lazy(() => import("@/pages/Platforms"));
 const AdNetworks = React.lazy(() => import("@/pages/AdNetworks"));
 const JobBoards = React.lazy(() => import("@/pages/JobBoards"));
 const FeedsManagement = React.lazy(() => import("@/pages/FeedsManagement"));
-const ClientsPage = React.lazy(() => import("@/features/clients").then(m => ({ default: m.ClientsPage })));
+const ClientsPage = React.lazy(() => import("@/features/clients/pages/ClientsPage"));
 const ClientDashboardsPage = React.lazy(() => import("@/pages/ClientDashboardsPage"));
 const Organizations = React.lazy(() => import("@/pages/Organizations"));
 const Settings = React.lazy(() => import("@/pages/Settings"));
@@ -114,11 +114,11 @@ const SecuritySettings = React.lazy(() => import("@/pages/settings/SecuritySetti
 // BillingSettings removed - no subscription tiers
 
 // Candidate settings
-const CandidateAccountSettings = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.CandidateAccountSettings })));
-const CandidateNotifications = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.CandidateNotifications })));
+const CandidateAccountSettings = React.lazy(() => import("@/features/candidate/pages/AccountSettings"));
+const CandidateNotifications = React.lazy(() => import("@/features/candidate/pages/NotificationsPage"));
 
 // Talent Pool pages
-const TalentPoolsPage = React.lazy(() => import("@/features/talent").then(m => ({ default: m.TalentPoolsPage })));
+const TalentPoolsPage = React.lazy(() => import("@/features/talent/pages/TalentPoolsPage"));
 
 // Loading fallback component
 const PageSkeleton = React.memo(() => (
@@ -171,15 +171,15 @@ const AppRoutes: React.FC = () => {
       {/* Public Routes */}
       <Route path="/" element={<PublicLayout />}>
         <Route index element={<RouteWrapper><LandingPage /></RouteWrapper>} />
-        <Route path="jobs" element={<JobsPage />} />
+        <Route path="jobs" element={<RouteWrapper><JobsPage /></RouteWrapper>} />
         <Route path="jobs/:id" element={<RouteWrapper><JobDetailsPage /></RouteWrapper>} />
-        <Route path="clients" element={<PublicClientsPage />} />
+        <Route path="clients" element={<RouteWrapper><PublicClientsPage /></RouteWrapper>} />
         <Route path="companies" element={<Navigate to="/clients" replace />} />
-        <Route path="employers" element={<PublicClientsPage />} />
-        <Route path="features" element={<FeaturesPage />} />
+        <Route path="employers" element={<RouteWrapper><PublicClientsPage /></RouteWrapper>} />
+        <Route path="features" element={<RouteWrapper><FeaturesPage /></RouteWrapper>} />
         
-        <Route path="contact" element={<ContactPage />} />
-        <Route path="resources" element={<ResourcesPage />} />
+        <Route path="contact" element={<RouteWrapper><ContactPage /></RouteWrapper>} />
+        <Route path="resources" element={<RouteWrapper><ResourcesPage /></RouteWrapper>} />
         <Route path="privacy-policy" element={<RouteWrapper><PrivacyPolicyPage /></RouteWrapper>} />
         <Route path="terms-of-service" element={<RouteWrapper><TermsOfServicePage /></RouteWrapper>} />
         <Route path="cookie-policy" element={<RouteWrapper><CookiePolicyPage /></RouteWrapper>} />

@@ -25,7 +25,8 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
   const { data: conversations, isLoading: loadingConversations, error: conversationsError } = useQuery({
     queryKey: ['elevenlabs-conversations', voiceAgentId],
     enabled: !!session && (userRole === 'super_admin' || userRole === 'admin'),
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
     queryFn: async () => {
       logger.debug('Fetching ElevenLabs conversations', { agentId: voiceAgentId || 'all' }, 'ElevenLabs');
       let query = supabase

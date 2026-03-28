@@ -83,7 +83,8 @@ const TenstreetSyncDashboard = () => {
         job_title: (app.job_listings as any)?.title || 'Unknown Job'
       })) as ApplicationSyncData[];
     },
-    refetchInterval: 10000, // Refetch every 10 seconds for real-time updates
+    refetchInterval: 30000, // Refetch every 30 seconds (reduced from 10s)
+    refetchIntervalInBackground: false,
   });
 
   // Fetch Tenstreet credentials status
