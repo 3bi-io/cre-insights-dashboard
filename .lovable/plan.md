@@ -1,57 +1,63 @@
 
 
-# Fix Voice Apply CTA and Apply Routing
+# Fix: Voice Apply CTA Not Showing on Public /jobs Page
 
-## Audit Results
+## Problem Found
 
-### Voice Apply — Current vs Expected
+The `voice_agents` table has RLS that restricts reads to **authenticated users only** (migration `20260123204659`). The public `/jobs` page queries voice_agents with the anon key, which returns `[]` for every request. This means **no client shows Voice Apply on the public page** — not even Danny Herman, Aspenview, or any enabled client.
 
-| Client | Org | Expected | Current | Status |
-|---|---|---|---|---|
-| Aspenview | Aspen Analytics | Enabled | Client agent ✅ | OK |
-| Danny Herman | Hayes | Enabled | Client agent ✅ | OK |
-| Day & Ross | Hayes | Enabled | Client agent ✅ | OK |
-| James Burg | Hayes | Enabled | Client agent ✅ | OK |
-| Pemberton | Hayes | Enabled | Client agent ✅ | OK |
-| Novco | Hayes | Enabled | Org fallback ✅ | Fragile |
-| R.E. Garrison | Hayes | Enabled | Org fallback ✅ | Fragile |
-| Sysco | CR England | Enabled | Org fallback ✅ | Fragile |
-| **Dollar Tree** | CR England | **Disabled** | Org fallback ❌ | **BUG** |
-| **Family Dollar** | CR England | **Disabled** | Org fallback ❌ | **BUG** |
-| **Kroger** | CR England | **Disabled** | Org fallback ❌ | **BUG** |
-| **Hayes AI Recruiting** | Hayes | **Disabled** | Org fallback ❌ | **BUG** |
-| Hub Group | (no agents) | Disabled | ✅ | OK |
-| Werner | (no agents) | Disabled | ✅ | OK |
-| TMC | (no agents) | Disabled | ✅ | OK |
+The code changes from the previous edit (client-only filtering logic) are correct, but they have no effect because the underlying data query returns nothing.
 
-**Root cause**: The org-level fallback in both `useJobDetails.tsx` and `usePaginatedPublicJobs.tsx` enables voice for ALL clients under an org if any org-level agent exists — including clients that should not have voice.
+## Fix
 
-### Apply Routing — All Correct
-- **Aspenview**: External (rippling.com) ✅
-- **Hub Group, TMC, Werner**: External (cdljobnow.com) ✅
-- **All others**: Internal `/apply` (via applyai.jobs/ats.me URLs or null apply_url → defaults to `/apply?job_id=`) ✅
+### Step 1: Create a security definer function for public voice agent lookup
 
-No apply routing changes needed.
+Create a new SQL function `get_public_voice_agent_client_ids` that:
+- Runs as `SECURITY DEFINER` (bypasses RLS)
+- Takes an array of organization IDs
+- Returns only `organization_id` and `client_id` for active agents with a non-null `client_id`
+- Exposes no sensitive data (no agent IDs, credentials, phone numbers)
 
----
+```sql
+CREATE OR REPLACE FUNCTION public.get_public_voice_agent_client_ids(_org_ids uuid[])
+RETURNS TABLE(organization_id uuid, client_id uuid)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+  SELECT DISTINCT va.organization_id, va.client_id
+  FROM public.voice_agents va
+  WHERE va.organization_id = ANY(_org_ids)
+    AND va.is_active = true
+    AND va.client_id IS NOT NULL;
+$$;
+```
 
-## Fix Plan
+### Step 2: Update `usePaginatedPublicJobs.tsx` enrichJobs function
 
-### Step 1: Database — Create client-specific voice agent records
+Replace the direct `.from('voice_agents').select(...)` query with an RPC call:
 
-Insert inbound agent records for the 3 clients that currently rely on org-level fallback but should keep voice enabled:
+```ts
+const { data: agentData } = await supabase.rpc('get_public_voice_agent_client_ids', {
+  _org_ids: orgIds
+});
+```
 
-- **R.E. Garrison** (`be8b645e`) → Hayes org, reuse Hayes inbound agent ID (`agent_3901k96k46dhecxbzhr85tmwrph7`)
-- **Novco** (`4a9ef1df`) → Hayes org, reuse Hayes inbound agent ID
-- **Sysco** (`e2619f0a`) → CR England org, reuse CR England inbound agent ID (`agent_2601k9d75z14f508v87nx8mmwv78`)
+Then build agentKeys from the result as before.
 
-### Step 2: Code — Remove org-level fallback
+### Step 3: Update `useJobDetails.tsx`
 
-**`src/hooks/useJobDetails.tsx`** (lines 91-101): Remove the "Fallback to org-level agent" block. Only check client-specific agents.
+Replace the direct voice_agents query with the same RPC, or a simpler single-row check:
 
-**`src/hooks/usePaginatedPublicJobs.tsx`** (lines 194-199): Stop adding org-only keys to the agent set. Only add `orgId:clientId` keys, so only client-specific agents trigger voice.
+```ts
+const { data: agentCheck } = await supabase.rpc('get_public_voice_agent_client_ids', {
+  _org_ids: [data.organization_id]
+});
+const hasClientAgent = agentCheck?.some(a => a.client_id === data.client_id);
+```
 
-### Result
+## Result
 
-After these changes, voice is strictly opt-in per client via the `voice_agents` table. No org-level fallback means Dollar Tree, Family Dollar, Kroger, and Hayes AI Recruiting correctly show no voice CTA.
+After this fix:
+- **Enabled clients** (Aspenview, Danny Herman, Day & Ross, James Burg, Novco, Pemberton, R.E. Garrison, Sysco) will show Voice Apply CTA
+- **Disabled clients** (Dollar Tree, Family Dollar, Hayes AI Recruiting, Hub Group, Kroger, TMC, Werner) will NOT show Voice Apply CTA
+- No sensitive agent data is exposed to public visitors
 
