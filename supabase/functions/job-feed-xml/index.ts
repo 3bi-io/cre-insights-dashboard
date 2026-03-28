@@ -24,6 +24,24 @@ Deno.serve(async (req) => {
     const platform = url.searchParams.get('platform')
     const user_id = url.searchParams.get('user_id')
 
+    // Redirect Indeed requests to the canonical universal-xml-feed endpoint
+    if (platform?.toLowerCase() === 'indeed') {
+      const canonicalBase = url.origin.replace('job-feed-xml', 'universal-xml-feed');
+      const redirectUrl = new URL(canonicalBase);
+      redirectUrl.searchParams.set('format', 'indeed');
+      // Forward organization_id or user_id params
+      for (const [key, value] of url.searchParams.entries()) {
+        if (key !== 'platform') {
+          redirectUrl.searchParams.set(key, value);
+        }
+      }
+      logger.info('Redirecting Indeed request to canonical feed', { redirectUrl: redirectUrl.toString() });
+      return new Response(null, {
+        status: 301,
+        headers: { ...corsHeaders, 'Location': redirectUrl.toString(), 'Cache-Control': 'public, max-age=86400' },
+      });
+    }
+
     // Create Supabase client with service role to bypass RLS
     const supabaseClient = getServiceClient()
 
