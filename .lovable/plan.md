@@ -1,47 +1,47 @@
 
 
-## Enable Voice Apply for All Companies with External Apply URLs
+# Remove Platform Default Voice Agent Fallback
 
-### Problem
-Voice Apply is hardcoded to only bypass the external-URL block for AspenView. Four Hayes clients (Pemberton, Day & Ross, Novco, James Burg) with 162 combined jobs are excluded despite the same use case — voice screening before external ATS redirect.
+## Summary
+Currently, every job shows "Voice Apply" because both the frontend and backend fall back to a global platform-default agent when no specific agent is assigned. This change removes that fallback so Voice Apply only appears for clients/orgs with a dedicated agent.
 
-### Approach
-Replace the hardcoded `isAspenViewClientId()` check with a configurable client-level flag. Two options:
+## Changes
 
-**Option A — Database flag (recommended)**: Add `enable_voice_apply boolean` column to the clients table, set it per client, and query it alongside job data. Most flexible, admin-controllable.
+### 1. Frontend: Stop hardcoding `voiceAgent: { global: true }`
+Currently `usePaginatedPublicJobs.tsx` and `useJobDetails.tsx` unconditionally attach `voiceAgent: { global: true }` to every job. Instead, query the `voice_agents` table to check if the job's org/client actually has an active inbound agent assigned.
 
-**Option B — Code-level allow list**: Replace the single AspenView ID check with a set of client IDs. Faster to ship, but requires code changes to add/remove clients.
+**Files**: `src/hooks/usePaginatedPublicJobs.tsx`, `src/hooks/useJobDetails.tsx`
 
-### Changes (Option B — immediate, no migration needed)
+- Query `voice_agents` for each unique `organization_id` (and optionally `client_id`) to check if an active agent exists
+- Only set `voiceAgent` on jobs that have a matching agent; leave it `null` otherwise
+- This naturally disables `hasVoiceAgent` → `showVoiceButton` → Voice Apply CTA for unassigned clients
 
-#### 1. `src/utils/aspenviewJobGrouping.ts` → Create a general voice-enabled check
-- Add a `VOICE_APPLY_CLIENT_IDS` set containing AspenView + Pemberton + Day & Ross + Novco + James Burg IDs
-- Export `isVoiceApplyEnabled(clientId)` function that checks membership
-- Keep `isAspenViewClientId()` for AspenView-specific display logic (description transform, grouping)
+### 2. Remove `VOICE_APPLY_CLIENT_IDS` hardcoded allow-list
+Since voice visibility will now be driven by actual agent assignment in the database, the static client ID set is no longer needed.
 
-#### 2. `src/components/public/PublicJobCard.tsx`
-- Replace `isAspenViewClientId(job.client_id)` in the `showVoiceButton` line with `isVoiceApplyEnabled(job.client_id)`
-- Multi-location guard: also use `isVoiceApplyEnabled` (currently only AspenView has multi-location grouping anyway)
+**File**: `src/utils/aspenviewJobGrouping.ts`
+- Remove `VOICE_APPLY_CLIENT_IDS` set and `isVoiceApplyEnabled()` function
 
-#### 3. `src/pages/public/JobDetailsPage.tsx`
-- Replace `isAspenViewJob(job.client_id)` in `showVoiceButton` prop (lines 293, 354) with `isVoiceApplyEnabled(job.client_id)`
-- Keep AspenView-specific logic (description transform, sibling grouping) unchanged
+**Files**: `src/components/public/PublicJobCard.tsx`, `src/pages/public/JobDetailsPage.tsx`, `src/features/jobs/components/public/JobSidebar.tsx`
+- Replace `isVoiceApplyEnabled(job.client_id)` checks with the existing `hasVoiceAgent` / `!!job.voiceAgent` check (which now reflects real DB state)
+- For external-apply jobs, show Voice Apply if the job has a voice agent assigned (regardless of external URL)
 
-#### 4. `src/features/jobs/components/public/JobSidebar.tsx`
-- Replace `isAspenView` check for ReadinessBadges voice indicator with `isVoiceApplyEnabled`
+### 3. Backend: Remove platform default fallback from outbound call trigger
 
-### Client IDs for Allow List
-| Client | ID |
-|--------|-----|
-| AspenView Technology | `82513316-7df2-4bf0-83d8-6c511c83ddfb` |
-| Pemberton Truck Lines | `67cadf11-8cce-41c6-8e19-7d2bb0be3b03` |
-| Day and Ross | `30ab5f68-258c-4e81-8217-1123c4536259` |
-| Novco, Inc. | `4a9ef1df-dcc9-499c-999a-446bb9a329fc` |
-| James Burg Trucking | `b2a29507-32a6-4f5e-85d6-a7e6ffac3c52` |
-| Werner Enterprises | `feb3479f-4116-42a5-bb6a-811406c1c99a` |
-| Hub Group | `8ca3faca-b91c-4ab8-a9af-b145ab265228` |
-| TMC Transportation | `50657f4d-c47b-4104-a307-b82d5fa4a1df` |
+**DB trigger** (`trigger_application_insert_outbound_call`): Remove PRIORITY 3 block that falls back to `is_platform_default = true`. If no client-specific or org-level agent exists, no outbound call is queued.
 
-### Result
-All 8 external-apply clients get Voice Apply on both the job card and detail page. Internal-apply clients (Danny Herman, R.E. Garrison, Dollar Tree, etc.) continue working as-is since they already show voice.
+**Edge function** (`supabase/functions/elevenlabs-outbound-call/index.ts`): Remove the "Final fallback - platform default" block (lines ~951-967) that queries for `is_platform_default = true`.
+
+### 4. Backend: Relax org-check for inbound agent access
+
+**Edge function** (`supabase/functions/elevenlabs-agent/index.ts`): The `is_platform_default` check on line 149 allows cross-org access for platform-default agents. Since we're removing that concept, simplify the auth check — agents are accessible if they match the requesting user's org, or if the request is unauthenticated (public web voice apply).
+
+### 5. Submit-application edge function
+**File**: `supabase/functions/submit-application/index.ts` (lines ~1236-1247)
+- No change needed — it already checks for org-level agent only, no platform default fallback here.
+
+## Result
+- Werner, Hub Group, TMC (and any client without a dedicated agent) will **not** show Voice Apply
+- Clients with assigned agents (AspenView, Pemberton, Day & Ross, Novco, James Burg, Danny Herman, R.E. Garrison) continue showing it
+- Adding Voice Apply to a new client = inserting a `voice_agents` row for that client/org
 
