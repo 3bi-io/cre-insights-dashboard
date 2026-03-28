@@ -8814,10 +8814,6 @@ export type Database = {
       }
     }
     Functions: {
-      alter_google_indexing_schedule: {
-        Args: { new_schedule: string }
-        Returns: undefined
-      }
       apply_industry_template: {
         Args: { _org_id: string; _reset_existing?: boolean; _vertical: string }
         Returns: undefined

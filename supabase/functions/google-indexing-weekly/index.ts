@@ -289,12 +289,9 @@ Deno.serve(async (req) => {
       organizations: orgSummaries,
     };
 
-    // ─── Auto-schedule: switch cron between daily and twice-weekly ───
+    // ─── Backlog check: log remaining unindexed jobs ───
     let scheduleAction = 'unchanged';
     try {
-      const DAILY_SCHEDULE = '0 6 * * *';
-      const NORMAL_SCHEDULE = '0 6 * * 0,3';
-
       // Count remaining unindexed active jobs
       const { count: remainingCount } = await supabase
         .from('job_listings')
@@ -306,22 +303,14 @@ Deno.serve(async (req) => {
       const backlogRemaining = remainingCount ?? 0;
 
       if (backlogRemaining > 0) {
-        // Still have backlog — ensure daily schedule
-        await supabase.rpc('alter_google_indexing_schedule', {
-          new_schedule: DAILY_SCHEDULE,
-        }).throwOnError();
-        scheduleAction = `kept_daily (${backlogRemaining} remaining)`;
+        scheduleAction = `backlog_remaining: ${backlogRemaining} jobs still need indexing`;
       } else {
-        // Backlog cleared — revert to twice-weekly
-        await supabase.rpc('alter_google_indexing_schedule', {
-          new_schedule: NORMAL_SCHEDULE,
-        }).throwOnError();
-        scheduleAction = 'reverted_to_twice_weekly';
+        scheduleAction = 'backlog_cleared — safe to revert cron to 0 6 * * 0,3';
       }
 
-      logger.info('Cron schedule check', { backlogRemaining, scheduleAction });
+      logger.info('Backlog status', { backlogRemaining, scheduleAction });
     } catch (schedErr) {
-      logger.error('Failed to update cron schedule', schedErr);
+      logger.error('Failed to check backlog', schedErr);
       scheduleAction = `error: ${schedErr instanceof Error ? schedErr.message : String(schedErr)}`;
     }
 
