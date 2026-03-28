@@ -44,7 +44,7 @@ const JobDetailPage = () => {
     const params = new URLSearchParams();
     params.set('job_id', job.id);
     if (job.organizations?.slug) params.set('org_slug', job.organizations.slug);
-    navigate(`/apply?${params.toString()}`);
+    navigate(`/apply?${params.toString()}`, { state: { internal: true } });
   };
 
   const handleSaveToggle = () => {

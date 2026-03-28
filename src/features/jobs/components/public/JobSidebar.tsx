@@ -104,7 +104,7 @@ export const JobSidebar = ({
                       </Button>
                     </a>
                   ) : (
-                    <Link key={variant.id} to={variantUrl} className="block">
+                    <Link key={variant.id} to={variantUrl} state={{ internal: true }} className="block">
                       <Button className="w-full min-h-[44px] text-sm font-semibold" size="default">
                         Apply to {locationLabel}
                         <ExternalLink className="w-4 h-4 ml-2" />
@@ -135,7 +135,7 @@ export const JobSidebar = ({
                     </Button>
                   </a>
                 ) : (
-                  <Link to={applyUrl} className="block">
+                  <Link to={applyUrl} state={{ internal: true }} className="block">
                     <Button className="w-full min-h-[48px] text-base font-semibold" size="lg">
                       Apply Now
                       <ExternalLink className="w-4 h-4 ml-2" />

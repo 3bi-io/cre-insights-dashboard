@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ApplicationHeader } from '@/components/apply/ApplicationHeader';
 import { ApplicationForm } from '@/components/apply/ApplicationForm';
 import { SocialExpressForm } from '@/components/apply/SocialExpressForm';
@@ -26,8 +27,10 @@ const Apply = () => {
     isLoading 
   } = useApplyContext();
 
+  const location = useLocation();
   const { isOutsideAmericas, country, countryCode } = useGeoBlocking();
   const { isSocialTraffic } = useSourceDetection();
+  const isInternalNavigation = !!(location.state as any)?.internal;
 
   // Memoize SEO content to prevent unnecessary recalculations
   const seoContent = useMemo(() => {
@@ -75,7 +78,7 @@ const Apply = () => {
               clientName={clientName}
               clientLogoUrl={clientLogoUrl}
               location={location}
-              source={source}
+              source={isInternalNavigation ? null : source}
               isLoading={isLoading}
               isExpressMode={isSocialTraffic && !isOutsideAmericas}
             />

@@ -75,7 +75,7 @@ export const JobPreviewModal: React.FC<JobPreviewModalProps> = ({
       const params = new URLSearchParams();
       params.set('job_id', job.id);
       if (org?.slug) params.set('org_slug', org.slug);
-      navigate(`/apply?${params.toString()}`);
+      navigate(`/apply?${params.toString()}`, { state: { internal: true } });
     }
   };
 
