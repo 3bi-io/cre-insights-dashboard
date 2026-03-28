@@ -31,7 +31,7 @@ const FeedsManagement = () => {
 
   const feedUrls = {
     platformSpecific: `${projectUrl}/functions/v1/job-feed-xml?platform={platform}&user_id=${user?.id}`,
-    indeed: `${projectUrl}/functions/v1/indeed-xml-feed`,
+    indeed: `${projectUrl}/functions/v1/universal-xml-feed?format=indeed`,
     googleJobs: `${projectUrl}/functions/v1/google-jobs-xml?user_id=${user?.id}`,
   };
 

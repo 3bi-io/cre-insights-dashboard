@@ -40,7 +40,7 @@ const DashboardHeader = () => {
   };
 
   const handleOpenIndeedFeed = () => {
-    const feedUrl = 'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/indeed-xml-feed';
+    const feedUrl = 'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/universal-xml-feed?format=indeed';
     window.open(feedUrl, '_blank');
     toast({
       title: "Indeed XML Feed",
