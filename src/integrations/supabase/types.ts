@@ -9072,6 +9072,13 @@ export type Database = {
           slug: string
         }[]
       }
+      get_public_voice_agent_client_ids: {
+        Args: { _org_ids: string[] }
+        Returns: {
+          client_id: string
+          organization_id: string
+        }[]
+      }
       get_publisher_feed_config: {
         Args: { p_organization_id: string; p_publisher_slug: string }
         Returns: {
