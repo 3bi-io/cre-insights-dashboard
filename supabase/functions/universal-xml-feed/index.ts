@@ -55,6 +55,7 @@ const VALID_FORMATS = [
   'wellfound',    // Wellfound (tech/startup)
   'jobrapido',    // JobRapido
   'recruitnet',   // Recruit.net
+  'linkedin',     // LinkedIn Job Wrapping
 ];
 
 Deno.serve(async (req) => {
@@ -251,6 +252,9 @@ Deno.serve(async (req) => {
         break;
       case 'recruitnet':
         xmlContent = generateRecruitNetXML(transformedJobs, format);
+        break;
+      case 'linkedin':
+        xmlContent = generateLinkedInXML(transformedJobs, format);
         break;
       default:
         xmlContent = generateGenericXML(transformedJobs, format);
@@ -691,6 +695,57 @@ function generateJobRapidoXML(jobs: JobListing[], feedSource: string): string {
 
 function generateRecruitNetXML(jobs: JobListing[], feedSource: string): string {
   return generateJobRapidoXML(jobs, feedSource);
+}
+
+function generateLinkedInXML(jobs: JobListing[], feedSource: string): string {
+  const jobsXML = jobs.map(job => {
+    const company = escapeXML(job.company || job.client_name || 'Company');
+    const jobUrl = escapeXML(buildApplyUrl(job, feedSource));
+    const listedAt = new Date(job.created_at).getTime();
+    const expiresAt = listedAt + (90 * 24 * 60 * 60 * 1000); // 90 days
+
+    return `  <job>
+    <partnerJobId>${escapeXML(job.id)}</partnerJobId>
+    <company><name>${company}</name></company>
+    <title>${escapeXML(job.title)}</title>
+    <description><![CDATA[${job.description || ''}]]></description>
+    <applyUrl>${jobUrl}</applyUrl>
+    <location>
+      <city>${escapeXML(job.city || '')}</city>
+      <state>${escapeXML(job.state || '')}</state>
+      <country>${escapeXML(job.country || 'US')}</country>
+      <postalCode>${escapeXML(job.zip_code || '')}</postalCode>
+    </location>
+    <listedAt>${listedAt}</listedAt>
+    <expiresAt>${expiresAt}</expiresAt>
+    ${job.job_type ? `<jobtype>${escapeXML(mapLinkedInJobType(job.job_type))}</jobtype>` : ''}
+    ${job.experience_level ? `<experienceLevel>${escapeXML(job.experience_level)}</experienceLevel>` : ''}
+    ${job.salary_min || job.salary_max ? `<salary>
+      ${job.salary_min ? `<min>${job.salary_min}</min>` : ''}
+      ${job.salary_max ? `<max>${job.salary_max}</max>` : ''}
+      <currency>USD</currency>
+      <period>${job.salary_type === 'hour' ? 'hourly' : 'yearly'}</period>
+    </salary>` : ''}
+  </job>`;
+  }).join('\n');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<source>
+  <publisherUrl>https://applyai.jobs</publisherUrl>
+  <publisher>Apply AI</publisher>
+  <lastBuildDate>${new Date().toISOString()}</lastBuildDate>
+${jobsXML}
+</source>`;
+}
+
+function mapLinkedInJobType(jobType: string): string {
+  const mapping: Record<string, string> = {
+    'full-time': 'full-time', 'full_time': 'full-time', 'fulltime': 'full-time',
+    'part-time': 'part-time', 'part_time': 'part-time', 'parttime': 'part-time',
+    'contract': 'contract', 'temporary': 'temporary', 'internship': 'internship',
+    'volunteer': 'volunteer',
+  };
+  return mapping[jobType.toLowerCase()] || 'full-time';
 }
 
 function generateErrorXML(message: string): string {
