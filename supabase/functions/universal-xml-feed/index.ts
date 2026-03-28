@@ -323,7 +323,7 @@ function generateIndeedXML(jobs: JobListing[], feedSource: string): string {
     
     return `    <job>
       <title>${escapeXML(job.title)}</title>
-      <date>${new Date(job.created_at).toISOString().split('T')[0]}</date>
+      <date>${new Date(job.feed_date || job.created_at).toISOString().split('T')[0]}</date>
       <referencenumber>${escapeXML(job.id)}</referencenumber>
       <url>${jobUrl}</url>
       <company>${company}</company>
@@ -354,7 +354,7 @@ function generateGoogleJobsXML(jobs: JobListing[], organizationId: string, feedS
     
     return `  <url>
     <loc>${jobUrl}</loc>
-    <lastmod>${new Date(job.updated_at || job.created_at).toISOString()}</lastmod>
+    <lastmod>${new Date(job.feed_date || job.updated_at || job.created_at).toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>`;
@@ -373,7 +373,7 @@ function generateTalentXML(jobs: JobListing[], feedSource: string): string {
     
     return `  <job>
     <title>${escapeXML(job.title)}</title>
-    <date>${new Date(job.created_at).toISOString().split('T')[0]}</date>
+    <date>${new Date(job.feed_date || job.created_at).toISOString().split('T')[0]}</date>
     <referencenumber>${escapeXML(job.id)}</referencenumber>
     <url>${jobUrl}</url>
     <apply_url>${jobUrl}</apply_url>
@@ -409,7 +409,7 @@ function generateCareerJetXML(jobs: JobListing[], feedSource: string): string {
     
     return `  <offer>
     <name>${escapeXML(job.title)}</name>
-    <date>${new Date(job.created_at).toISOString().split('T')[0]}</date>
+    <date>${new Date(job.feed_date || job.created_at).toISOString().split('T')[0]}</date>
     <id>${escapeXML(job.id)}</id>
     <url>${jobUrl}</url>
     <company>${company}</company>
@@ -443,7 +443,7 @@ function generateTrovitXML(jobs: JobListing[], feedSource: string): string {
     <region>${escapeXML(job.state || '')}</region>
     <postcode>${escapeXML(job.zip_code || '')}</postcode>
     <country>${escapeXML(job.country || 'US')}</country>
-    <date>${new Date(job.created_at).toISOString().split('T')[0]}</date>
+    <date>${new Date(job.feed_date || job.created_at).toISOString().split('T')[0]}</date>
     ${job.salary_min ? `<salary>${job.salary_min}</salary>` : ''}
     ${job.job_type ? `<contract>${escapeXML(mapJobType(job.job_type))}</contract>` : ''}
     ${job.category_name ? `<category>${escapeXML(job.category_name)}</category>` : ''}
@@ -469,7 +469,7 @@ function generateAdzunaXML(jobs: JobListing[], feedSource: string): string {
     <location>${escapeXML(formatLocation(job.location, job.city, job.state))}</location>
     <url>${jobUrl}</url>
     <apply_url>${jobUrl}</apply_url>
-    <date>${new Date(job.created_at).toISOString()}</date>
+    <date>${new Date(job.feed_date || job.created_at).toISOString()}</date>
     ${job.salary_min ? `<salary_min>${job.salary_min}</salary_min>` : ''}
     ${job.salary_max ? `<salary_max>${job.salary_max}</salary_max>` : ''}
     ${job.salary_type ? `<salary_type>${escapeXML(job.salary_type)}</salary_type>` : ''}
@@ -505,7 +505,7 @@ function generateDiceXML(jobs: JobListing[], feedSource: string): string {
     <apply_url>${jobUrl}</apply_url>
     <description><![CDATA[${job.description || ''}]]></description>
     ${job.requirements ? `<skills><![CDATA[${job.requirements}]]></skills>` : ''}
-    <date_posted>${new Date(job.created_at).toISOString().split('T')[0]}</date_posted>
+    <date_posted>${new Date(job.feed_date || job.created_at).toISOString().split('T')[0]}</date_posted>
     ${salary ? `<salary>${escapeXML(salary)}</salary>` : ''}
     ${job.job_type ? `<employment_type>${escapeXML(mapJobType(job.job_type))}</employment_type>` : ''}
     ${job.remote_type === 'remote' ? '<telecommute>yes</telecommute>' : '<telecommute>no</telecommute>'}
@@ -534,7 +534,7 @@ function generateJoobleXML(jobs: JobListing[], feedSource: string): string {
     <region>${escapeXML(job.state || '')}</region>
     <city>${escapeXML(job.city || '')}</city>
     <description><![CDATA[${job.description || ''}]]></description>
-    <pubdate>${new Date(job.created_at).toISOString()}</pubdate>
+    <pubdate>${new Date(job.feed_date || job.created_at).toISOString()}</pubdate>
     ${salary ? `<salary>${escapeXML(salary)}</salary>` : ''}
     ${job.job_type ? `<job_type>${escapeXML(mapJobType(job.job_type))}</job_type>` : ''}
     ${job.experience_level ? `<experience>${escapeXML(job.experience_level)}</experience>` : ''}
@@ -576,8 +576,8 @@ function generateGenericXML(jobs: JobListing[], feedSource: string): string {
     ${job.remote_type ? `<remote_type>${escapeXML(job.remote_type)}</remote_type>` : ''}
     <url>${jobUrl}</url>
     <apply_url>${jobUrl}</apply_url>
-    <posted>${new Date(job.created_at).toISOString()}</posted>
-    <updated>${new Date(job.updated_at || job.created_at).toISOString()}</updated>
+    <posted>${new Date(job.feed_date || job.created_at).toISOString()}</posted>
+    <updated>${new Date(job.feed_date || job.updated_at || job.created_at).toISOString()}</updated>
   </job>`;
   }).join('\n');
 
@@ -603,7 +603,7 @@ function generateHcareersXML(jobs: JobListing[], feedSource: string): string {
     <location>${escapeXML(formatLocation(job.location, job.city, job.state))}</location>
     <description><![CDATA[${job.description || ''}]]></description>
     <url>${jobUrl}</url>
-    <posted>${new Date(job.created_at).toISOString().split('T')[0]}</posted>
+    <posted>${new Date(job.feed_date || job.created_at).toISOString().split('T')[0]}</posted>
     ${job.job_type ? `<type>${escapeXML(mapJobType(job.job_type))}</type>` : ''}
     <industry>hospitality</industry>
   </job>`;
@@ -625,7 +625,7 @@ function generateSnagajobXML(jobs: JobListing[], feedSource: string): string {
     <zip>${escapeXML(job.zip_code || '')}</zip>
     <description><![CDATA[${job.description || ''}]]></description>
     <url>${jobUrl}</url>
-    <posted>${new Date(job.created_at).toISOString()}</posted>
+    <posted>${new Date(job.feed_date || job.created_at).toISOString()}</posted>
     ${salary ? `<pay>${escapeXML(salary)}</pay>` : ''}
     ${job.job_type ? `<schedule>${escapeXML(job.job_type)}</schedule>` : ''}
   </job>`;
@@ -645,7 +645,7 @@ function generateHealthEcareersXML(jobs: JobListing[], feedSource: string): stri
     <state>${escapeXML(job.state || '')}</state>
     <description><![CDATA[${job.description || ''}]]></description>
     <apply_url>${jobUrl}</apply_url>
-    <date_posted>${new Date(job.created_at).toISOString().split('T')[0]}</date_posted>
+    <date_posted>${new Date(job.feed_date || job.created_at).toISOString().split('T')[0]}</date_posted>
     ${job.job_type ? `<employment_type>${escapeXML(job.job_type)}</employment_type>` : ''}
     <specialty>${escapeXML(job.category_name || 'General')}</specialty>
   </position>`;
@@ -669,7 +669,7 @@ function generateWellfoundXML(jobs: JobListing[], feedSource: string): string {
     <remote>${job.remote_type === 'remote' ? 'true' : 'false'}</remote>
     <description><![CDATA[${job.description || ''}]]></description>
     <url>${jobUrl}</url>
-    <posted_at>${new Date(job.created_at).toISOString()}</posted_at>
+    <posted_at>${new Date(job.feed_date || job.created_at).toISOString()}</posted_at>
     ${job.salary_min ? `<salary_min>${job.salary_min}</salary_min>` : ''}
     ${job.salary_max ? `<salary_max>${job.salary_max}</salary_max>` : ''}
   </job>`;
@@ -689,7 +689,7 @@ function generateJobRapidoXML(jobs: JobListing[], feedSource: string): string {
     <country>${escapeXML(job.country || 'US')}</country>
     <description><![CDATA[${job.description || ''}]]></description>
     <url>${jobUrl}</url>
-    <date>${new Date(job.created_at).toISOString().split('T')[0]}</date>
+    <date>${new Date(job.feed_date || job.created_at).toISOString().split('T')[0]}</date>
   </job>`;
   }).join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<jobs>\n${jobsXML}\n</jobs>`;
@@ -703,7 +703,7 @@ function generateLinkedInXML(jobs: JobListing[], feedSource: string): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
     const jobUrl = escapeXML(buildApplyUrl(job, feedSource));
-    const listedAt = new Date(job.created_at).getTime();
+    const listedAt = new Date(job.feed_date || job.created_at).getTime();
     const expiresAt = listedAt + (90 * 24 * 60 * 60 * 1000); // 90 days
 
     return `  <job>
