@@ -8875,6 +8875,7 @@ export type Database = {
         Args: { _email: string }
         Returns: undefined
       }
+      exec_sql_void: { Args: { query: string }; Returns: undefined }
       generate_embed_token: { Args: never; Returns: string }
       generate_share_code: { Args: never; Returns: string }
       generate_short_code: { Args: { length?: number }; Returns: string }
