@@ -1,77 +1,47 @@
 
 
-# Full SEO Audit Report - applyai.jobs
+## Enable Voice Apply for All Companies with External Apply URLs
 
-## Critical Issues
+### Problem
+Voice Apply is hardcoded to only bypass the external-URL block for AspenView. Four Hayes clients (Pemberton, Day & Ross, Novco, James Burg) with 162 combined jobs are excluded despite the same use case — voice screening before external ATS redirect.
 
-### 1. /jobs pages marked as noindex (SEVERITY: CRITICAL)
-`src/utils/seoUtils.ts` line 150 includes `/jobs` in the `noIndexPatterns` array. This means:
-- `/jobs` (public job listings) gets a `noindex` meta tag
-- `/jobs/some-job-id` (every job detail page) also gets `noindex`
-- The `useSEO` hook dynamically injects `<meta name="robots" content="noindex, nofollow">` for these pages
+### Approach
+Replace the hardcoded `isAspenViewClientId()` check with a configurable client-level flag. Two options:
 
-**This directly contradicts** `robots.txt` which explicitly `Allow: /jobs` and `Allow: /jobs/*`. Google sees the noindex meta tag and will de-index all job pages.
+**Option A — Database flag (recommended)**: Add `enable_voice_apply boolean` column to the clients table, set it per client, and query it alongside job data. Most flexible, admin-controllable.
 
-**Fix**: Remove `/jobs` from the `noIndexPatterns` array. It should only contain private/dashboard paths.
+**Option B — Code-level allow list**: Replace the single AspenView ID check with a set of client IDs. Faster to ship, but requires code changes to add/remove clients.
 
-### 2. Duplicate/conflicting Organization schema
-- `index.html` (lines 60-107): Contains Organization+LocalBusiness schema with `twitter.com/applyai` and `linkedin.com/company/applyai`
-- `LandingPage.tsx` (lines 12-28): Contains separate Organization schema with `x.com/applyai_jobs` and `linkedin.com/company/108142287/`
+### Changes (Option B — immediate, no migration needed)
 
-Google will see both on the homepage, causing validation conflicts. The social links also differ between the two.
+#### 1. `src/utils/aspenviewJobGrouping.ts` → Create a general voice-enabled check
+- Add a `VOICE_APPLY_CLIENT_IDS` set containing AspenView + Pemberton + Day & Ross + Novco + James Burg IDs
+- Export `isVoiceApplyEnabled(clientId)` function that checks membership
+- Keep `isAspenViewClientId()` for AspenView-specific display logic (description transform, grouping)
 
-**Fix**: Remove the Organization schema from `index.html` (already injected dynamically by LandingPage). Keep only the WebSite schema in `index.html`.
+#### 2. `src/components/public/PublicJobCard.tsx`
+- Replace `isAspenViewClientId(job.client_id)` in the `showVoiceButton` line with `isVoiceApplyEnabled(job.client_id)`
+- Multi-location guard: also use `isVoiceApplyEnabled` (currently only AspenView has multi-location grouping anyway)
 
-### 3. OG image mismatch between static HTML and React Helmet
-- `index.html` line 44: Uses Google Storage URL `https://storage.googleapis.com/gpt-engineer-file-uploads/...`
-- `SEO.tsx` component: Uses `https://applyai.jobs/og-image.png` (via `ogImageUtils`)
+#### 3. `src/pages/public/JobDetailsPage.tsx`
+- Replace `isAspenViewJob(job.client_id)` in `showVoiceButton` prop (lines 293, 354) with `isVoiceApplyEnabled(job.client_id)`
+- Keep AspenView-specific logic (description transform, sibling grouping) unchanged
 
-Social crawlers (LinkedIn, Twitter, Facebook) typically only read the initial HTML since they don't execute JavaScript. The React Helmet tags may never override the static HTML for these crawlers. This means the static `index.html` OG tags are what social platforms actually see for **all** pages.
+#### 4. `src/features/jobs/components/public/JobSidebar.tsx`
+- Replace `isAspenView` check for ReadinessBadges voice indicator with `isVoiceApplyEnabled`
 
-**Fix**: Update `index.html` OG image to `https://applyai.jobs/og-image.png` for consistency, OR keep the Google Storage URL if that's the intended branded image — but ensure the file actually exists at that URL.
+### Client IDs for Allow List
+| Client | ID |
+|--------|-----|
+| AspenView Technology | `82513316-7df2-4bf0-83d8-6c511c83ddfb` |
+| Pemberton Truck Lines | `67cadf11-8cce-41c6-8e19-7d2bb0be3b03` |
+| Day and Ross | `30ab5f68-258c-4e81-8217-1123c4536259` |
+| Novco, Inc. | `4a9ef1df-dcc9-499c-999a-446bb9a329fc` |
+| James Burg Trucking | `b2a29507-32a6-4f5e-85d6-a7e6ffac3c52` |
+| Werner Enterprises | `feb3479f-4116-42a5-bb6a-811406c1c99a` |
+| Hub Group | `8ca3faca-b91c-4ab8-a9af-b145ab265228` |
+| TMC Transportation | `50657f4d-c47b-4104-a307-b82d5fa4a1df` |
 
-## Medium Issues
-
-### 4. SearchAction points to non-existent `/search` route
-`index.html` line 120 defines a `SearchAction` with `urlTemplate: "https://applyai.jobs/search?q={search_term_string}"`. There is no `/search` route in the app. This will cause a Google Rich Results validation error.
-
-**Fix**: Either remove the SearchAction schema or update it to point to `/jobs?search={search_term_string}` if the jobs page supports query-based search.
-
-### 5. Social profile links inconsistency
-| Source | Twitter | LinkedIn |
-|--------|---------|----------|
-| `index.html` schema | twitter.com/applyai | linkedin.com/company/applyai |
-| `LandingPage.tsx` schema | x.com/applyai_jobs | linkedin.com/company/108142287/ |
-| `SEO.tsx` twitter:creator | @applyai_jobs | — |
-
-**Fix**: Standardize all social links to the correct handles across all files.
-
-### 6. Missing `og:title` and `og:description` in static `<head>` section
-Lines 40-48 of `index.html` define `og:type`, `og:url`, `og:image` but no `og:title` or `og:description`. These are added at lines 160-163 (outside `<head>`? or at bottom of head). This ordering is fine for rendering but should be verified — some crawlers stop reading after a certain point.
-
-**Fix**: Move `og:title` and `og:description` to be adjacent to the other OG tags (lines 40-48).
-
-## Minor Issues
-
-### 7. Static sitemap.xml has stale `lastmod` dates
-All entries show `2026-02-20` — over a month old. This doesn't affect indexing directly but reduces crawl priority signals.
-
-**Fix**: Update dates or rely on the dynamic sitemap edge function.
-
-### 8. `index.html` has conflicting `og:type` for sub-pages
-The static `og:type` is `website` in `index.html`. For blog posts, `SEO.tsx` tries to set `og:type` to `article` via React Helmet, but social crawlers reading only the static HTML will always see `website`.
-
-**Fix**: This is inherent to client-side rendering. Consider server-side rendering or pre-rendering for blog/job pages if social sharing accuracy is important.
-
-## Summary of Required Changes
-
-| File | Change | Priority |
-|------|--------|----------|
-| `src/utils/seoUtils.ts` | Remove `/jobs` from `noIndexPatterns` | CRITICAL |
-| `index.html` | Remove duplicate Organization schema (keep WebSite only) | High |
-| `index.html` | Move og:title/og:description to proper position in head | High |
-| `index.html` | Fix or remove SearchAction (no /search route exists) | Medium |
-| `index.html` | Standardize social profile URLs to match LandingPage.tsx | Medium |
-| `index.html` | Update OG image URL to match SEO component | Medium |
-| `public/sitemap.xml` | Update lastmod dates | Low |
+### Result
+All 8 external-apply clients get Voice Apply on both the job card and detail page. Internal-apply clients (Danny Herman, R.E. Garrison, Dollar Tree, etc.) continue working as-is since they already show voice.
 
