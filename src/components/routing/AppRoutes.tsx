@@ -84,6 +84,7 @@ const Platforms = React.lazy(() => import("@/pages/Platforms"));
 const AdNetworks = React.lazy(() => import("@/pages/AdNetworks"));
 const JobBoards = React.lazy(() => import("@/pages/JobBoards"));
 const FeedsManagement = React.lazy(() => import("@/pages/FeedsManagement"));
+const SyndicationDashboard = React.lazy(() => import("@/pages/SyndicationDashboard"));
 const ClientsPage = React.lazy(() => import("@/features/clients/pages/ClientsPage"));
 const ClientDashboardsPage = React.lazy(() => import("@/pages/ClientDashboardsPage"));
 const Organizations = React.lazy(() => import("@/pages/Organizations"));
@@ -298,6 +299,7 @@ const AppRoutes: React.FC = () => {
         <Route path="ad-networks" element={<AdminRouteWrapper><AdNetworks /></AdminRouteWrapper>} />
         <Route path="job-boards" element={<AdminRouteWrapper><JobBoards /></AdminRouteWrapper>} />
         <Route path="feeds" element={<AdminRouteWrapper><FeedsManagement /></AdminRouteWrapper>} />
+        <Route path="syndication" element={<AdminRouteWrapper><SyndicationDashboard /></AdminRouteWrapper>} />
         <Route path="universal-feeds" element={<AdminRouteWrapper><UniversalFeeds /></AdminRouteWrapper>} />
         <Route path="clients" element={<AdminRouteWrapper><ClientsPage /></AdminRouteWrapper>} />
         <Route path="client-dashboards" element={<AdminRouteWrapper><ClientDashboardsPage /></AdminRouteWrapper>} />
