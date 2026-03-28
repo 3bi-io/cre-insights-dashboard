@@ -185,7 +185,7 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
                     </Button>
                   </a>
                 ) : (
-                  <Link key={variant.id} to={variantApplyUrl} className="block">
+                  <Link key={variant.id} to={variantApplyUrl} state={{ internal: true }} className="block">
                     <Button 
                       className="w-full min-h-[44px] text-sm font-semibold" 
                       size="default"
@@ -220,7 +220,7 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
                   </Button>
                 </a>
               ) : (
-                <Link to={applyUrl} className="block">
+                <Link to={applyUrl} state={{ internal: true }} className="block">
                   <Button 
                     className="w-full min-h-[48px] text-base font-semibold" 
                     size="lg"
