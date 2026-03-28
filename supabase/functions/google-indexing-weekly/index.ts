@@ -24,7 +24,7 @@ const corsHeaders = {
 };
 
 const BASE_URL = Deno.env.get('SITE_BASE_URL') || 'https://applyai.jobs';
-const GOOGLE_DAILY_QUOTA = 200; // Google Indexing API default quota
+const MAX_PER_RUN = 400; // Max submissions per invocation
 
 interface SubmissionResult {
   job_id: string;
