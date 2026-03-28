@@ -292,7 +292,6 @@ Deno.serve(async (req) => {
     // ─── Auto-schedule: switch cron between daily and twice-weekly ───
     let scheduleAction = 'unchanged';
     try {
-      const CRON_JOB_ID = 17;
       const DAILY_SCHEDULE = '0 6 * * *';
       const NORMAL_SCHEDULE = '0 6 * * 0,3';
 
@@ -308,14 +307,14 @@ Deno.serve(async (req) => {
 
       if (backlogRemaining > 0) {
         // Still have backlog — ensure daily schedule
-        await supabase.rpc('exec_sql_void', {
-          query: `SELECT cron.alter_job(${CRON_JOB_ID}, schedule := '${DAILY_SCHEDULE}')`,
+        await supabase.rpc('alter_google_indexing_schedule', {
+          new_schedule: DAILY_SCHEDULE,
         }).throwOnError();
         scheduleAction = `kept_daily (${backlogRemaining} remaining)`;
       } else {
         // Backlog cleared — revert to twice-weekly
-        await supabase.rpc('exec_sql_void', {
-          query: `SELECT cron.alter_job(${CRON_JOB_ID}, schedule := '${NORMAL_SCHEDULE}')`,
+        await supabase.rpc('alter_google_indexing_schedule', {
+          new_schedule: NORMAL_SCHEDULE,
         }).throwOnError();
         scheduleAction = 'reverted_to_twice_weekly';
       }
