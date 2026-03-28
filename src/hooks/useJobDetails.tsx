@@ -74,15 +74,11 @@ export const useJobDetails = (jobId: string | undefined) => {
       // Check if this job's client has a voice agent explicitly assigned (no org-level fallback)
       let voiceAgent: { assigned: boolean } | null = null;
       if (data.organization_id && data.client_id) {
-        const { data: clientAgent } = await supabase
-          .from('voice_agents')
-          .select('id')
-          .eq('organization_id', data.organization_id)
-          .eq('client_id', data.client_id)
-          .eq('is_active', true)
-          .limit(1)
-          .maybeSingle();
-        if (clientAgent) voiceAgent = { assigned: true };
+        const { data: agentCheck } = await supabase.rpc('get_public_voice_agent_client_ids', {
+          _org_ids: [data.organization_id],
+        });
+        const hasClientAgent = agentCheck?.some((a: any) => a.client_id === data.client_id);
+        if (hasClientAgent) voiceAgent = { assigned: true };
       }
 
       return { ...data, clients: clientInfo, voiceAgent } as unknown as JobDetails;
