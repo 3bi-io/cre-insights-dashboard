@@ -24,7 +24,7 @@ const corsHeaders = {
 };
 
 const BASE_URL = Deno.env.get('SITE_BASE_URL') || 'https://applyai.jobs';
-const GOOGLE_DAILY_QUOTA = 200; // Google Indexing API default quota
+const MAX_PER_RUN = 400; // Max submissions per invocation
 
 interface SubmissionResult {
   job_id: string;
@@ -119,12 +119,12 @@ Deno.serve(async (req) => {
     }
 
     // 5. Process each organization - fetch delta jobs and submit
-    let quotaRemaining = GOOGLE_DAILY_QUOTA;
+    let totalSubmittedSoFar = 0;
     let rateLimited = false;
     const orgSummaries: OrgSummary[] = [];
 
     for (const orgId of orgIds) {
-      if (rateLimited || quotaRemaining <= 0) {
+      if (rateLimited || totalSubmittedSoFar >= MAX_PER_RUN) {
         orgSummaries.push({
           organization_id: orgId,
           organization_name: orgNameMap.get(orgId) || 'Unknown',
@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
           submitted: 0,
           failed: 0,
           skipped_quota: 1,
-          errors: ['Skipped: daily quota exhausted or rate limited'],
+          errors: ['Skipped: max per run reached or rate limited'],
         });
         continue;
       }
@@ -191,7 +191,7 @@ Deno.serve(async (req) => {
         const successfulJobIds: string[] = [];
 
         for (const job of deltaJobs) {
-          if (quotaRemaining <= 0 || rateLimited) {
+          if (totalSubmittedSoFar >= MAX_PER_RUN || rateLimited) {
             summary.skipped_quota += deltaJobs.length - (summary.submitted + summary.failed);
             break;
           }
@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
               // Consume response body
               await response.text();
               summary.submitted++;
-              quotaRemaining--;
+              totalSubmittedSoFar++;
               successfulJobIds.push(job.id);
             }
           } catch (fetchErr) {
@@ -283,7 +283,7 @@ Deno.serve(async (req) => {
       total_delta_jobs: totalDelta,
       total_submitted: totalSubmitted,
       total_failed: totalFailed,
-      quota_remaining: quotaRemaining,
+      max_per_run: MAX_PER_RUN,
       rate_limited: rateLimited,
       elapsed_ms: elapsed,
       organizations: orgSummaries,
@@ -294,7 +294,7 @@ Deno.serve(async (req) => {
       delta: totalDelta,
       submitted: totalSubmitted,
       failed: totalFailed,
-      quotaRemaining,
+      maxPerRun: MAX_PER_RUN,
       rateLimited,
       elapsed,
     });
