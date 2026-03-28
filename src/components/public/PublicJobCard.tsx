@@ -62,7 +62,7 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
       jobTitle: displayTitle,
       jobDescription: displayDescription || `This is a ${displayTitle} position`,
       company: companyName,
-      location: displayLocation || 'Various locations',
+      location: isMultiLocation ? locationVariants.map(v => v.location).join(', ') : (displayLocation || 'Various locations'),
       salary: salary || 'Competitive salary',
       organizationId: job.organization_id || undefined,
       clientId: job.client_id || undefined,
