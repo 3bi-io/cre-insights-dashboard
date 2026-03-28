@@ -1,0 +1,1 @@
+ALTER TABLE public.job_listings ADD COLUMN IF NOT EXISTS last_google_indexed_at TIMESTAMPTZ;
