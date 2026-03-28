@@ -12,7 +12,6 @@ import { renderJobDescription } from '@/utils/markdownRenderer';
 import { isAspenViewJob, transformAspenViewDescription } from '@/utils/aspenviewDescriptionTransformer';
 import { useIsVoiceSupported } from '@/hooks/useVoiceCompatibility';
 import { getDisplayCompanyName, formatSalary } from '@/utils/jobDisplayUtils';
-import { isVoiceApplyEnabled } from '@/utils/aspenviewJobGrouping';
 import type { JobLocationVariant } from '@/utils/aspenviewJobGrouping';
 import {
   Tooltip,
@@ -52,7 +51,7 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
   const applyUrl = job.apply_url || `/apply?job_id=${job.id}`;
   const isExternalApply = !!job.apply_url && !job.apply_url.includes('applyai.jobs');
-  const showVoiceButton = hasVoiceAgent && isVoiceSupported && onVoiceApply && (!isExternalApply || isVoiceApplyEnabled(job.client_id)) && (!isMultiLocation || isVoiceApplyEnabled(job.client_id));
+  const showVoiceButton = hasVoiceAgent && isVoiceSupported && onVoiceApply;
 
   
   const handleVoiceApply = () => {

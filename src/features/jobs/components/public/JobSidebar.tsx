@@ -12,7 +12,6 @@ import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui
 import { DollarSign, MapPin, ExternalLink, Mic } from 'lucide-react';
 import { ReadinessBadges } from '@/components/shared';
 import { JobShareActions } from './JobShareActions';
-import { isVoiceApplyEnabled } from '@/utils/aspenviewJobGrouping';
 import type { JobLocationVariant } from '@/utils/aspenviewJobGrouping';
 
 interface JobSidebarProps {
@@ -47,7 +46,6 @@ export const JobSidebar = ({
   clientId,
 }: JobSidebarProps) => {
   const isMultiLocation = locationVariants && locationVariants.length > 1;
-  const isVoiceEnabled = isVoiceApplyEnabled(clientId);
 
   return (
     <div className="hidden lg:block">
@@ -65,7 +63,7 @@ export const JobSidebar = ({
               </LogoAvatar>
               <h3 className="font-semibold text-lg">{title}</h3>
               <p className="text-sm text-muted-foreground mb-3">{company}</p>
-              <ReadinessBadges showVoiceApply={!!showVoiceButton || (isMultiLocation && isVoiceEnabled)} />
+              <ReadinessBadges showVoiceApply={!!showVoiceButton} />
             </div>
 
             {salary && (
@@ -115,7 +113,7 @@ export const JobSidebar = ({
                   );
                 })}
 
-                {isVoiceEnabled && (
+                {showVoiceButton && (
                   <Button
                     variant="outline"
                     className="w-full"
