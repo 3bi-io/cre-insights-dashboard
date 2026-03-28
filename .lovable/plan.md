@@ -1,51 +1,30 @@
 
 
-# Replace All `ats.me` / `ATS.me` with `applyai.jobs` / `Apply AI`
+# Hide Source Badge on /apply for Internal Navigation
 
-## Current State
+## Problem
+When a user clicks "Apply" from the `/jobs` page, the apply URL may contain `utm_source` parameters (e.g., `utm_source=cdl_jobcast`) inherited from the job listing's enriched apply URL. This causes the header to display "via Cdl_jobcast" even though the user navigated internally, which looks wrong.
 
-- **Source code**: Already clean. No `ats.me` references remain in `.ts`, `.tsx`, `.md`, or config files.
-- **Database content**: Blog posts and profile data still contain `ATS.me` brand references and `ats.me` domain references from old migrations.
-- **`apply_url` values**: Some job listings may still have `https://ats.me/apply?...` URLs from migration `20260206000753`.
-- **Old migrations**: Historical SQL files -- these are immutable records and will NOT be edited.
+## Solution
+In `src/pages/Apply.tsx`, suppress the `source` prop passed to `ApplicationHeader` when the navigation originated from within the app.
 
-## Plan
+### Detection Logic
+Check `document.referrer` — if it contains the app's own domain (`applyai.jobs` or `lovable.app`), or is empty (SPA navigation via React Router doesn't set referrer), treat it as internal. Additionally, check for a `ref=internal` or similar marker, but the simplest approach: use React Router's `useLocation` state to detect internal navigation.
 
-### Step 1: New migration to replace all remaining database content
+**Preferred approach**: When linking from `/jobs` to `/apply`, the app already uses React Router `<Link>` or `navigate()`. We add a `state: { internal: true }` flag on those navigations, then check it on the Apply page.
 
-Create a single migration that performs:
+### Changes
 
-1. **Blog post content** -- Replace `ATS.me` with `Apply AI` and `ats.me` with `applyai.jobs` across all blog posts:
-   ```sql
-   UPDATE blog_posts
-   SET content = REPLACE(REPLACE(content, 'ATS.me', 'Apply AI'), 'ats.me', 'applyai.jobs'),
-       title = REPLACE(title, 'ATS.me', 'Apply AI'),
-       description = REPLACE(description, 'ATS.me', 'Apply AI');
-   ```
+1. **`src/pages/Apply.tsx`** (~3 lines)
+   - Import `useLocation` from react-router-dom
+   - Check `location.state?.internal` — if true, pass `source={null}` to `ApplicationHeader` instead of the detected source
 
-2. **Author profile** -- Update Cody Forbes' bio and title:
-   ```sql
-   UPDATE profiles
-   SET author_bio = REPLACE(author_bio, 'ATS.me', 'Apply AI'),
-       author_title = REPLACE(author_title, 'ATS.me', 'Apply AI')
-   WHERE author_bio LIKE '%ATS.me%' OR author_title LIKE '%ATS.me%';
-   ```
+2. **Job card/detail "Apply" links** (where internal navigation to `/apply` happens)
+   - Find all internal `<Link to="/apply?...">` or `navigate('/apply?...')` calls
+   - Add `state: { internal: true }` to those navigations
 
-3. **Job listing apply URLs** -- Replace any lingering `ats.me` domain in apply URLs:
-   ```sql
-   UPDATE job_listings
-   SET apply_url = REPLACE(apply_url, 'ats.me', 'applyai.jobs')
-   WHERE apply_url LIKE '%ats.me%';
-   ```
-
-### What stays unchanged
-
-- **Blog slugs** (`why-ats-me-will-thrive-2026`) -- preserved for SEO link continuity
-- **Image asset filenames** (`ats-me-thrive-hero.jpg`) -- preserved to match slugs
-- **`blogImageUtils.ts`** slug mappings -- preserved to match database slugs
-- **Old migration files** -- immutable historical records
-
-### Result
-
-After this single migration, all live database content will reference `Apply AI` / `applyai.jobs` instead of `ATS.me` / `ats.me`.
+### Files to investigate for navigation sources
+- Job cards on `/jobs` page
+- Job detail page apply button
+- Any other internal links to `/apply`
 
