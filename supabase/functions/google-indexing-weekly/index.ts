@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
       logger.info('Successfully obtained Google OAuth2 access token');
     } catch (tokenErr) {
       const msg = tokenErr instanceof Error ? tokenErr.message : String(tokenErr);
-      logger.error('Failed to obtain Google OAuth2 token', { error: msg, client_email: serviceAccount.client_email });
+      logger.error('Failed to obtain Google OAuth2 token', new Error(msg), { client_email: serviceAccount.client_email });
       return new Response(
         JSON.stringify({ success: false, error: `OAuth2 token exchange failed: ${msg}. Verify GOOGLE_SERVICE_ACCOUNT_JSON credentials and that the Indexing API is enabled.` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -219,7 +219,7 @@ Deno.serve(async (req) => {
               const errorBody = await response.text();
               summary.failed++;
               summary.errors.push(`${job.id}: HTTP ${response.status} - ${errorBody.substring(0, 300)}`);
-              logger.error('Google Indexing API error', { jobId: job.id, status: response.status, body: errorBody.substring(0, 500) });
+              logger.error('Google Indexing API error', new Error(`HTTP ${response.status}: ${errorBody.substring(0, 500)}`), { jobId: job.id, status: response.status });
             } else {
               // Consume response body
               await response.text();
@@ -233,8 +233,8 @@ Deno.serve(async (req) => {
             summary.errors.push(`${job.id}: ${msg}`);
           }
 
-          // 100ms delay between requests
-          await new Promise(r => setTimeout(r, 100));
+          // 50ms delay between requests
+          await new Promise(r => setTimeout(r, 50));
         }
 
         // 6. Update last_google_indexed_at for successfully submitted jobs
@@ -248,7 +248,7 @@ Deno.serve(async (req) => {
               .in('id', batch);
 
             if (updateErr) {
-              logger.error('Failed to update last_google_indexed_at', { error: updateErr.message, batchSize: batch.length });
+              logger.error('Failed to update last_google_indexed_at', new Error(updateErr.message), { batchSize: batch.length });
             }
           }
         }
