@@ -26,7 +26,7 @@ const SavedJobsPage = () => {
     const params = new URLSearchParams();
     params.set('job_id', jobId);
     if (orgSlug) params.set('org_slug', orgSlug);
-    navigate(`/apply?${params.toString()}`);
+    navigate(`/apply?${params.toString()}`, { state: { internal: true } });
   };
 
   // Sort saved jobs

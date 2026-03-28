@@ -83,7 +83,7 @@ export const StickyApplyCTA: React.FC<StickyApplyCTAProps> = ({
               </Button>
             </a>
           ) : (
-            <Link to={applyUrl} className="flex-1">
+            <Link to={applyUrl} state={{ internal: true }} className="flex-1">
               <Button 
                 className="w-full min-h-[48px] text-base font-semibold touch-manipulation"
                 size="lg"

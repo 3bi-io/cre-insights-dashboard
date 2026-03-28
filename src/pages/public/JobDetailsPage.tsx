@@ -330,7 +330,7 @@ const JobDetailsContent: React.FC = () => {
                     </Button>
                   </a>
                 ) : (
-                  <Link key={variant.id} to={variantUrl} className="block">
+                  <Link key={variant.id} to={variantUrl} state={{ internal: true }} className="block">
                     <Button className="w-full min-h-[44px] text-sm font-semibold touch-manipulation" size="default">
                       Apply to {variant.location}
                       <ExternalLink className="w-4 h-4 ml-2" />
