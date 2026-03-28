@@ -948,23 +948,7 @@ async function processOutboundCall(
         }
       }
       
-      // Final fallback - platform default
-      if (!voiceAgentId) {
-        const { data: platformAgent } = await supabase
-          .from('voice_agents')
-          .select('id')
-          .eq('is_platform_default', true)
-          .eq('is_outbound_enabled', true)
-          .eq('is_active', true)
-          .not('agent_phone_number_id', 'is', null)
-          .limit(1)
-          .single();
-        
-        if (platformAgent) {
-          voiceAgentId = platformAgent.id;
-          logger.info('Using platform default outbound agent', { voiceAgentId });
-        }
-      }
+      // No platform default fallback — if no agent assigned, no call is made
     }
 
     if (!voiceAgentId) {
