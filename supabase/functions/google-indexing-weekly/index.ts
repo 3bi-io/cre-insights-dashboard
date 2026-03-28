@@ -191,7 +191,7 @@ Deno.serve(async (req) => {
         const successfulJobIds: string[] = [];
 
         for (const job of deltaJobs) {
-          if (quotaRemaining <= 0 || rateLimited) {
+          if (totalSubmittedSoFar >= MAX_PER_RUN || rateLimited) {
             summary.skipped_quota += deltaJobs.length - (summary.submitted + summary.failed);
             break;
           }
