@@ -289,6 +289,31 @@ Deno.serve(async (req) => {
       organizations: orgSummaries,
     };
 
+    // ─── Backlog check: log remaining unindexed jobs ───
+    let scheduleAction = 'unchanged';
+    try {
+      // Count remaining unindexed active jobs
+      const { count: remainingCount } = await supabase
+        .from('job_listings')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'active')
+        .eq('is_hidden', false)
+        .or('last_google_indexed_at.is.null,updated_at.gt.last_google_indexed_at');
+
+      const backlogRemaining = remainingCount ?? 0;
+
+      if (backlogRemaining > 0) {
+        scheduleAction = `backlog_remaining: ${backlogRemaining} jobs still need indexing`;
+      } else {
+        scheduleAction = 'backlog_cleared — safe to revert cron to 0 6 * * 0,3';
+      }
+
+      logger.info('Backlog status', { backlogRemaining, scheduleAction });
+    } catch (schedErr) {
+      logger.error('Failed to check backlog', schedErr);
+      scheduleAction = `error: ${schedErr instanceof Error ? schedErr.message : String(schedErr)}`;
+    }
+
     logger.info('Weekly indexing complete', {
       orgs: orgIds.length,
       delta: totalDelta,
@@ -297,9 +322,10 @@ Deno.serve(async (req) => {
       maxPerRun: MAX_PER_RUN,
       rateLimited,
       elapsed,
+      scheduleAction,
     });
 
-    return new Response(JSON.stringify(response, null, 2), {
+    return new Response(JSON.stringify({ ...response, schedule_action: scheduleAction }, null, 2), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
