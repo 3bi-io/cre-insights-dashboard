@@ -1,50 +1,52 @@
 
 
-## AspenView Voice Agent Final Configuration
+## Enable Voice Apply for All AspenView Job Listings
 
-### Current State
-- Both agents already upgraded to **gpt-4o** (previous migration applied successfully)
-- Neither agent has a phone number assigned (`agent_phone_number_id = NULL`)
-- Cybersecurity Recruiter has no description
+### Problem
+Voice Apply is currently hidden in three scenarios for AspenView:
+1. **Multi-location grouped jobs** on the detail page — the multi-location branch renders only external apply buttons with no voice option
+2. **Job cards on /jobs list** — `PublicJobCard` still has the old `!isExternalApply` guard with no AspenView override
+3. **Job context accuracy** — for multi-location jobs, the voice agent receives a combined location string ("Dallas, TX · Tampa, FL") instead of a specific location, making the screening conversation inaccurate
 
-### Step 1: Assign Phone Numbers (data update)
+### Changes
 
-Using the insert/update tool (not a migration, since this is data):
+#### 1. `src/components/public/PublicJobCard.tsx` — Enable voice on job cards
+- Line 54: Change `showVoiceButton` logic to include AspenView override
+- `const showVoiceButton = hasVoiceAgent && isVoiceSupported && onVoiceApply && (!isExternalApply || isAspenViewClientId(job.client_id)) && !isMultiLocation;`
+- Import `isAspenViewClientId` from `@/utils/aspenviewJobGrouping`
 
-```sql
--- Inbound: Cybersecurity Recruiter
-UPDATE voice_agents 
-SET agent_phone_number_id = 'phnum_5601kg7vfxvbfe6bt08gd4hkm5wn'
-WHERE id = '2c86588a-db3a-45d9-9ede-4bd3a30355ec';
+#### 2. `src/features/jobs/components/public/JobSidebar.tsx` — Add voice button to multi-location view
+- In the multi-location branch (lines 90-112), add a single "Apply with Voice" button below the per-location external apply buttons
+- This lets candidates start a voice screening for the role regardless of which location they prefer — the agent will ask about location preference during the conversation
+- Update the `ReadinessBadges` line to show voice badge for AspenView multi-location jobs too
 
--- Outbound: Outbound Screener
-UPDATE voice_agents 
-SET agent_phone_number_id = 'phnum_01jz3x3nm8ex6rx09hmf3fr1ht'
-WHERE id = '219e2902-8c26-4adb-9200-1c3aca95b2e3';
-```
+#### 3. `src/pages/public/JobDetailsPage.tsx` — Enable voice for multi-location detail views
+- Line 290: Remove the `!isMultiLocation` guard for AspenView jobs: `showVoiceButton={!isMultiLocation ? (!isExternalApply || isAspenViewJob(job.client_id)) : isAspenViewJob(job.client_id)}`
+- Lines 314-336 (mobile multi-location CTA): Add a voice apply button below the location-specific apply buttons, mirroring the sidebar pattern
 
-### Step 2: Add Description to Cybersecurity Recruiter (data update)
+#### 4. `src/pages/public/JobDetailsPage.tsx` — Enrich voice context for multi-location
+- Update `handleVoiceApply` (line 128) to pass all available locations when multi-location: `location: isMultiLocation ? locationVariants.map(v => v.location).join(', ') : (displayLocation || 'Various locations')`
+- This gives the agent explicit knowledge of all locations so it can ask the candidate which they prefer
 
-```sql
-UPDATE voice_agents 
-SET description = 'Inbound voice screening agent for AspenView Technology Partners. Conducts technical cybersecurity screening interviews via web and phone, evaluating candidates on security clearances, certifications (CISSP, CEH, CompTIA Security+), and relevant experience before routing to Rippling ATS for formal application.'
-WHERE id = '2c86588a-db3a-45d9-9ede-4bd3a30355ec';
-```
+#### 5. `src/features/elevenlabs/hooks/useVoiceAgentConnection.ts` — Pass job_id in metadata
+- Verify that `job_listing_id` is passed in the metadata/dynamic variables so the webhook correctly attributes the conversation (already present via `jobId` in context — confirm and add explicit `job_listing_id` dynamic variable if missing)
 
-### Step 3: Verify End-to-End
+### Agent Context Verification
+The dynamic variables injected into ElevenLabs (line 284-295 of `useVoiceAgentConnection.ts`) already pass:
+- `job_title` — from the listing title
+- `company_name` — "AspenView Technology Partners"
+- `job_description` — full transformed description including duties, requirements, compensation
+- `job_location` — will now include all locations for multi-location roles
+- `salary_range` — from salary_min/max formatting
+- `job_requirements` — extracted qualifications
+- `job_benefits` — structured benefits data
 
-After the data updates, verify:
+This means the agent has full context about the role's content, location(s), and compensation when screening candidates.
 
-1. **Database** — Query `voice_agents` to confirm both `agent_phone_number_id` values are set and description is populated
-2. **Frontend** — Load an AspenView job on the public site (`/jobs?client=82513316-...`) and confirm the "Apply with Voice" button is visible (the code change from the previous implementation should show it despite `isExternalApply`)
-3. **Voice session** — Confirm the WebRTC connection initializes when clicking "Apply with Voice" on an AspenView job
-4. **Outbound trigger** — Confirm the `trigger_application_insert_outbound_call` function now finds the outbound agent (since `agent_phone_number_id` is no longer NULL, the priority-1 client-specific match will succeed)
-
-### Files to Change
-None — these are all data updates to the `voice_agents` table using the insert/update tool.
-
-### What Was Already Done
-- LLM model upgraded to `gpt-4o` (migration `20260327234743`)
-- Voice Apply button visibility fixed for AspenView jobs in `JobDetailsPage.tsx`
-- Webhook updated to capture `job_listing_id` from metadata
+### Files to modify
+| File | Change |
+|------|--------|
+| `src/components/public/PublicJobCard.tsx` | Add AspenView override to voice button visibility |
+| `src/features/jobs/components/public/JobSidebar.tsx` | Add voice button in multi-location branch |
+| `src/pages/public/JobDetailsPage.tsx` | Enable voice for multi-location, enrich location context, add mobile voice CTA |
 
