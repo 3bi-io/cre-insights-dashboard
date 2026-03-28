@@ -24,6 +24,7 @@ interface JobListing {
   experience_level?: string;
   created_at: string;
   updated_at?: string;
+  feed_date?: string;
   apply_url?: string;
   category_name?: string;
   client_name?: string;
