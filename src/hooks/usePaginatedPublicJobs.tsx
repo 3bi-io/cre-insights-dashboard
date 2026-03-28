@@ -179,15 +179,12 @@ async function enrichJobs(jobs: any[]): Promise<any[]> {
 
   const clientMap = new Map(clientData?.map(client => [client.id, client]) || []);
 
-  // Check which orgs/clients have active voice agents
+  // Check which orgs/clients have active voice agents via RPC (bypasses RLS for anon)
   const orgIds = [...new Set(jobs.map(j => j.organization_id).filter(Boolean))] as string[];
   
-  // Query voice agents for these orgs (inbound agents — not requiring outbound fields)
-  const { data: agentData } = await supabase
-    .from('voice_agents')
-    .select('organization_id, client_id')
-    .in('organization_id', orgIds.length > 0 ? orgIds : ['__none__'])
-    .eq('is_active', true);
+  const { data: agentData } = orgIds.length > 0
+    ? await supabase.rpc('get_public_voice_agent_client_ids', { _org_ids: orgIds })
+    : { data: [] };
 
   // Build a set of "orgId:clientId" keys — only client-specific agents (no org-level fallback)
   const agentKeys = new Set<string>();
