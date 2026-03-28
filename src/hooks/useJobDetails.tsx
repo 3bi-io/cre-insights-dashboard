@@ -36,7 +36,7 @@ interface JobDetails {
     name: string;
   } | null;
   voiceAgent?: {
-    global: boolean;
+    assigned: boolean;
   } | null;
 }
 
