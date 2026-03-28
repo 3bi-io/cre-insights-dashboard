@@ -292,6 +292,7 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
           salary_range: context?.jobContext?.salary || 'competitive salary',
           organization_id: context?.organizationId || context?.jobContext?.organizationId || '',
           application_id: context?.jobContext?.applicationId || '',
+          job_listing_id: context?.jobContext?.jobId || '',
         };
 
         // Step 3: Start WebRTC connection
