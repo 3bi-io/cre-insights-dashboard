@@ -6,6 +6,18 @@
 
 const ASPENVIEW_CLIENT_ID = '82513316-7df2-4bf0-83d8-6c511c83ddfb';
 
+/** Client IDs that should show Voice Apply even with external apply URLs */
+const VOICE_APPLY_CLIENT_IDS = new Set([
+  ASPENVIEW_CLIENT_ID,                              // AspenView Technology
+  '67cadf11-8cce-41c6-8e19-7d2bb0be3b03',          // Pemberton Truck Lines
+  '30ab5f68-258c-4e81-8217-1123c4536259',          // Day and Ross
+  '4a9ef1df-dcc9-499c-999a-446bb9a329fc',          // Novco, Inc.
+  'b2a29507-32a6-4f5e-85d6-a7e6ffac3c52',          // James Burg Trucking
+  'feb3479f-4116-42a5-bb6a-811406c1c99a',          // Werner Enterprises
+  '8ca3faca-b91c-4ab8-a9af-b145ab265228',          // Hub Group
+  '50657f4d-c47b-4104-a307-b82d5fa4a1df',          // TMC Transportation
+]);
+
 export interface JobLocationVariant {
   id: string;
   location: string;
@@ -27,6 +39,11 @@ export interface GroupedJob {
 
 export function isAspenViewClientId(clientId: string | null | undefined): boolean {
   return clientId === ASPENVIEW_CLIENT_ID;
+}
+
+/** Returns true if Voice Apply should be shown for this client, even with external apply URLs */
+export function isVoiceApplyEnabled(clientId: string | null | undefined): boolean {
+  return !!clientId && VOICE_APPLY_CLIENT_IDS.has(clientId);
 }
 
 /**
