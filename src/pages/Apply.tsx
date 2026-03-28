@@ -27,10 +27,10 @@ const Apply = () => {
     isLoading 
   } = useApplyContext();
 
-  const location = useLocation();
+  const routerLocation = useLocation();
   const { isOutsideAmericas, country, countryCode } = useGeoBlocking();
   const { isSocialTraffic } = useSourceDetection();
-  const isInternalNavigation = !!(location.state as any)?.internal;
+  const isInternalNavigation = !!(routerLocation.state as any)?.internal;
 
   // Memoize SEO content to prevent unnecessary recalculations
   const seoContent = useMemo(() => {
