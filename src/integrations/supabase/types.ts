@@ -8814,6 +8814,10 @@ export type Database = {
       }
     }
     Functions: {
+      alter_google_indexing_schedule: {
+        Args: { new_schedule: string }
+        Returns: undefined
+      }
       apply_industry_template: {
         Args: { _org_id: string; _reset_existing?: boolean; _vertical: string }
         Returns: undefined
@@ -8875,7 +8879,6 @@ export type Database = {
         Args: { _email: string }
         Returns: undefined
       }
-      exec_sql_void: { Args: { query: string }; Returns: undefined }
       generate_embed_token: { Args: never; Returns: string }
       generate_share_code: { Args: never; Returns: string }
       generate_short_code: { Args: { length?: number }; Returns: string }
