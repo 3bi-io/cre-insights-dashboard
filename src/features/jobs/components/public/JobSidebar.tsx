@@ -12,6 +12,7 @@ import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui
 import { DollarSign, MapPin, ExternalLink, Mic } from 'lucide-react';
 import { ReadinessBadges } from '@/components/shared';
 import { JobShareActions } from './JobShareActions';
+import { isAspenViewClientId } from '@/utils/aspenviewJobGrouping';
 import type { JobLocationVariant } from '@/utils/aspenviewJobGrouping';
 
 interface JobSidebarProps {
@@ -27,6 +28,7 @@ interface JobSidebarProps {
   isVoiceConnected: boolean;
   showVoiceButton?: boolean;
   locationVariants?: JobLocationVariant[];
+  clientId?: string | null;
 }
 
 export const JobSidebar = ({
@@ -42,8 +44,10 @@ export const JobSidebar = ({
   isVoiceConnected,
   showVoiceButton = true,
   locationVariants,
+  clientId,
 }: JobSidebarProps) => {
   const isMultiLocation = locationVariants && locationVariants.length > 1;
+  const isAspenView = isAspenViewClientId(clientId);
 
   return (
     <div className="hidden lg:block">
@@ -61,7 +65,7 @@ export const JobSidebar = ({
               </LogoAvatar>
               <h3 className="font-semibold text-lg">{title}</h3>
               <p className="text-sm text-muted-foreground mb-3">{company}</p>
-              <ReadinessBadges showVoiceApply={!!showVoiceButton && !isMultiLocation} />
+              <ReadinessBadges showVoiceApply={!!showVoiceButton || (isMultiLocation && isAspenView)} />
             </div>
 
             {salary && (
@@ -110,6 +114,18 @@ export const JobSidebar = ({
                     </Link>
                   );
                 })}
+
+                {isAspenView && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={onVoiceApply}
+                    disabled={isVoiceConnected}
+                  >
+                    <Mic className="w-4 h-4 mr-2" />
+                    Apply with Voice
+                  </Button>
+                )}
               </div>
             ) : (
               <>
