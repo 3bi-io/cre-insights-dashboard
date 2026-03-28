@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createLogger } from '../_shared/logger.ts'
 import { getServiceClient } from '../_shared/supabase-client.ts'
 
@@ -9,7 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -24,6 +23,24 @@ serve(async (req) => {
     const url = new URL(req.url)
     const platform = url.searchParams.get('platform')
     const user_id = url.searchParams.get('user_id')
+
+    // Redirect Indeed requests to the canonical universal-xml-feed endpoint
+    if (platform?.toLowerCase() === 'indeed') {
+      const canonicalBase = url.origin.replace('job-feed-xml', 'universal-xml-feed');
+      const redirectUrl = new URL(canonicalBase);
+      redirectUrl.searchParams.set('format', 'indeed');
+      // Forward organization_id or user_id params
+      for (const [key, value] of url.searchParams.entries()) {
+        if (key !== 'platform') {
+          redirectUrl.searchParams.set(key, value);
+        }
+      }
+      logger.info('Redirecting Indeed request to canonical feed', { redirectUrl: redirectUrl.toString() });
+      return new Response(null, {
+        status: 301,
+        headers: { ...corsHeaders, 'Location': redirectUrl.toString(), 'Cache-Control': 'public, max-age=86400' },
+      });
+    }
 
     // Create Supabase client with service role to bypass RLS
     const supabaseClient = getServiceClient()
