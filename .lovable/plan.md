@@ -1,80 +1,46 @@
 
 
-# Review All Platform Jobs & Optimize Google Jobs Integration
+# Fix Google Indexing & Deploy All 813 Jobs Immediately
 
-## Current State Assessment
+## Root Cause Analysis
 
-### Job Inventory (813 Google-ready across 4 orgs)
-| Organization | Google-Ready Jobs | Status |
-|---|---|---|
-| Hayes Recruiting Solutions | 421 | Active |
-| Career Now Brands (Hub Group, Werner, TMC) | 299 | Active |
-| Aspen Analytics (AspenView) | 53 | Active |
-| CR England | 40 | Active |
+The function ran successfully on 2026-03-28 at 02:16 UTC but **all submissions failed** with errors that got logged as `[object Object]` (a logging bug). Three critical issues:
 
-All 813 jobs have titles, locations, `status=active`, `is_hidden=false` -- fully eligible for Google Jobs.
+### Issue 1: Logger argument order bug
+Line 222 calls `logger.error('message', { context })` but the signature is `error(message, error?, context?)`. The context object is treated as the `error` parameter, so the actual Google API response body is lost.
 
-### Critical Issues Found
+### Issue 2: Edge function timeout
+813 jobs x 100ms delay = 81 seconds minimum. Supabase edge functions timeout at ~60 seconds. The function only processed 2 of 4 organizations before timing out. Career Now Brands (299 jobs) was never reached.
 
-1. **Weekly cron logs `job_count: 0` for all orgs** -- sitemaps are being fetched successfully (421, 40, 53 jobs) but zero URLs are actually submitted to Google. This means either the `GOOGLE_SERVICE_ACCOUNT_JSON` secret is missing/invalid or the OAuth token exchange is failing silently.
-
-2. **Career Now Brands (299 jobs) is missing from cron runs** -- only 3 orgs appear in the logs, not 4. The weekly cron's query uses `organizations!inner(name)` join which may be failing for this org, or the 1000-row default limit is truncating results before this org is reached.
-
-3. **Legacy `serve()` imports** -- Both `google-indexing-trigger` and `google-indexing` use the deprecated `serve()` from `deno.land/std`, violating the platform's Deno.serve() standard.
-
-4. **No database trigger wired** -- `google-indexing-trigger` exists as an edge function but no DB trigger calls it on job insert/update/delete, so real-time indexing is completely inactive.
-
-5. **Sitemap generates correct URLs** -- `https://applyai.jobs/jobs/{id}` pointing to pages with `JobPosting` JSON-LD schema. This part is working correctly.
-
-6. **Cron schedule is Sunday-only** -- `0 6 * * 0` means jobs added Monday-Saturday wait up to 6 days before being submitted.
-
----
+### Issue 3: Google API rejections
+Every submission returned an error (likely 403). The Google Indexing API requires the service account to have **verified ownership** of the domain `applyai.jobs` in Google Search Console. Without this, all submissions are rejected.
 
 ## Plan
 
-### Step 1: Fix the weekly cron edge function (critical)
+### Step 1: Fix the logging bug
+Update the `logger.error` calls in `google-indexing-weekly` to use correct argument order so we can see the actual Google API error response.
 
-Rewrite `google-indexing-weekly/index.ts` with these improvements:
+### Step 2: Fix the timeout problem
+- Reduce delay from 100ms to 50ms
+- Add a `max_per_run` parameter (default 200, matching Google's daily quota)
+- Prioritize new jobs (never-indexed first, sorted by `created_at` DESC)
+- Process all orgs' delta jobs in a single flat list instead of per-org loops to avoid wasting time on org overhead
 
-- **Fix the 1000-row limit bug**: The org discovery query fetches individual job rows to group by org. With 813+ jobs, it may hit the Supabase default 1000-row limit. Switch to an RPC or use `.select('organization_id').limit(10000)` with pagination.
-- **Better approach**: Query distinct `organization_id` values directly from `job_listings` where jobs are Google-ready, rather than fetching all rows and grouping client-side.
-- **Log actual errors**: When Google API returns errors, log the error body so we can diagnose the `GOOGLE_SERVICE_ACCOUNT_JSON` issue.
-- **Batch submissions with proper rate limiting**: Google Indexing API allows 200 requests/day for unverified properties. Add daily quota tracking and smart batching (submit changed/new jobs first).
-- **Track last-submitted timestamps**: Add an `last_google_indexed_at` column to `job_listings` so the cron only submits new/updated jobs instead of re-submitting all 813 every week.
+### Step 3: Redeploy and trigger immediately
+Deploy the fixed function and invoke it to get the actual Google API error response. This will tell us definitively whether:
+- (a) The service account credentials work but domain isn't verified (403)
+- (b) The credentials are invalid (401)
+- (c) Some other error
 
-### Step 2: Upgrade cron schedule to twice-weekly
-
-Update the `pg_cron` job from Sunday-only to **Sunday + Wednesday** at 6:00 AM UTC (`0 6 * * 0,3`), ensuring jobs are never more than 3-4 days stale. This stays well within Google's rate limits.
-
-### Step 3: Migrate legacy edge functions to Deno.serve()
-
-- **`google-indexing-trigger/index.ts`**: Replace `import { serve }` with `Deno.serve()` pattern
-- **`google-indexing/index.ts`**: Replace `import { serve }` with `Deno.serve()` pattern, update `createClient` import to `npm:@supabase/supabase-js@2.50.0`
-
-### Step 4: Enhance `google-jobs-xml` sitemap
-
-- Add `job_description` to the query so the sitemap can optionally include richer metadata
-- Add a global sitemap mode (no `organization_id` required) for submitting all jobs at once, reducing the number of internal API calls the weekly cron makes
-- Include `zip` field in query for more precise `lastmod` timestamps
-
-### Step 5: Add `last_google_indexed_at` column
-
-Create a migration adding `last_google_indexed_at TIMESTAMPTZ` to `job_listings`. The weekly cron will update this after successful submission, enabling delta-only submissions on subsequent runs (only jobs where `updated_at > last_google_indexed_at` or `last_google_indexed_at IS NULL`).
-
-### Step 6: Wire real-time database trigger (optional enhancement)
-
-Create a Postgres trigger on `job_listings` for INSERT/UPDATE/DELETE that calls `google-indexing-trigger` via `pg_net`. This ensures new jobs are submitted to Google within minutes rather than waiting for the next cron run. The trigger should only fire when `status = 'active'` and `is_hidden = false`.
-
----
+### Step 4: If domain verification is the issue
+Provide instructions to add the service account email as an **owner** in Google Search Console for `applyai.jobs`. This is a manual step in the Google Search Console dashboard.
 
 ## Files Changed
 
-| File | Action |
+| File | Change |
 |---|---|
-| `supabase/functions/google-indexing-weekly/index.ts` | Rewrite with delta indexing, proper org discovery, error logging |
-| `supabase/functions/google-indexing-trigger/index.ts` | Migrate to `Deno.serve()` |
-| `supabase/functions/google-indexing/index.ts` | Migrate to `Deno.serve()` |
-| `supabase/functions/google-jobs-xml/index.ts` | Add global sitemap mode, richer query |
-| New migration | Add `last_google_indexed_at` column |
-| SQL insert (cron update) | Update cron schedule to `0 6 * * 0,3` |
+| `supabase/functions/google-indexing-weekly/index.ts` | Fix logger calls, reduce delays, add max_per_run cap, flatten job processing |
+
+## Important Note
+If Google returns 403 errors, the `GOOGLE_SERVICE_ACCOUNT_JSON` service account's `client_email` must be added as a **verified owner** of `https://applyai.jobs` in [Google Search Console](https://search.google.com/search-console). No code change can fix this -- it's a Google-side configuration requirement for the Indexing API.
 
