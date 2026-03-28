@@ -289,6 +289,43 @@ Deno.serve(async (req) => {
       organizations: orgSummaries,
     };
 
+    // ─── Auto-schedule: switch cron between daily and twice-weekly ───
+    let scheduleAction = 'unchanged';
+    try {
+      const CRON_JOB_ID = 17;
+      const DAILY_SCHEDULE = '0 6 * * *';
+      const NORMAL_SCHEDULE = '0 6 * * 0,3';
+
+      // Count remaining unindexed active jobs
+      const { count: remainingCount } = await supabase
+        .from('job_listings')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'active')
+        .eq('is_hidden', false)
+        .or('last_google_indexed_at.is.null,updated_at.gt.last_google_indexed_at');
+
+      const backlogRemaining = remainingCount ?? 0;
+
+      if (backlogRemaining > 0) {
+        // Still have backlog — ensure daily schedule
+        await supabase.rpc('exec_sql_void', {
+          query: `SELECT cron.alter_job(${CRON_JOB_ID}, schedule := '${DAILY_SCHEDULE}')`,
+        }).throwOnError();
+        scheduleAction = `kept_daily (${backlogRemaining} remaining)`;
+      } else {
+        // Backlog cleared — revert to twice-weekly
+        await supabase.rpc('exec_sql_void', {
+          query: `SELECT cron.alter_job(${CRON_JOB_ID}, schedule := '${NORMAL_SCHEDULE}')`,
+        }).throwOnError();
+        scheduleAction = 'reverted_to_twice_weekly';
+      }
+
+      logger.info('Cron schedule check', { backlogRemaining, scheduleAction });
+    } catch (schedErr) {
+      logger.error('Failed to update cron schedule', schedErr);
+      scheduleAction = `error: ${schedErr instanceof Error ? schedErr.message : String(schedErr)}`;
+    }
+
     logger.info('Weekly indexing complete', {
       orgs: orgIds.length,
       delta: totalDelta,
@@ -297,9 +334,10 @@ Deno.serve(async (req) => {
       maxPerRun: MAX_PER_RUN,
       rateLimited,
       elapsed,
+      scheduleAction,
     });
 
-    return new Response(JSON.stringify(response, null, 2), {
+    return new Response(JSON.stringify({ ...response, schedule_action: scheduleAction }, null, 2), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
