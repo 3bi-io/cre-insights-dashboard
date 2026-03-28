@@ -193,6 +193,7 @@ Deno.serve(async (req) => {
       experience_level: job.experience_level,
       created_at: job.created_at,
       updated_at: job.updated_at,
+      feed_date: job.feed_date,
       apply_url: job.apply_url,
       category_name: job.job_categories?.name,
       client_name: job.clients?.name,
