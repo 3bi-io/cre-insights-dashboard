@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
               // Consume response body
               await response.text();
               summary.submitted++;
-              quotaRemaining--;
+              totalSubmittedSoFar++;
               successfulJobIds.push(job.id);
             }
           } catch (fetchErr) {
