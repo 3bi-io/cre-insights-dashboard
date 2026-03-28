@@ -120,12 +120,15 @@ const JobDetailsContent: React.FC = () => {
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
 
   const handleVoiceApply = () => {
+    const allLocations = isMultiLocation
+      ? locationVariants.map(v => v.location).join(', ')
+      : (displayLocation || 'Various locations');
     startVoiceApplication({
       jobId: job.id,
       jobTitle: displayTitle,
       jobDescription: displayDescription || `This is a ${displayTitle} position`,
       company: companyName,
-      location: displayLocation || 'Various locations',
+      location: allLocations,
       salary: salary || 'Competitive salary',
       organizationId: job.organization_id || undefined,
       clientId: job.client_id || undefined,
@@ -199,7 +202,7 @@ const JobDetailsContent: React.FC = () => {
                       {job.job_type && <Badge variant="outline">{job.job_type}</Badge>}
                       {job.experience_level && <Badge variant="outline">{job.experience_level}</Badge>}
                     </div>
-                    <ReadinessBadges showVoiceApply={!isMultiLocation && (!isExternalApply || isAspenViewJob(job.client_id))} />
+                    <ReadinessBadges showVoiceApply={(!isExternalApply || isAspenViewJob(job.client_id))} />
                   </div>
                 </div>
 
@@ -287,8 +290,9 @@ const JobDetailsContent: React.FC = () => {
             canonicalUrl={canonicalUrl}
             onVoiceApply={handleVoiceApply}
             isVoiceConnected={isConnected}
-            showVoiceButton={!isMultiLocation && (!isExternalApply || isAspenViewJob(job.client_id))}
+            showVoiceButton={!isExternalApply || isAspenViewJob(job.client_id)}
             locationVariants={isMultiLocation ? locationVariants : undefined}
+            clientId={job.client_id}
           />
         </div>
 
@@ -333,6 +337,17 @@ const JobDetailsContent: React.FC = () => {
                   </Link>
                 );
               })}
+              {isAspenViewJob(job.client_id) && (
+                <Button
+                  variant="outline"
+                  className="w-full min-h-[44px] touch-manipulation"
+                  onClick={handleVoiceApply}
+                  disabled={isConnected}
+                >
+                  <Mic className="w-4 h-4 mr-2" />
+                  Apply with Voice
+                </Button>
+              )}
             </div>
           </div>
         ) : (
