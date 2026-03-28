@@ -179,12 +179,35 @@ async function enrichJobs(jobs: any[]): Promise<any[]> {
 
   const clientMap = new Map(clientData?.map(client => [client.id, client]) || []);
 
+  // Check which orgs/clients have active voice agents
+  const orgIds = [...new Set(jobs.map(j => j.organization_id).filter(Boolean))] as string[];
+  
+  // Query voice agents for these orgs (inbound agents — not requiring outbound fields)
+  const { data: agentData } = await supabase
+    .from('voice_agents')
+    .select('organization_id, client_id')
+    .in('organization_id', orgIds.length > 0 ? orgIds : ['__none__'])
+    .eq('is_active', true);
+
+  // Build a set of "orgId" and "orgId:clientId" keys that have agents
+  const agentKeys = new Set<string>();
+  agentData?.forEach(a => {
+    if (a.client_id) {
+      agentKeys.add(`${a.organization_id}:${a.client_id}`);
+    } else {
+      agentKeys.add(a.organization_id);
+    }
+  });
+
   return jobs.map(job => {
     const client = job.client_id ? clientMap.get(job.client_id) : null;
+    // Check client-specific agent first, then org-level
+    const hasAgent = (job.organization_id && job.client_id && agentKeys.has(`${job.organization_id}:${job.client_id}`))
+      || (job.organization_id && agentKeys.has(job.organization_id));
     return {
       ...job,
       clients: client,
-      voiceAgent: { global: true },
+      voiceAgent: hasAgent ? { assigned: true } : null,
     };
   });
 }

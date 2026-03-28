@@ -20,7 +20,7 @@ import { sanitizers } from '@/utils/validation';
 import { getDisplayCompanyName, formatSalary } from '@/utils/jobDisplayUtils';
 import { renderJobDescription } from '@/utils/markdownRenderer';
 import { isAspenViewJob, transformAspenViewDescription } from '@/utils/aspenviewDescriptionTransformer';
-import { isVoiceApplyEnabled } from '@/utils/aspenviewJobGrouping';
+
 import { JobShareActions } from '@/features/jobs/components/public/JobShareActions';
 import { JobSidebar } from '@/features/jobs/components/public/JobSidebar';
 import type { JobLocationVariant } from '@/utils/aspenviewJobGrouping';
@@ -203,7 +203,7 @@ const JobDetailsContent: React.FC = () => {
                       {job.job_type && <Badge variant="outline">{job.job_type}</Badge>}
                       {job.experience_level && <Badge variant="outline">{job.experience_level}</Badge>}
                     </div>
-                    <ReadinessBadges showVoiceApply={(!isExternalApply || isVoiceApplyEnabled(job.client_id))} />
+                    <ReadinessBadges showVoiceApply={!!job.voiceAgent} />
                   </div>
                 </div>
 
@@ -291,7 +291,7 @@ const JobDetailsContent: React.FC = () => {
             canonicalUrl={canonicalUrl}
             onVoiceApply={handleVoiceApply}
             isVoiceConnected={isConnected}
-            showVoiceButton={!isExternalApply || isVoiceApplyEnabled(job.client_id)}
+            showVoiceButton={!!job.voiceAgent}
             locationVariants={isMultiLocation ? locationVariants : undefined}
             clientId={job.client_id}
           />
@@ -338,7 +338,7 @@ const JobDetailsContent: React.FC = () => {
                   </Link>
                 );
               })}
-              {isVoiceApplyEnabled(job.client_id) && (
+              {!!job.voiceAgent && (
                 <Button
                   variant="outline"
                   className="w-full min-h-[44px] touch-manipulation"
@@ -352,7 +352,7 @@ const JobDetailsContent: React.FC = () => {
             </div>
           </div>
         ) : (
-          <StickyApplyCTA applyUrl={applyUrl} isExternalApply={isExternalApply} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={!isExternalApply || isVoiceApplyEnabled(job.client_id)} />
+          <StickyApplyCTA applyUrl={applyUrl} isExternalApply={isExternalApply} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={!!job.voiceAgent} />
         )}
       </div>
     </div>

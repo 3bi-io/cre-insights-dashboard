@@ -71,7 +71,36 @@ export const useJobDetails = (jobId: string | undefined) => {
         clientInfo = ci;
       }
 
-      const voiceAgent = { global: true };
+      // Check if this job's org/client has a voice agent assigned
+      let voiceAgent: { assigned: boolean } | null = null;
+      if (data.organization_id) {
+        // Check client-specific agent first
+        let hasAgent = false;
+        if (data.client_id) {
+          const { data: clientAgent } = await supabase
+            .from('voice_agents')
+            .select('id')
+            .eq('organization_id', data.organization_id)
+            .eq('client_id', data.client_id)
+            .eq('is_active', true)
+            .limit(1)
+            .maybeSingle();
+          hasAgent = !!clientAgent;
+        }
+        // Fallback to org-level agent
+        if (!hasAgent) {
+          const { data: orgAgent } = await supabase
+            .from('voice_agents')
+            .select('id')
+            .eq('organization_id', data.organization_id)
+            .is('client_id', null)
+            .eq('is_active', true)
+            .limit(1)
+            .maybeSingle();
+          hasAgent = !!orgAgent;
+        }
+        if (hasAgent) voiceAgent = { assigned: true };
+      }
 
       return { ...data, clients: clientInfo, voiceAgent } as unknown as JobDetails;
     },

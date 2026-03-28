@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
           
           const userOrgId = profile?.organization_id;
           
-          if (!agent.is_platform_default && userOrgId && agent.organization_id !== userOrgId) {
+          if (userOrgId && agent.organization_id !== userOrgId) {
             logger.warn('Unauthorized agent access attempt', { 
               requestedAgent: agentId.substring(0, 8) + '...', 
               userOrg: userOrgId?.substring(0, 8) + '...'
