@@ -1,64 +1,67 @@
 
 
-# Syndication Push: Immediate + Weekly Cron
+# Job Posting Date Renewal (Every 24 Days)
 
-## What We're Building
-1. A new **`syndication-push`** edge function that hits every free-platform XML feed URL for every organization, warming caches and logging access
-2. An **immediate invocation** of that function (via `supabase--curl_edge_functions`)
-3. A **weekly pg_cron job** to run it every Sunday at 5:00 AM UTC
+## Goal
+Automatically refresh the `feed_date` column on all active job listings every 24 days so syndication platforms treat them as fresh postings, improving visibility and ranking.
 
-## Free Platforms (excluding Google)
-From `universal-xml-feed` VALID_FORMATS, the free syndication platforms are:
-- `indeed`, `simplyhired`, `talent`, `careerjet`, `jooble`, `jobrapido`, `linkedin`, `trovit`, `recruitnet`, `adzuna`, `dice`, `wellfound`, `hcareers`, `snagajob`, `healthecareers`, `nurse`
+## Changes
 
-Google is excluded — it already has `google-indexing-weekly` on its own cron.
+### 1. Database Migration — Add `pg_cron` job for date renewal
+Create a scheduled SQL function that runs daily and updates `feed_date` to `NOW()` for any active, non-hidden job where `feed_date` is NULL or older than 24 days.
 
-## Implementation
+```sql
+-- Function to renew stale feed dates
+CREATE OR REPLACE FUNCTION public.renew_job_feed_dates()
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v_count integer;
+BEGIN
+  UPDATE job_listings
+  SET feed_date = NOW(),
+      updated_at = NOW()
+  WHERE status = 'active'
+    AND (is_hidden = false OR is_hidden IS NULL)
+    AND (feed_date IS NULL OR feed_date < NOW() - INTERVAL '24 days');
 
-### 1. Create `supabase/functions/syndication-push/index.ts`
-Edge function that:
-- Queries all distinct `organization_id` values from `job_listings` where `status = 'active'` and `is_hidden = false`
-- For each organization, fetches the `universal-xml-feed` endpoint for each free platform format (using internal Supabase function URL)
-- Logs a summary per org: how many jobs served per platform, any errors
-- Returns a JSON report with totals
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
+END;
+$$;
+```
 
-The function calls itself via `fetch()` to `universal-xml-feed?organization_id=X&format=Y` for each org/platform pair. Each call already logs to `feed_access_logs`, so we get full audit trail automatically.
+Schedule via `pg_cron` (daily at 4:00 AM UTC, just before the weekly syndication push):
 
-### 2. Immediately invoke via `curl_edge_functions`
-After deploying, call it once to trigger the initial push for all orgs across all platforms.
-
-### 3. Weekly cron job (migration)
-Schedule via `pg_cron` + `pg_net`:
 ```sql
 SELECT cron.schedule(
-  'syndication-push-weekly',
-  '0 5 * * 0',  -- Sunday 5 AM UTC
-  $$ SELECT net.http_post(
-    url:='https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/syndication-push',
-    headers:='{"Content-Type":"application/json","Authorization":"Bearer <anon_key>"}'::jsonb,
-    body:='{}'::jsonb
-  ); $$
+  'renew-job-feed-dates',
+  '0 4 * * *',
+  $$ SELECT public.renew_job_feed_dates(); $$
 );
 ```
 
-## Technical Details
+### 2. Update `universal-xml-feed` — Use `feed_date` over `created_at`
+In `supabase/functions/universal-xml-feed/index.ts`, change all instances of:
+- `new Date(job.created_at).toISOString().split('T')[0]` → `new Date(job.feed_date || job.created_at).toISOString().split('T')[0]`
+- `new Date(job.created_at).toISOString()` → `new Date(job.feed_date || job.created_at).toISOString()`
 
-### Edge function logic (pseudocode)
-```text
-1. Query distinct org IDs from active job_listings
-2. Define FREE_PLATFORMS array (16 platforms, no 'google')
-3. For each org:
-   a. For each platform:
-      - fetch(universal-xml-feed?organization_id=X&format=Y)
-      - Record status code + job count from response
-   b. Add 100ms delay between orgs to avoid self-rate-limiting
-4. Return JSON summary
-```
+This ensures feeds emit the refreshed date when available, falling back to `created_at` for jobs that haven't been renewed yet.
 
-### Files changed
-- **Create**: `supabase/functions/syndication-push/index.ts`
-- **Create**: Migration SQL for weekly cron schedule
+### 3. Add `feed_date` to the query select
+Ensure the universal-xml-feed query includes `feed_date` in its SELECT columns so it's available for the XML templates.
 
-### No database schema changes needed
-`feed_access_logs` already captures all feed requests with format, org, job count, and timestamps.
+## How It Works
+- The cron job runs **daily at 4 AM UTC**
+- It finds all active jobs where `feed_date` is null or 24+ days old
+- It stamps them with today's date
+- The next time any platform crawls the XML feed, they see a fresh posting date
+- The existing weekly `syndication-push` at 5 AM Sunday ensures all platforms actively pull the refreshed feeds
+
+## Files Changed
+- **Migration SQL**: `renew_job_feed_dates()` function + `pg_cron` schedule
+- **`supabase/functions/universal-xml-feed/index.ts`**: Use `feed_date` as primary date source in XML output
 
