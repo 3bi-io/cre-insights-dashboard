@@ -1,36 +1,31 @@
 
 
-## Temporarily Increase Google Indexing Cron to Daily
+# Add LinkedIn Job Wrapping XML Feed
 
-### Context
-- 613 jobs remain unindexed; at 400/run, ~2 daily runs will clear the backlog
-- Current cron: `0 6 * * 0,3` (Sunday + Wednesday 6 AM UTC), job ID 17
+## Context
+The `universal-xml-feed` edge function already supports 16 platform formats. LinkedIn's Job Wrapping program accepts an XML feed to surface jobs organically on LinkedIn for free. We need to add `linkedin` as a new format.
 
-### Approach: Self-Reverting Edge Function
+## LinkedIn Job Wrapping XML Spec
+LinkedIn requires a specific XML schema with these key elements per job:
+- `<company>` with `<name>` (must match the LinkedIn Company Page name exactly)
+- `<job>` containing: `<partnerJobId>`, `<company>`, `<title>`, `<description>`, `<applyUrl>`, `<location>` (with `<city>`, `<state>`, `<country>`), `<industryCode>`, `<jobType>`, `<listedAt>` (epoch ms), `<expiresAt>` (epoch ms)
 
-Rather than manually updating the cron and hoping to remember to revert it, the function itself will check whether a backlog exists after each run and automatically switch the cron schedule.
+Root element: `<source>` wrapping `<lastBuildDate>`, `<publisherUrl>`, and multiple `<job>` elements.
 
-### Changes
+## Changes
 
-**1. Add auto-schedule logic to `google-indexing-weekly/index.ts`**
+### 1. `supabase/functions/universal-xml-feed/index.ts`
+- Add `'linkedin'` to the `VALID_FORMATS` array (line ~40)
+- Add `case 'linkedin':` in the switch block (around line 250) calling a new `generateLinkedInXML()` function
+- Add `generateLinkedInXML(jobs, feedSource)` function that produces LinkedIn's required XML structure:
+  - Root `<source>` element
+  - Each job wrapped in `<job>` with: `<partnerJobId>`, `<company><name>`, `<title>`, `<description>` (CDATA), `<applyUrl>`, `<location>` (city/state/country/postalCode), `<listedAt>` (epoch ms from created_at), `<expiresAt>` (90 days from created_at), `<jobtype>` mapped to LinkedIn values (full-time, part-time, contract, temporary, internship)
 
-After the final summary is computed (around line 278), add logic that:
-- Queries the count of active jobs where `last_google_indexed_at IS NULL` or `updated_at > last_google_indexed_at`
-- If remaining unindexed jobs > 0 → ensure cron is set to daily (`0 6 * * *`)
-- If remaining unindexed jobs = 0 → revert cron to twice-weekly (`0 6 * * 0,3`)
-- Uses `cron.alter_job` or unschedule/reschedule via SQL to update the existing job ID 17
-- Logs the schedule change
-
-**2. Update cron schedule to daily now (SQL via Supabase)**
-
-Run SQL to immediately switch to daily:
-```sql
-SELECT cron.alter_job(17, schedule := '0 6 * * *');
-```
+### 2. `supabase/config.toml`
+No changes needed — `universal-xml-feed` already configured with `verify_jwt = false`.
 
 ### Result
-- Cron runs daily at 6 AM UTC starting immediately
-- After each run, the function checks if backlog is cleared
-- Once all jobs are indexed, it automatically reverts to `0 6 * * 0,3`
-- No manual intervention needed
+Feed URL: `https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/universal-xml-feed?organization_id=<ORG_ID>&format=linkedin`
+
+This URL can be submitted to LinkedIn's Job Wrapping partner program for free organic syndication.
 
