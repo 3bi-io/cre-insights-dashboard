@@ -17,7 +17,11 @@ export type PlatformKey =
   | 'import_applications'
   | 'adzuna'
   | 'talroo'
-  | 'doublenickel';
+  | 'doublenickel'
+  | 'jooble'
+  | 'talent'
+  | 'careerjet'
+  | 'jobrapido';
 
 /**
  * Platform category for grouping

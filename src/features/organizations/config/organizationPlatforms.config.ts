@@ -107,6 +107,34 @@ export const ORGANIZATION_PLATFORMS: Record<PlatformKey, PlatformConfig> = {
     category: 'Trucking Platforms',
     icon: 'Truck',
   },
+  jooble: {
+    key: 'jooble',
+    name: 'Jooble',
+    description: 'Free global job aggregator with XML feed syndication',
+    category: 'General Platforms',
+    icon: 'Globe',
+  },
+  talent: {
+    key: 'talent',
+    name: 'Talent.com',
+    description: 'Free organic job distribution via XML feed (formerly Neuvoo)',
+    category: 'General Platforms',
+    icon: 'Globe',
+  },
+  careerjet: {
+    key: 'careerjet',
+    name: 'CareerJet',
+    description: 'Free international job search engine with XML feed integration',
+    category: 'General Platforms',
+    icon: 'Globe',
+  },
+  jobrapido: {
+    key: 'jobrapido',
+    name: 'Jobrapido',
+    description: 'Free global job search engine with XML feed syndication',
+    category: 'General Platforms',
+    icon: 'Globe',
+  },
 };
 
 /**
