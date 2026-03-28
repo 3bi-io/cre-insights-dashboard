@@ -27,8 +27,8 @@ export function useOptimizedQuery<TData, TError = Error>(
     ...restOptions
   } = options;
 
-  // Memoize the query function to prevent unnecessary re-renders
-  const memoizedQueryFn = useCallback(queryFn, []);
+  // Memoize the query function — track queryFn changes to avoid stale closures
+  const memoizedQueryFn = useCallback(queryFn, [queryFn]);
 
   // Memoize query options
   const queryOptions = useMemo(() => ({
@@ -97,7 +97,7 @@ export function useRealTimeQuery<TData, TError = Error>(
   intervalMs: number = 30000,
   options?: Omit<OptimizedQueryOptions<TData, TError>, 'queryKey' | 'queryFn'>
 ) {
-  const memoizedQueryFn = useCallback(queryFn, []);
+  const memoizedQueryFn = useCallback(queryFn, [queryFn]);
 
   return useOptimizedQuery({
     queryKey,

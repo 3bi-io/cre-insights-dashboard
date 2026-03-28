@@ -80,8 +80,9 @@ const JobPerformanceTable = () => {
         };
       });
     },
-    // Refresh every 30 seconds
-    refetchInterval: 30000,
+    // Refresh every 60 seconds
+    refetchInterval: 60000,
+    refetchIntervalInBackground: false,
   });
 
   if (isLoading) {

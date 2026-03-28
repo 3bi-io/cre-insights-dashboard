@@ -81,7 +81,8 @@ export function useSocialInteractions(options: UseInteractionsOptions = {}) {
       return data as SocialInteraction[];
     },
     enabled: !!organizationId,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 60000, // Refresh every 60 seconds
+    refetchIntervalInBackground: false,
   });
 
   const updateStatus = useMutation({

@@ -59,8 +59,8 @@ export function useTenstreetNotifications() {
         totalNotifications
       } as TenstreetNotificationCounts;
     },
-    refetchInterval: 30000,
-    refetchIntervalInBackground: true
+    refetchInterval: 60000,
+    refetchIntervalInBackground: false
   });
 
   return {

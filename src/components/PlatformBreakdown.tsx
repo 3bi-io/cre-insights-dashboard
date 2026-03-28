@@ -52,8 +52,9 @@ const PlatformBreakdown = () => {
         color: colors[index % colors.length]
       }));
     },
-    // Refresh every 30 seconds
-    refetchInterval: 30000,
+    // Refresh every 60 seconds
+    refetchInterval: 60000,
+    refetchIntervalInBackground: false,
   });
 
   const CustomTooltip = ({ active, payload }: any) => {

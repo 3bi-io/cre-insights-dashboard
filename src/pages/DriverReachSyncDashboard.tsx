@@ -61,7 +61,8 @@ const DriverReachSyncDashboard = () => {
       })) as ApplicationSyncData[];
     },
     enabled: !!organization?.id,
-    refetchInterval: 10000,
+    refetchInterval: 30000, // Reduced from 10s
+    refetchIntervalInBackground: false,
   });
 
   // Fetch credentials for manual sync

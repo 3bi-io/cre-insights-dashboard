@@ -57,8 +57,9 @@ export const RecentActivityFeed = () => {
 
       return combined.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 10);
     },
-    staleTime: 30000,
-    refetchInterval: 30000,
+    staleTime: 45000,
+    refetchInterval: 60000,
+    refetchIntervalInBackground: false,
   });
 
   useEffect(() => {

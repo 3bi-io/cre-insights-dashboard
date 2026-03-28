@@ -22,8 +22,9 @@ export const usePlatforms = () => {
       logger.debug('Platforms fetched', { count: data?.length, context: 'usePlatforms' });
       return data;
     },
-    // Refresh every 30 seconds to stay in sync
-    refetchInterval: 30000,
+    // Refresh every 60 seconds to reduce resource consumption
+    refetchInterval: 60000,
+    refetchIntervalInBackground: false,
   });
 
   return {

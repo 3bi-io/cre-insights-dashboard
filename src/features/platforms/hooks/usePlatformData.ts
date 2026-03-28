@@ -14,8 +14,9 @@ export const usePlatformData = () => {
   } = useQuery({
     queryKey: queryKeys.platforms.list(),
     queryFn: PlatformService.fetchPlatforms,
-    refetchInterval: 30000, // Refresh every 30 seconds
-    staleTime: 20000, // Data considered fresh for 20 seconds
+    refetchInterval: 60000, // Refresh every 60 seconds
+    refetchIntervalInBackground: false,
+    staleTime: 45000, // Data considered fresh for 45 seconds
   });
 
   return {
