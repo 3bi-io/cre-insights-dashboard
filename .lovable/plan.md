@@ -1,63 +1,51 @@
 
 
-# Fix: Voice Apply CTA Not Showing on Public /jobs Page
+# Replace All `ats.me` / `ATS.me` with `applyai.jobs` / `Apply AI`
 
-## Problem Found
+## Current State
 
-The `voice_agents` table has RLS that restricts reads to **authenticated users only** (migration `20260123204659`). The public `/jobs` page queries voice_agents with the anon key, which returns `[]` for every request. This means **no client shows Voice Apply on the public page** — not even Danny Herman, Aspenview, or any enabled client.
+- **Source code**: Already clean. No `ats.me` references remain in `.ts`, `.tsx`, `.md`, or config files.
+- **Database content**: Blog posts and profile data still contain `ATS.me` brand references and `ats.me` domain references from old migrations.
+- **`apply_url` values**: Some job listings may still have `https://ats.me/apply?...` URLs from migration `20260206000753`.
+- **Old migrations**: Historical SQL files -- these are immutable records and will NOT be edited.
 
-The code changes from the previous edit (client-only filtering logic) are correct, but they have no effect because the underlying data query returns nothing.
+## Plan
 
-## Fix
+### Step 1: New migration to replace all remaining database content
 
-### Step 1: Create a security definer function for public voice agent lookup
+Create a single migration that performs:
 
-Create a new SQL function `get_public_voice_agent_client_ids` that:
-- Runs as `SECURITY DEFINER` (bypasses RLS)
-- Takes an array of organization IDs
-- Returns only `organization_id` and `client_id` for active agents with a non-null `client_id`
-- Exposes no sensitive data (no agent IDs, credentials, phone numbers)
+1. **Blog post content** -- Replace `ATS.me` with `Apply AI` and `ats.me` with `applyai.jobs` across all blog posts:
+   ```sql
+   UPDATE blog_posts
+   SET content = REPLACE(REPLACE(content, 'ATS.me', 'Apply AI'), 'ats.me', 'applyai.jobs'),
+       title = REPLACE(title, 'ATS.me', 'Apply AI'),
+       description = REPLACE(description, 'ATS.me', 'Apply AI');
+   ```
 
-```sql
-CREATE OR REPLACE FUNCTION public.get_public_voice_agent_client_ids(_org_ids uuid[])
-RETURNS TABLE(organization_id uuid, client_id uuid)
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $$
-  SELECT DISTINCT va.organization_id, va.client_id
-  FROM public.voice_agents va
-  WHERE va.organization_id = ANY(_org_ids)
-    AND va.is_active = true
-    AND va.client_id IS NOT NULL;
-$$;
-```
+2. **Author profile** -- Update Cody Forbes' bio and title:
+   ```sql
+   UPDATE profiles
+   SET author_bio = REPLACE(author_bio, 'ATS.me', 'Apply AI'),
+       author_title = REPLACE(author_title, 'ATS.me', 'Apply AI')
+   WHERE author_bio LIKE '%ATS.me%' OR author_title LIKE '%ATS.me%';
+   ```
 
-### Step 2: Update `usePaginatedPublicJobs.tsx` enrichJobs function
+3. **Job listing apply URLs** -- Replace any lingering `ats.me` domain in apply URLs:
+   ```sql
+   UPDATE job_listings
+   SET apply_url = REPLACE(apply_url, 'ats.me', 'applyai.jobs')
+   WHERE apply_url LIKE '%ats.me%';
+   ```
 
-Replace the direct `.from('voice_agents').select(...)` query with an RPC call:
+### What stays unchanged
 
-```ts
-const { data: agentData } = await supabase.rpc('get_public_voice_agent_client_ids', {
-  _org_ids: orgIds
-});
-```
+- **Blog slugs** (`why-ats-me-will-thrive-2026`) -- preserved for SEO link continuity
+- **Image asset filenames** (`ats-me-thrive-hero.jpg`) -- preserved to match slugs
+- **`blogImageUtils.ts`** slug mappings -- preserved to match database slugs
+- **Old migration files** -- immutable historical records
 
-Then build agentKeys from the result as before.
+### Result
 
-### Step 3: Update `useJobDetails.tsx`
-
-Replace the direct voice_agents query with the same RPC, or a simpler single-row check:
-
-```ts
-const { data: agentCheck } = await supabase.rpc('get_public_voice_agent_client_ids', {
-  _org_ids: [data.organization_id]
-});
-const hasClientAgent = agentCheck?.some(a => a.client_id === data.client_id);
-```
-
-## Result
-
-After this fix:
-- **Enabled clients** (Aspenview, Danny Herman, Day & Ross, James Burg, Novco, Pemberton, R.E. Garrison, Sysco) will show Voice Apply CTA
-- **Disabled clients** (Dollar Tree, Family Dollar, Hayes AI Recruiting, Hub Group, Kroger, TMC, Werner) will NOT show Voice Apply CTA
-- No sensitive agent data is exposed to public visitors
+After this single migration, all live database content will reference `Apply AI` / `applyai.jobs` instead of `ATS.me` / `ats.me`.
 
