@@ -25,7 +25,8 @@ const BlogPostPage = React.lazy(() => import("@/pages/public/BlogPostPage"));
 const BlogAuthorPage = React.lazy(() => import("@/pages/public/BlogAuthorPage"));
 const ApiDocsPage = React.lazy(() => import("@/pages/ApiDocsPage"));
 const PartnerSetupGuidePage = React.lazy(() => import("@/pages/PartnerSetupGuidePage"));
-
+const GuidePage = React.lazy(() => import("@/pages/public/GuidePage"));
+const AiChatPage = React.lazy(() => import("@/pages/public/AiChatPage"));
 
 // Authentication pages
 const Auth = React.lazy(() => import("@/pages/Auth"));
