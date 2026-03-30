@@ -37,6 +37,11 @@ const CDL_FEEDS = [
     clientId: 'b2a29507-32a6-4f5e-85d6-a7e6ffac3c52',
     clientName: 'James Burg Trucking Company',
     feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=James-Burg-Trucking-Company-1770928232&board=AIRecruiter'
+  },
+  {
+    clientId: 'be8b645e-d480-4c22-8e75-b09a7fc1db7a',
+    clientName: 'R.E. Garrison Trucking',
+    feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=RE-Garrison-Trucking-1760000000&board=AIRecruiter'
   }
 ];
 
