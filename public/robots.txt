@@ -46,6 +46,9 @@ Sitemap: https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/indeed-xml-feed
 # Fallback static sitemap
 Sitemap: https://applyai.jobs/sitemap.xml
 
+# RSS Job Feed
+Sitemap: https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/rss-feed
+
 # Crawl-delay for all bots
 Crawl-delay: 1
 

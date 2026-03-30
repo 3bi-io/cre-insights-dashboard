@@ -350,3 +350,6 @@ verify_jwt = false
 
 [functions.test-sms]
 verify_jwt = false
+
+[functions.rss-feed]
+verify_jwt = false
