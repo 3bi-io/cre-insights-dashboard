@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
 
     let query = supabase
       .from("job_listings")
-      .select("id, title, job_title, job_description, job_summary, location, city, state, zip, salary_min, salary_max, salary_type, job_type, created_at, updated_at, feed_date, organization_id, client_id")
+      .select("id, title, job_title, job_description, job_summary, location, city, state, salary_min, salary_max, salary_type, job_type, created_at, updated_at, feed_date, organization_id, client_id")
       .eq("status", "active")
       .eq("is_hidden", false)
       .order("feed_date", { ascending: false, nullsFirst: false })
