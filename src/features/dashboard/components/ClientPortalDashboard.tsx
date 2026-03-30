@@ -14,6 +14,7 @@ import { AnalyticsChartsRow } from './client-portal/AnalyticsChartsRow';
 import { ATSDeliverySection } from './client-portal/ATSDeliverySection';
 import { RecentApplicantsTable } from './client-portal/RecentApplicantsTable';
 import { JobPerformanceSection } from './client-portal/JobPerformanceSection';
+import { VoiceConversationsSection } from './client-portal/VoiceConversationsSection';
 
 interface ClientPortalDashboardProps {
   overrideClientId?: string;
@@ -129,7 +130,14 @@ export const ClientPortalDashboard: React.FC<ClientPortalDashboardProps> = ({ ov
 
         <div className="border-t border-border/30" />
 
-        {/* Section 5: Recent Applicants */}
+        {/* Section 5: Voice Conversations */}
+        {activeClientId && (
+          <VoiceConversationsSection clientId={activeClientId} />
+        )}
+
+        <div className="border-t border-border/30" />
+
+        {/* Section 6: Recent Applicants */}
         {activeClientId && (
           <RecentApplicantsTable clientId={activeClientId} dateRange={dateRange} />
         )}
