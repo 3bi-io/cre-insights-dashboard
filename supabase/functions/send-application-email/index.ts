@@ -179,7 +179,7 @@ const getEmailTemplate = (request: EmailRequest): string => {
                 <p style="margin: 5px 0; font-size: 14px;">📅 Date: ${safeDate}</p>
                 <p style="margin: 5px 0; font-size: 14px;">🕐 Time: ${safeTime}</p>
                 <p style="margin: 5px 0; font-size: 14px;">📝 Type: ${safeType}</p>
-                ${safeLink ? `<p style="margin: 15px 0 5px 0; font-size: 14px;"><a href="${safeLink}" style="background: #10b981; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Join Interview</a></p>` : ''}
+                ${safeLink ? `<p style="margin: 15px 0 5px 0; font-size: 14px;"><a href="${safeLink}" ${safeLink ? `<p style="margin: 15px 0 5px 0; font-size: 14px;"><a href="${safeLink}" style="background-color: #10b981; background: #10b981; color: #ffffff !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Join Interview</a></p>` : ''}</p>` : ''}
               </div>
               <p style="font-size: 16px; margin-bottom: 20px;">Please confirm your availability by replying to this email. We look forward to speaking with you!</p>
               <p style="font-size: 16px; margin-bottom: 5px;">Best regards,</p>
