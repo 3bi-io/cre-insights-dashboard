@@ -1,42 +1,32 @@
 
 
-# Auto-Update Conversation Data on Admin & Client Dashboards
+# Fix: Enable Supabase Realtime for Applications Table
 
-## Problem
-- The **Admin Dashboard** (ElevenLabsAdmin) already has realtime subscriptions on `elevenlabs_conversations` via `useElevenLabsConversations`, but the **Super Admin Command Center** (`/admin`) does not reflect conversation updates in real time.
-- The **Client Portal Dashboard** has no voice conversation data or realtime subscriptions at all — clients cannot see inbound/outbound conversation activity for their agents.
-- Neither the `useClientPortalAnalytics` nor `useSuperAdminDashboardData` hooks have `refetchInterval` or realtime subscriptions, so data goes stale until manual refresh.
+## Root Cause
+The `usePaginatedApplications` hook already has both a realtime subscription and 60s polling configured correctly in the code. However, the `applications` table is **not added to the Supabase realtime publication** (`supabase_realtime`). This means Supabase never broadcasts change events, so the realtime subscription silently receives nothing. The 60s polling should still work as a fallback -- if it's also not updating, there may be an additional issue with query key matching.
+
+Currently **zero tables** are in the realtime publication.
 
 ## Plan
 
-### 1. Add realtime auto-refresh to Super Admin Dashboard
-**File:** `src/hooks/useSuperAdminDashboardData.tsx`
-- Add `refetchInterval: 60_000` (60s polling) to the main metrics query so conversation counts stay current.
-- Add a Supabase realtime subscription on `elevenlabs_conversations` table changes that invalidates the `super-admin-dashboard` query key.
+### 1. Add tables to the Supabase realtime publication
+Run a database migration to add the `applications` and `elevenlabs_conversations` tables to the realtime publication so change events are actually broadcast:
 
-### 2. Add Voice Conversations section to Client Portal Dashboard
-**New file:** `src/features/dashboard/components/client-portal/VoiceConversationsSection.tsx`
-- Create a new section showing recent inbound and outbound voice conversations for the client's agents.
-- Query `elevenlabs_conversations` joined with `voice_agents` filtered by `client_id` (via the voice_agents table).
-- Display a compact table: Date, Agent Name, Direction (inbound/outbound), Duration, Status.
-- Show summary KPIs: total conversations, avg duration, completion rate.
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE applications;
+ALTER PUBLICATION supabase_realtime ADD TABLE elevenlabs_conversations;
+```
 
-### 3. Add realtime subscription to Client Portal voice conversations
-**In the new VoiceConversationsSection:**
-- Subscribe to `postgres_changes` on `elevenlabs_conversations` to auto-invalidate the query.
-- Add `refetchInterval: 60_000` as a fallback.
+This single migration fixes both the admin applications list and the voice conversations section.
 
-### 4. Wire up the new section in ClientPortalDashboard
-**File:** `src/features/dashboard/components/ClientPortalDashboard.tsx`
-- Import and render `VoiceConversationsSection` between the Recent Applicants and Job Performance sections.
-- Pass `activeClientId` so it scopes to the selected client.
+### 2. Verify query key invalidation matches
+The realtime handler invalidates `queryKeys.applications.all`, and the infinite query uses `queryKeys.applications.list(filters)`. Confirm that `queryKeys.applications.all` is a prefix of `queryKeys.applications.list(filters)` so that `invalidateQueries` with the prefix key correctly triggers refetch of the list query. If not, fix the invalidation key.
 
-### 5. Add auto-refresh to Client Portal analytics
-**File:** `src/hooks/useClientPortalAnalytics.ts`
-- Add `refetchInterval: 60_000` to keep pipeline/KPI data fresh as new applications arrive from voice conversations.
+### 3. Reduce polling interval as immediate fix
+As a belt-and-suspenders approach, reduce the `refetchInterval` from 60s to 30s to ensure faster updates even if realtime events are occasionally missed.
 
 ## Technical Details
-- Realtime channels use `crypto.randomUUID()` for unique channel names (existing pattern).
-- Voice agent → client mapping uses the `client_id` column on `voice_agents` table to scope conversations.
-- All queries respect existing RLS policies; no migration needed.
+- The realtime publication is a Postgres-level setting that controls which tables emit WAL events to the Supabase Realtime server.
+- Without tables in the publication, `.on('postgres_changes', ...)` subscriptions connect successfully but never fire callbacks.
+- This is why the client dashboard (which likely uses a different data path) appears to work while the admin applications list does not.
 
