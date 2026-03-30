@@ -178,6 +178,7 @@ export function useClientPortalAnalytics(clientId: string | null, dateRange: Dat
       };
     },
     enabled: !!clientId,
+    refetchInterval: 60_000,
   });
 }
 

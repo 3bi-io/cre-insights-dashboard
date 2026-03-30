@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { queryKeys } from '@/lib/queryKeys';
 
@@ -19,6 +20,27 @@ interface SuperAdminDashboardMetrics {
 }
 
 export const useSuperAdminDashboardData = () => {
+  const queryClient = useQueryClient();
+
+  // Realtime subscription on elevenlabs_conversations to auto-invalidate
+  useEffect(() => {
+    const channelName = `super-admin-conversations-${crypto.randomUUID()}`;
+    const channel = supabase
+      .channel(channelName)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'elevenlabs_conversations',
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.admin.superAdminDashboard() });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: queryKeys.admin.superAdminDashboard(),
     queryFn: async (): Promise<SuperAdminDashboardMetrics> => {
@@ -88,7 +110,7 @@ export const useSuperAdminDashboardData = () => {
         totalOrganizations: orgsCount || 0,
         totalUsers: usersCount || 0,
         totalApplications: totalApps || 0,
-        systemHealth: 99.9, // Can be calculated based on uptime/errors in future
+        systemHealth: 99.9,
         organizationGrowth: {
           current: recentOrgsCount || 0,
           previous: previousOrgsCount || 0,
@@ -100,6 +122,7 @@ export const useSuperAdminDashboardData = () => {
         }
       };
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 60_000,
   });
 };
