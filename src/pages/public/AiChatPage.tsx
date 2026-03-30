@@ -26,7 +26,7 @@ const features = [
   {
     icon: MessageCircle,
     title: 'Automated Follow-Ups',
-    description: 'Intelligent follow-up sequences via voice and SMS to re-engage candidates who don't answer or need callbacks.',
+    description: "Intelligent follow-up sequences via voice and SMS to re-engage candidates who don't answer or need callbacks.",
   },
   {
     icon: Zap,

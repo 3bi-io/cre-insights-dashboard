@@ -193,6 +193,8 @@ const AppRoutes: React.FC = () => {
         <Route path="blog/:slug" element={<RouteWrapper><BlogPostPage /></RouteWrapper>} />
         <Route path="api-docs" element={<RouteWrapper><ApiDocsPage /></RouteWrapper>} />
         <Route path="partner-setup" element={<RouteWrapper><PartnerSetupGuidePage /></RouteWrapper>} />
+        <Route path="guide" element={<RouteWrapper><GuidePage /></RouteWrapper>} />
+        <Route path="ai-chat" element={<RouteWrapper><AiChatPage /></RouteWrapper>} />
         
       </Route>
 
