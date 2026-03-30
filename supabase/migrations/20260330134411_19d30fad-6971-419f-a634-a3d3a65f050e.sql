@@ -1,0 +1,2 @@
+ALTER PUBLICATION supabase_realtime ADD TABLE applications;
+ALTER PUBLICATION supabase_realtime ADD TABLE elevenlabs_conversations;

@@ -98,7 +98,7 @@ export const usePaginatedApplications = (filters: PaginationFilters = {}) => {
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: 0,
-    refetchInterval: 60_000,
+    refetchInterval: 30_000,
     refetchIntervalInBackground: false,
   });
 };
