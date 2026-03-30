@@ -16,8 +16,8 @@ Allow: /blog
 Allow: /blog/*
 Allow: /clients
 Allow: /map
-
-# Allow public job pages
+Allow: /guide
+Allow: /ai-chat
 Allow: /jobs
 Allow: /jobs/*
 Allow: /apply
