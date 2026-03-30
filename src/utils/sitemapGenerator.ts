@@ -67,6 +67,16 @@ export const STATIC_ROUTES: SitemapUrl[] = [
     changefreq: 'monthly',
     priority: 0.5,
   },
+  {
+    loc: 'https://applyai.jobs/guide',
+    changefreq: 'weekly',
+    priority: 0.7,
+  },
+  {
+    loc: 'https://applyai.jobs/ai-chat',
+    changefreq: 'weekly',
+    priority: 0.7,
+  },
 ];
 
 /**
