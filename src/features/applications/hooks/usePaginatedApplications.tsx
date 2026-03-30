@@ -1,4 +1,5 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { queryKeys } from '@/lib/queryKeys';
 
@@ -13,6 +14,27 @@ interface PaginationFilters {
 const PAGE_SIZE = 50;
 
 export const usePaginatedApplications = (filters: PaginationFilters = {}) => {
+  const queryClient = useQueryClient();
+
+  // Realtime subscription for automatic updates
+  useEffect(() => {
+    const channelName = `applications-list-${crypto.randomUUID()}`;
+    const channel = supabase
+      .channel(channelName)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'applications',
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.applications.all });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useInfiniteQuery({
     queryKey: queryKeys.applications.list(filters),
     queryFn: async ({ pageParam = 0 }) => {
@@ -76,5 +98,7 @@ export const usePaginatedApplications = (filters: PaginationFilters = {}) => {
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: 0,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   });
 };

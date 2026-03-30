@@ -72,6 +72,8 @@ export const useApplicationStats = (filters: ApplicationStatsFilters = {}) => {
         byCategory,
       };
     },
-    staleTime: 30000, // 30 seconds - avoid excessive refetching
+    staleTime: 30000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   });
 };
