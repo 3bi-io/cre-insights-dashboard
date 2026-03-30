@@ -119,23 +119,34 @@ export const buildJobPostingSchema = (job: JobPostingSchemaInput) => {
       "name": job.jobLocation?.country || "US"
     };
   } else if (job.jobLocation) {
-    // On-site or hybrid jobs
+    // On-site or hybrid jobs — always include jobLocation even with partial data
+    const address: Record<string, string> = {
+      "@type": "PostalAddress",
+      "addressCountry": job.jobLocation.country || "US"
+    };
+    if (job.jobLocation.streetAddress) address.streetAddress = job.jobLocation.streetAddress;
+    if (job.jobLocation.city) address.addressLocality = job.jobLocation.city;
+    if (job.jobLocation.state) address.addressRegion = job.jobLocation.state;
+    if (job.jobLocation.postalCode) address.postalCode = job.jobLocation.postalCode;
+
     schema.jobLocation = {
       "@type": "Place",
-      "address": {
-        "@type": "PostalAddress",
-        ...(job.jobLocation.streetAddress && { "streetAddress": job.jobLocation.streetAddress }),
-        ...(job.jobLocation.city && { "addressLocality": job.jobLocation.city }),
-        ...(job.jobLocation.state && { "addressRegion": job.jobLocation.state }),
-        ...(job.jobLocation.postalCode && { "postalCode": job.jobLocation.postalCode }),
-        "addressCountry": job.jobLocation.country || "US"
-      }
+      "address": address
     };
     
     // Add telecommute for hybrid
     if (job.remoteType === 'hybrid') {
       schema.jobLocationType = "TELECOMMUTE";
     }
+  } else {
+    // Fallback: at minimum provide country-level location
+    schema.jobLocation = {
+      "@type": "Place",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "US"
+      }
+    };
   }
 
   // Salary handling with min/max support

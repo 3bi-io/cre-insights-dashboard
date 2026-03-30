@@ -139,14 +139,28 @@ const JobDetailsContent: React.FC = () => {
   const experienceData = extractExperienceFromDescription(displayDescription);
   const qualificationsData = extractQualificationsFromDescription(displayDescription);
 
+  // Ensure description is never empty for JSON-LD compliance
+  const schemaDescription = displayDescription && displayDescription.trim().length > 0
+    ? displayDescription
+    : `${displayTitle} position at ${companyName}.${displayLocation ? ` Located in ${displayLocation}.` : ''} Apply today.`;
+
+  // Calculate validThrough: 30 days from the posting date
+  const postingDate = new Date(job.created_at);
+  const validThroughDate = new Date(postingDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
   const jobPostingSchema = buildJobPostingSchema({
-    id: job.id, title: displayTitle, description: displayDescription,
+    id: job.id, title: displayTitle, description: schemaDescription,
     datePosted: job.created_at,
-    validThrough: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    validThrough: validThroughDate,
     employmentType: job.job_type || 'FULL_TIME',
     hiringOrganization: companyName,
     hiringOrganizationLogo: job.clients?.logo_url,
-    jobLocation: displayLocation ? { city: job.city || '', state: job.state || '', country: 'US', postalCode: job.zip || undefined } : undefined,
+    jobLocation: {
+      city: job.city || displayLocation?.split(',')[0]?.trim() || '',
+      state: job.state || displayLocation?.split(',')[1]?.trim() || '',
+      country: 'US',
+      postalCode: job.zip || undefined,
+    },
     baseSalary: (job.salary_min || job.salary_max) ? {
       minValue: job.salary_min || undefined, maxValue: job.salary_max || undefined,
       currency: 'USD', unitText: getSalaryUnitText(job.salary_type),
