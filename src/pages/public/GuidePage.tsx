@@ -123,9 +123,10 @@ const GuidePage = () => {
       <StructuredData data={[breadcrumbSchema, faqSchema]} />
 
       <PublicPageHero
+        imageSrc={guideHero}
+        imageAlt="Apply AI Platform Guide"
         title="Platform Guide"
         subtitle="Everything you need to hire faster — from first setup to advanced integrations."
-        backgroundImage={guideHero}
       />
 
       <div className="container mx-auto px-4 py-12 max-w-6xl">

@@ -63,9 +63,10 @@ const AiChatPage = () => {
       <StructuredData data={[breadcrumbSchema]} />
 
       <PublicPageHero
+        imageSrc={guideHero}
+        imageAlt="AI-Powered Hiring Tools"
         title="AI-Powered Hiring"
         subtitle="From voice screening to smart matching — AI handles the heavy lifting so you can focus on the human side of hiring."
-        backgroundImage={guideHero}
       />
 
       <div className="container mx-auto px-4 py-12 max-w-6xl">
