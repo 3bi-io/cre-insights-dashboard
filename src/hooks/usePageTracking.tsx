@@ -28,7 +28,11 @@ const getSessionId = (): string => {
 
 // Detect device type from user agent
 const getDeviceType = (): string => {
-  const ua = navigator.userAgent.toLowerCase();
+  const ua = navigator.userAgent;
+  // Check for in-app browsers first (Instagram, Facebook, etc.)
+  if (/Instagram|FBAN|FBAV/i.test(ua)) {
+    return 'mobile';
+  }
   if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
     return 'tablet';
   }
@@ -36,6 +40,24 @@ const getDeviceType = (): string => {
     return 'mobile';
   }
   return 'desktop';
+};
+
+// Extract UTM params with first-touch session persistence
+const getUtmParams = (): Record<string, string | null> => {
+  const params = new URLSearchParams(window.location.search);
+  const keys = ['utm_source', 'utm_medium', 'utm_campaign'] as const;
+  const result: Record<string, string | null> = {};
+
+  for (const key of keys) {
+    const value = params.get(key);
+    if (value) {
+      sessionStorage.setItem(`_track_${key}`, value);
+      result[key] = value;
+    } else {
+      result[key] = sessionStorage.getItem(`_track_${key}`);
+    }
+  }
+  return result;
 };
 
 // Track page view in Supabase
