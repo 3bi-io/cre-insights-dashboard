@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ApplicationHeader } from '@/components/apply/ApplicationHeader';
 import { ApplicationForm } from '@/components/apply/ApplicationForm';
@@ -10,6 +10,7 @@ import { useSourceDetection } from '@/hooks/useSourceDetection';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildBreadcrumbSchema } from '@/components/StructuredData';
 import ZipRecruiterPixel from '@/components/tracking/ZipRecruiterPixel';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Apply Page - Quick application form for job seekers
@@ -23,6 +24,7 @@ const Apply = () => {
     location, 
     source,
     jobListingId,
+    organizationId,
     industryVertical,
     isLoading 
   } = useApplyContext();
@@ -31,6 +33,24 @@ const Apply = () => {
   const { isOutsideAmericas, country, countryCode } = useGeoBlocking();
   const { isSocialTraffic } = useSourceDetection();
   const isInternalNavigation = !!(routerLocation.state as any)?.internal;
+
+  // Backfill organization_id on the page_view once apply context resolves
+  useEffect(() => {
+    if (!organizationId) return;
+    const sessionId = sessionStorage.getItem('session_id');
+    if (!sessionId) return;
+
+    // Update the most recent page_view for this session on /apply to set org context
+    supabase
+      .from('page_views')
+      .update({ organization_id: organizationId } as any)
+      .eq('session_id', sessionId)
+      .like('page_path', '/apply%')
+      .is('organization_id', null)
+      .then(({ error }) => {
+        if (error) console.warn('Failed to backfill org on page_view', error);
+      });
+  }, [organizationId]);
 
   // Memoize SEO content to prevent unnecessary recalculations
   const seoContent = useMemo(() => {

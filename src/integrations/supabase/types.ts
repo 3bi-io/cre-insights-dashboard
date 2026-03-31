@@ -5873,6 +5873,9 @@ export type Database = {
           referrer: string | null
           session_id: string
           user_agent: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
           visitor_id: string
         }
         Insert: {
@@ -5886,6 +5889,9 @@ export type Database = {
           referrer?: string | null
           session_id: string
           user_agent?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
           visitor_id: string
         }
         Update: {
@@ -5899,6 +5905,9 @@ export type Database = {
           referrer?: string | null
           session_id?: string
           user_agent?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
           visitor_id?: string
         }
         Relationships: [

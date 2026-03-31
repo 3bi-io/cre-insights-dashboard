@@ -28,7 +28,11 @@ const getSessionId = (): string => {
 
 // Detect device type from user agent
 const getDeviceType = (): string => {
-  const ua = navigator.userAgent.toLowerCase();
+  const ua = navigator.userAgent;
+  // Check for in-app browsers first (Instagram, Facebook, etc.)
+  if (/Instagram|FBAN|FBAV/i.test(ua)) {
+    return 'mobile';
+  }
   if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
     return 'tablet';
   }
@@ -36,6 +40,24 @@ const getDeviceType = (): string => {
     return 'mobile';
   }
   return 'desktop';
+};
+
+// Extract UTM params with first-touch session persistence
+const getUtmParams = (): Record<string, string | null> => {
+  const params = new URLSearchParams(window.location.search);
+  const keys = ['utm_source', 'utm_medium', 'utm_campaign'] as const;
+  const result: Record<string, string | null> = {};
+
+  for (const key of keys) {
+    const value = params.get(key);
+    if (value) {
+      sessionStorage.setItem(`_track_${key}`, value);
+      result[key] = value;
+    } else {
+      result[key] = sessionStorage.getItem(`_track_${key}`);
+    }
+  }
+  return result;
 };
 
 // Track page view in Supabase
@@ -48,6 +70,7 @@ const trackPageView = async (
   const sessionId = getSessionId();
   const deviceType = getDeviceType();
   const referrer = document.referrer || '';
+  const utmParams = getUtmParams();
 
   try {
     // Insert page view
@@ -62,8 +85,11 @@ const trackPageView = async (
         referrer: referrer,
         user_agent: navigator.userAgent,
         device_type: deviceType,
-        country: 'US' // Would need IP geolocation service for real country
-      });
+        country: 'US',
+        utm_source: utmParams.utm_source || null,
+        utm_medium: utmParams.utm_medium || null,
+        utm_campaign: utmParams.utm_campaign || null,
+      } as any);
 
     if (pageViewError) {
       logger.error('Error tracking page view', pageViewError, { context: 'page-tracking' });
@@ -126,10 +152,13 @@ const trackPageView = async (
 /**
  * Hook to track page views and visitor sessions
  */
-export const usePageTracking = () => {
+export const usePageTracking = (overrideOrganizationId?: string) => {
   const location = useLocation();
   const { organization } = useAuth();
   const lastTrackedPath = useRef<string>('');
+
+  // Use override org ID (e.g. from apply page context) or fall back to auth org
+  const effectiveOrgId = overrideOrganizationId || organization?.id;
 
   useEffect(() => {
     const currentPath = location.pathname;
@@ -140,12 +169,12 @@ export const usePageTracking = () => {
       
       // Track the page view
       const pageTitle = document.title;
-      trackPageView(currentPath, pageTitle, organization?.id);
+      trackPageView(currentPath, pageTitle, effectiveOrgId);
       
       // Also track in Google Analytics
       gaTrackPageView(currentPath, pageTitle);
     }
-  }, [location.pathname, organization?.id]);
+  }, [location.pathname, effectiveOrgId]);
 
   // Track session end on page unload
   useEffect(() => {
