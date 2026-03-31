@@ -34,6 +34,24 @@ const Apply = () => {
   const { isSocialTraffic } = useSourceDetection();
   const isInternalNavigation = !!(routerLocation.state as any)?.internal;
 
+  // Backfill organization_id on the page_view once apply context resolves
+  useEffect(() => {
+    if (!organizationId) return;
+    const sessionId = sessionStorage.getItem('session_id');
+    if (!sessionId) return;
+
+    // Update the most recent page_view for this session on /apply to set org context
+    supabase
+      .from('page_views')
+      .update({ organization_id: organizationId } as any)
+      .eq('session_id', sessionId)
+      .like('page_path', '/apply%')
+      .is('organization_id', null)
+      .then(({ error }) => {
+        if (error) console.warn('Failed to backfill org on page_view', error);
+      });
+  }, [organizationId]);
+
   // Memoize SEO content to prevent unnecessary recalculations
   const seoContent = useMemo(() => {
     const title = jobTitle ? `Apply for ${jobTitle}` : 'Quick Apply';
