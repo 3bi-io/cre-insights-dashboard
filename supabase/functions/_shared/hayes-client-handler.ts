@@ -289,7 +289,7 @@ async function processApplication(
     exp: data.exp || null,
     driving_experience_years: data.driving_experience_years || null,
     source: `hayes-${config.clientSlug}-inbound`,
-    status: 'new',
+    status: 'pending',
     utm_source: utmSource,
     utm_medium: utmMedium,
     utm_campaign: utmCampaign,
