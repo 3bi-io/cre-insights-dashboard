@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ApplicationHeader } from '@/components/apply/ApplicationHeader';
 import { ApplicationForm } from '@/components/apply/ApplicationForm';
@@ -10,6 +10,7 @@ import { useSourceDetection } from '@/hooks/useSourceDetection';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildBreadcrumbSchema } from '@/components/StructuredData';
 import ZipRecruiterPixel from '@/components/tracking/ZipRecruiterPixel';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Apply Page - Quick application form for job seekers
