@@ -1,66 +1,36 @@
 
 
-# Add UTM Parameter Tracking to Page Views
+# Add Consistent Tracking for Facebook, X, and TikTok
 
-## Problem
-1. The `page_views` table has no UTM columns, so we lose utm_source/utm_medium/utm_campaign data from Instagram and Facebook traffic.
-2. The `usePageTracking` hook doesn't extract UTM params from the URL.
-3. The `/apply` page already reads `utm_source` via `useApplyContext`, but doesn't pass the resolved `organizationId` to the page tracking system — resulting in `organization_id = null` for all apply page views.
+## Current State
+- **X**: Has dedicated `/x/apply/:jobId` route, copy button, and URL builder -- fully set up.
+- **Facebook**: Has a "Facebook (with UTM)" copy button but uses generic UTM params (not a dedicated route). No dedicated route like `/fb/apply/:jobId`. In-app browser detection works (FBAN/FBAV).
+- **TikTok**: No dedicated route, no copy button, no URL builder. TikTok in-app browser not detected as mobile in `getDeviceType`.
+- **Generic**: `/s/:platform/apply/:jobId` exists and supports all platforms, but no short aliases like `/fb/` or `/tt/`.
 
 ## Changes
 
-### 1. Database Migration — Add UTM columns to `page_views`
-```sql
-ALTER TABLE public.page_views
-  ADD COLUMN IF NOT EXISTS utm_source text,
-  ADD COLUMN IF NOT EXISTS utm_medium text,
-  ADD COLUMN IF NOT EXISTS utm_campaign text;
-```
+### 1. Add dedicated routes for Facebook and TikTok
+Create `src/pages/FacebookApply.tsx` and `src/pages/TikTokApply.tsx` (same pattern as `XApply.tsx`) that redirect to `/apply` with platform-specific UTM params.
 
-### 2. Update `usePageTracking` hook (`src/hooks/usePageTracking.tsx`)
-- Extract UTM parameters from `window.location.search` on each page view.
-- Pass `utm_source`, `utm_medium`, `utm_campaign` into the `page_views` insert call.
-- Also persist UTM params to `sessionStorage` on first landing so they carry across internal navigations within the same session.
+Register routes in `AppRoutes.tsx`:
+- `/fb/apply/:jobId` → FacebookApply
+- `/tt/apply/:jobId` → TikTokApply
 
-Key changes to `trackPageView`:
-```typescript
-// Extract UTM params (persist first-touch to sessionStorage)
-const getUtmParams = () => {
-  const params = new URLSearchParams(window.location.search);
-  const keys = ['utm_source', 'utm_medium', 'utm_campaign'] as const;
-  const result: Record<string, string | null> = {};
-  
-  for (const key of keys) {
-    const value = params.get(key);
-    if (value) {
-      sessionStorage.setItem(key, value);
-      result[key] = value;
-    } else {
-      result[key] = sessionStorage.getItem(key);
-    }
-  }
-  return result;
-};
-```
+### 2. Add URL builders in `useJobShortLinks.ts`
+Add `buildFacebookApplyUrl` and `buildTikTokApplyUrl` functions matching the `buildXApplyUrl` pattern.
 
-Then include in the insert:
-```typescript
-utm_source: utmParams.utm_source || null,
-utm_medium: utmParams.utm_medium || null,
-utm_campaign: utmParams.utm_campaign || null,
-```
+### 3. Update CopyApplyLinkButton
+Replace the generic "Facebook (with UTM)" button with a dedicated "Facebook" button using the new route. Add "TikTok" button. Add proper icons for each platform.
 
-### 3. Pass organization context from Apply page to page tracking
-- Add an optional `organizationId` override to `usePageTracking` so the Apply page can pass the resolved org ID from `useApplyContext`.
-- In `src/pages/Apply.tsx`, update the `usePageTracking` call (or add a separate effect) that updates the page view's `organization_id` once `useApplyContext` resolves the org/client context.
+### 4. Fix device detection for TikTok in-app browser
+In `usePageTracking.tsx`, add TikTok's in-app browser UA string (`musical_ly`, `BytedanceWebview`, `TikTok`) to the mobile detection regex alongside Instagram and Facebook.
 
-Alternatively (simpler approach): modify `trackPageView` to also read `organization_id` / `client_id` from URL search params as a fallback when the auth-based `organization?.id` is null. This way, apply page views from anonymous visitors still get attributed.
-
-### 4. Update analytics queries
-- **`src/features/analytics/hooks/useApplyPageAnalytics.ts`**: Update the traffic sources and daily trend calculations to use the new `utm_source` column when available (falling back to referrer-based classification).
+### 5. Update source classifier to include TikTok and X
+In `usePageTracking.tsx`, update `classifySource` to recognize `tiktok`, `x.com`, and `t.co` referrers as "Social".
 
 ## Technical Details
-- UTM params use first-touch attribution via `sessionStorage` — once set on landing, they persist for all page views in that session.
-- The migration adds nullable text columns, so no existing data is affected.
-- The `usePageTracking` hook change is backward-compatible — rows without UTM data simply have nulls.
+- All three platforms will have: dedicated short route → `/apply` redirect with UTM → tracked in `page_views` with `utm_source` and `utm_medium`.
+- In-app browser detection covers Instagram, Facebook, and TikTok for accurate `device_type`.
+- The `classifySource` function in `visitor_sessions` will correctly categorize all social traffic.
 
