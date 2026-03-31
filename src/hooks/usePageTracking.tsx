@@ -70,6 +70,7 @@ const trackPageView = async (
   const sessionId = getSessionId();
   const deviceType = getDeviceType();
   const referrer = document.referrer || '';
+  const utmParams = getUtmParams();
 
   try {
     // Insert page view
@@ -84,8 +85,11 @@ const trackPageView = async (
         referrer: referrer,
         user_agent: navigator.userAgent,
         device_type: deviceType,
-        country: 'US' // Would need IP geolocation service for real country
-      });
+        country: 'US',
+        utm_source: utmParams.utm_source || null,
+        utm_medium: utmParams.utm_medium || null,
+        utm_campaign: utmParams.utm_campaign || null,
+      } as any);
 
     if (pageViewError) {
       logger.error('Error tracking page view', pageViewError, { context: 'page-tracking' });
