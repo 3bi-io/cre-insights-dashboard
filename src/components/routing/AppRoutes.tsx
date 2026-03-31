@@ -37,6 +37,8 @@ const DetailedApply = React.lazy(() => import("@/pages/DetailedApply"));
 const ThankYou = React.lazy(() => import("@/pages/ThankYou"));
 const EmbedApply = React.lazy(() => import("@/pages/EmbedApply"));
 const XApply = React.lazy(() => import("@/pages/XApply"));
+const FacebookApply = React.lazy(() => import("@/pages/FacebookApply"));
+const TikTokApply = React.lazy(() => import("@/pages/TikTokApply"));
 const LinkedInApply = React.lazy(() => import("@/pages/LinkedInApply"));
 const SocialApply = React.lazy(() => import("@/pages/SocialApply"));
 const SocialEmbedApply = React.lazy(() => import("@/pages/SocialEmbedApply"));
