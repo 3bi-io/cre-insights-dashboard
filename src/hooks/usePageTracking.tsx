@@ -115,7 +115,7 @@ const trackPageView = async (
     const classifySource = (ref: string): string => {
       if (!ref) return 'Direct';
       if (ref.includes('google') || ref.includes('bing') || ref.includes('yahoo')) return 'Search';
-      if (ref.includes('facebook') || ref.includes('twitter') || ref.includes('linkedin') || ref.includes('instagram')) return 'Social';
+      if (ref.includes('facebook') || ref.includes('twitter') || ref.includes('linkedin') || ref.includes('instagram') || ref.includes('tiktok') || ref.includes('x.com') || ref.includes('t.co')) return 'Social';
       if (ref.includes('mail')) return 'Email';
       return 'Referral';
     };

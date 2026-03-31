@@ -213,6 +213,8 @@ const AppRoutes: React.FC = () => {
       
       {/* Social Platform Apply Routes - cleaner URLs with tracking */}
       <Route path="/x/apply/:jobId" element={<RouteWrapper><XApply /></RouteWrapper>} />
+      <Route path="/fb/apply/:jobId" element={<RouteWrapper><FacebookApply /></RouteWrapper>} />
+      <Route path="/tt/apply/:jobId" element={<RouteWrapper><TikTokApply /></RouteWrapper>} />
       <Route path="/in/apply/:jobId" element={<RouteWrapper><LinkedInApply /></RouteWrapper>} />
       <Route path="/s/:platform/apply/:jobId" element={<RouteWrapper><SocialApply /></RouteWrapper>} />
       <Route path="/s/:platform/embed/apply" element={<RouteWrapper><SocialEmbedApply /></RouteWrapper>} />

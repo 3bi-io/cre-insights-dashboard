@@ -129,6 +129,24 @@ export const CopyApplyLinkButton: React.FC<CopyApplyLinkButtonProps> = ({
           {copiedType === 'Short link' && <Check className="w-4 h-4 ml-auto text-green-500" />}
         </DropdownMenuItem>
 
+        <DropdownMenuItem onClick={() => {
+          const url = buildFacebookApplyUrl(jobId);
+          copyToClipboard(url, 'Facebook');
+        }}>
+          <Facebook className="w-4 h-4 mr-2" />
+          Facebook Link
+          {copiedType === 'Facebook' && <Check className="w-4 h-4 ml-auto text-green-500" />}
+        </DropdownMenuItem>
+
+        <DropdownMenuItem onClick={() => {
+          const url = buildTikTokApplyUrl(jobId);
+          copyToClipboard(url, 'TikTok');
+        }}>
+          <Music className="w-4 h-4 mr-2" />
+          TikTok Link
+          {copiedType === 'TikTok' && <Check className="w-4 h-4 ml-auto text-green-500" />}
+        </DropdownMenuItem>
+
         <DropdownMenuSeparator />
 
         <DropdownMenuItem onClick={() => handleCopyWithUTM('LinkedIn')}>
@@ -139,11 +157,6 @@ export const CopyApplyLinkButton: React.FC<CopyApplyLinkButtonProps> = ({
         <DropdownMenuItem onClick={() => handleCopyWithUTM('Indeed')}>
           <Copy className="w-4 h-4 mr-2" />
           Indeed (with UTM)
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={() => handleCopyWithUTM('Facebook')}>
-          <Copy className="w-4 h-4 mr-2" />
-          Facebook (with UTM)
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

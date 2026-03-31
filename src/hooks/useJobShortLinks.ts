@@ -187,6 +187,8 @@ export const useJobShortLinks = () => {
     getShortLinksForJob,
     buildApplyUrl,
     buildXApplyUrl,
+    buildFacebookApplyUrl,
+    buildTikTokApplyUrl,
     buildLinkedInApplyUrl,
     buildSocialApplyUrl,
     isCreating,
