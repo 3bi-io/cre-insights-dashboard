@@ -30,7 +30,7 @@ export const CopyApplyLinkButton: React.FC<CopyApplyLinkButtonProps> = ({
   const [copied, setCopied] = useState(false);
   const [copiedType, setCopiedType] = useState<string | null>(null);
   const { toast } = useToast();
-  const { buildApplyUrl, buildXApplyUrl, createShortLink, isCreating } = useJobShortLinks();
+  const { buildApplyUrl, buildXApplyUrl, buildFacebookApplyUrl, buildTikTokApplyUrl, createShortLink, isCreating } = useJobShortLinks();
 
   const copyToClipboard = async (text: string, type: string) => {
     try {
