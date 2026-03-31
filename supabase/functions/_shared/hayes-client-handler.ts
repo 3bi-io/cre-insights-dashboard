@@ -12,6 +12,7 @@ import { successResponse, errorResponse } from './response.ts';
 import { createLogger } from './logger.ts';
 import { wrapHandler } from './error-handler.ts';
 import { findOrCreateJobListing, normalizePhone, insertApplication } from './application-processor.ts';
+import { autoPostToATS } from './ats-adapters/auto-post-engine.ts';
 
 // Hayes organization ID
 const HAYES_ORG_ID = '84214b48-7b51-45bc-ad7f-723bcf50466c';
@@ -308,6 +309,13 @@ async function processApplication(
     applicationId: application.id,
     matchType: jobResult.matchType
   });
+
+  // Auto-post to ATS (non-blocking) — delivers to Double Nickel, Tenstreet, etc.
+  EdgeRuntime.waitUntil(
+    autoPostToATS(supabase, application.id, HAYES_ORG_ID, applicationData as Record<string, unknown>, {
+      clientId: config.clientId
+    })
+  );
   
   return { success: true, applicationId: application.id };
 }
