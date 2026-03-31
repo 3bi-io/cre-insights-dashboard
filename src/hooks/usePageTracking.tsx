@@ -30,7 +30,7 @@ const getSessionId = (): string => {
 const getDeviceType = (): string => {
   const ua = navigator.userAgent;
   // Check for in-app browsers first (Instagram, Facebook, etc.)
-  if (/Instagram|FBAN|FBAV/i.test(ua)) {
+  if (/Instagram|FBAN|FBAV|musical_ly|BytedanceWebview|TikTok/i.test(ua)) {
     return 'mobile';
   }
   if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
