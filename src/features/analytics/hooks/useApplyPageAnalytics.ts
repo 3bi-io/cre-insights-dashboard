@@ -75,11 +75,14 @@ async function fetchApplyPageAnalytics(
     percentage: totalViews > 0 ? (count / totalViews) * 100 : 0
   })).sort((a, b) => b.count - a.count);
 
-  // Traffic sources (from referrer)
+  // Traffic sources (prefer utm_source, fall back to referrer)
   const sourceCounts: Record<string, number> = {};
   views.forEach(v => {
     let source = 'Direct';
-    if (v.referrer) {
+    const utmSource = (v as any).utm_source;
+    if (utmSource) {
+      source = utmSource;
+    } else if (v.referrer) {
       try {
         const url = new URL(v.referrer);
         source = url.hostname.replace('www.', '');
