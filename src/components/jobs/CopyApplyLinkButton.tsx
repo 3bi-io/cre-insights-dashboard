@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Link2, Copy, Check, ExternalLink, Twitter, Eye } from 'lucide-react';
+import { Link2, Copy, Check, ExternalLink, Twitter, Eye, Facebook, Music } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useJobShortLinks } from '@/hooks/useJobShortLinks';
 import { SITE_URL } from '@/config/siteConfig';
