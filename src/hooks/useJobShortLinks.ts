@@ -137,6 +137,24 @@ export const useJobShortLinks = () => {
     return url;
   };
 
+  const buildFacebookApplyUrl = (jobId: string, utmCampaign?: string): string => {
+    const baseUrl = window.location.origin;
+    let url = `${baseUrl}/fb/apply/${jobId}`;
+    if (utmCampaign) {
+      url += `?utm_campaign=${encodeURIComponent(utmCampaign)}`;
+    }
+    return url;
+  };
+
+  const buildTikTokApplyUrl = (jobId: string, utmCampaign?: string): string => {
+    const baseUrl = window.location.origin;
+    let url = `${baseUrl}/tt/apply/${jobId}`;
+    if (utmCampaign) {
+      url += `?utm_campaign=${encodeURIComponent(utmCampaign)}`;
+    }
+    return url;
+  };
+
   const buildLinkedInApplyUrl = (jobId: string, utmCampaign?: string): string => {
     const baseUrl = window.location.origin;
     let url = `${baseUrl}/in/apply/${jobId}`;
