@@ -152,10 +152,13 @@ const trackPageView = async (
 /**
  * Hook to track page views and visitor sessions
  */
-export const usePageTracking = () => {
+export const usePageTracking = (overrideOrganizationId?: string) => {
   const location = useLocation();
   const { organization } = useAuth();
   const lastTrackedPath = useRef<string>('');
+
+  // Use override org ID (e.g. from apply page context) or fall back to auth org
+  const effectiveOrgId = overrideOrganizationId || organization?.id;
 
   useEffect(() => {
     const currentPath = location.pathname;
@@ -166,12 +169,12 @@ export const usePageTracking = () => {
       
       // Track the page view
       const pageTitle = document.title;
-      trackPageView(currentPath, pageTitle, organization?.id);
+      trackPageView(currentPath, pageTitle, effectiveOrgId);
       
       // Also track in Google Analytics
       gaTrackPageView(currentPath, pageTitle);
     }
-  }, [location.pathname, organization?.id]);
+  }, [location.pathname, effectiveOrgId]);
 
   // Track session end on page unload
   useEffect(() => {
