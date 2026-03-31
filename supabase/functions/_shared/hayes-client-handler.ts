@@ -309,6 +309,13 @@ async function processApplication(
     applicationId: application.id,
     matchType: jobResult.matchType
   });
+
+  // Auto-post to ATS (non-blocking) — delivers to Double Nickel, Tenstreet, etc.
+  EdgeRuntime.waitUntil(
+    autoPostToATS(supabase, application.id, HAYES_ORG_ID, applicationData as Record<string, unknown>, {
+      clientId: config.clientId
+    })
+  );
   
   return { success: true, applicationId: application.id };
 }
