@@ -37,6 +37,8 @@ const DetailedApply = React.lazy(() => import("@/pages/DetailedApply"));
 const ThankYou = React.lazy(() => import("@/pages/ThankYou"));
 const EmbedApply = React.lazy(() => import("@/pages/EmbedApply"));
 const XApply = React.lazy(() => import("@/pages/XApply"));
+const FacebookApply = React.lazy(() => import("@/pages/FacebookApply"));
+const TikTokApply = React.lazy(() => import("@/pages/TikTokApply"));
 const LinkedInApply = React.lazy(() => import("@/pages/LinkedInApply"));
 const SocialApply = React.lazy(() => import("@/pages/SocialApply"));
 const SocialEmbedApply = React.lazy(() => import("@/pages/SocialEmbedApply"));
@@ -211,6 +213,8 @@ const AppRoutes: React.FC = () => {
       
       {/* Social Platform Apply Routes - cleaner URLs with tracking */}
       <Route path="/x/apply/:jobId" element={<RouteWrapper><XApply /></RouteWrapper>} />
+      <Route path="/fb/apply/:jobId" element={<RouteWrapper><FacebookApply /></RouteWrapper>} />
+      <Route path="/tt/apply/:jobId" element={<RouteWrapper><TikTokApply /></RouteWrapper>} />
       <Route path="/in/apply/:jobId" element={<RouteWrapper><LinkedInApply /></RouteWrapper>} />
       <Route path="/s/:platform/apply/:jobId" element={<RouteWrapper><SocialApply /></RouteWrapper>} />
       <Route path="/s/:platform/embed/apply" element={<RouteWrapper><SocialEmbedApply /></RouteWrapper>} />
