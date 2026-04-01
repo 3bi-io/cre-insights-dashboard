@@ -685,6 +685,7 @@ export type Database = {
           preferred_start_date: string | null
           prefix: string | null
           privacy: string | null
+          raw_payload: Json | null
           recruiter_id: string | null
           referral_source: string | null
           salary_expectations: string | null
@@ -783,6 +784,7 @@ export type Database = {
           preferred_start_date?: string | null
           prefix?: string | null
           privacy?: string | null
+          raw_payload?: Json | null
           recruiter_id?: string | null
           referral_source?: string | null
           salary_expectations?: string | null
@@ -881,6 +883,7 @@ export type Database = {
           preferred_start_date?: string | null
           prefix?: string | null
           privacy?: string | null
+          raw_payload?: Json | null
           recruiter_id?: string | null
           referral_source?: string | null
           salary_expectations?: string | null
