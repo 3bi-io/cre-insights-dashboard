@@ -1063,7 +1063,8 @@ Deno.serve(async (req) => {
       status: 'pending',
       applied_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      raw_payload: rawData,
     };
 
     // ================================================================

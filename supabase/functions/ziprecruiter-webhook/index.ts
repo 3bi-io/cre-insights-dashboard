@@ -311,7 +311,8 @@ async function parseApplicationData(data: Record<string, unknown>): Promise<Reco
           education_level: parsed.education_level || null,
           work_authorization: parsed.work_authorization || null,
           veteran: parsed.veteran || null,
-          military_service: parsed.military_service || null,
+           military_service: parsed.military_service || null,
+           raw_payload: body,
        })
        .select('id')
        .single()

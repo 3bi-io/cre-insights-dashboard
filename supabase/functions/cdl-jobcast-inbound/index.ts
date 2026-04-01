@@ -297,6 +297,7 @@ async function handleApplicationForward(
     utm_medium: body.utm_medium || utmParams.medium,
     utm_campaign: body.utm_campaign || utmParams.campaign,
     source: body.source || 'CDL Job Cast',
+    raw_payload: body,
   };
 
   logger.info('Forwarding application with UTM enrichment', {

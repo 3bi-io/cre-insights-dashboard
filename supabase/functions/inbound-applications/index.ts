@@ -1117,6 +1117,7 @@ const handler = async (req: Request): Promise<Response> => {
       status: applicationData.status,
       applied_at: new Date().toISOString(),
       elevenlabs_call_transcript: applicationData.elevenlabs_call_transcript,
+      raw_payload: body,
     };
 
     // Insert application using shared processor
