@@ -211,6 +211,9 @@ export const ApplicationsTableView: React.FC<ApplicationsTableViewProps> = ({
                     onSort={handleSort}
                   />
                 </TableHead>
+               )}
+              {columnVisibility.source && (
+                <TableHead className="w-[120px]">Source</TableHead>
               )}
               {columnVisibility.status && (
                 <TableHead className="w-[140px]">
