@@ -74,6 +74,8 @@ Deno.serve(async (req) => {
   try {
     const body = (await req.json()) as Record<string, unknown>;
 
+    logger.info('Zapier payload received', { keys: Object.keys(body) });
+
     const fields = mapFields(body);
 
     // Require at least a name + contact info
