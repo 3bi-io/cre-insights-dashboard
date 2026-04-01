@@ -1,74 +1,46 @@
 
-Goal: keep the “Screen now” first call behavior, but stop the AI from transferring to a recruiter at night/holidays. Instead, it should screen the driver and schedule the next valid business-day callback.
 
-What I found
-1. Primary bug: the after-hours callback is explicitly labeled as a recruiter transfer when calendars exist.
-   - In `supabase/functions/elevenlabs-outbound-call/index.ts`, the scheduled callback metadata sets:
-   - `callback_purpose: hasCalendarConnections ? 'recruiter_transfer' : 'business_hours_callback'`
-   - That means any after-hours callback for orgs with calendar connections is tagged as `recruiter_transfer`, which likely tells the voice agent to hand off instead of schedule.
+## Plan: Title Standardization, State Normalization, and Junk Cleanup
 
-2. Holiday context is incomplete.
-   - The code exposes `vars.is_holiday` to the agent, but I only found it being read, not set for outbound call metadata.
-   - Result: the agent may know it is after-hours, but not reliably know it is a holiday case.
+### What we're fixing
 
-3. Business-hours context is only loaded from org-level settings in one place.
-   - `elevenlabs-outbound-call` loads `organization_call_settings` with `client_id IS NULL`, so client-level schedule overrides may be ignored when building the agent context.
+1. **Raw feed titles** -- All 14 active R.E. Garrison feed-synced jobs have titles like `Job 14558J14549` instead of the canonical format: `CDL-A Drivers: Top Tier Lease Purchase Program! $0 Down, No Credit Check! | {State}`
+2. **Inconsistent state values** -- Some records use full names (`New York`, `Totam perspiciatis`) instead of 2-letter abbreviations (`NY`, `TX`)
+3. **8 junk test records** -- 5 "Mick Foley" and 3 "test data" applications need deletion
 
-4. The scheduling backend itself looks mostly correct.
-   - `next_business_datetime(...)` already respects business days and holidays.
-   - `agent-scheduling` already has a no-calendar fallback that schedules next business time.
-   - The main issue is the outbound call metadata/context telling the agent “transfer” instead of “schedule.”
+---
 
-Implementation plan
-1. Fix the after-hours callback intent in `elevenlabs-outbound-call`
-   - Replace `callback_purpose: 'recruiter_transfer'` with a scheduling-focused value for after-hours callbacks, regardless of calendar connections.
-   - Use one consistent purpose such as `business_hours_callback` or `scheduled_callback`.
-   - Keep calendar awareness separately via `_has_calendar_connections` so the agent can still use scheduling tools without attempting live transfer.
+### Changes
 
-2. Pass explicit after-hours/holiday instructions into dynamic variables
-   - Set metadata flags like:
-     - `_is_holiday`
-     - `_is_after_hours`
-     - `_after_hours_action = 'schedule_next_business_day'`
-     - `_allow_live_transfer = 'no'`
-   - Surface them in `buildDynamicVariables()` so the agent gets an unambiguous instruction set.
+#### 1. Add title standardization and state normalization to `sync-cdl-feeds/index.ts`
 
-3. Respect client-level schedule settings when building call context
-   - Update the settings lookup in `elevenlabs-outbound-call` to try client-specific `organization_call_settings` first, then fall back to org-level.
-   - This keeps the agent’s “current hours” logic aligned with the same rules used by `next_business_datetime()`.
+- Add a **client title template map** at the top of the file, keyed by clientId:
+  ```
+  'be8b645e-...' => 'CDL-A Drivers: Top Tier Lease Purchase Program! $0 Down, No Credit Check!'
+  ```
+- Add a **US state abbreviation lookup** (full name to 2-letter code)
+- In `syncClientFeed`, after building `jobData`:
+  - Normalize `state` through the lookup (e.g. `New York` → `NY`, already-abbreviated values pass through)
+  - If a title template exists for this client, replace the raw feed title with `{template} | {StateName}` (using the full state name for the suffix, matching the existing canonical pattern like `| Alabama`, `| New York`)
+  - Rebuild `location` from normalized city + state
+- This runs on every sync, so existing raw-titled jobs get corrected on the next cycle
 
-4. Align scheduling behavior for holiday cases
-   - Ensure first-call screening can still occur after-hours/holiday, but any follow-up callback created from that call is always scheduled via `next_business_datetime(...)`.
-   - No “transfer now” branch should remain for after-hours/holiday callbacks.
+#### 2. Migration: Clean up junk records and fix existing data
 
-5. Add/adjust tests
-   - Add targeted tests for:
-     - after-hours + calendar connections => callback metadata is scheduling-focused, not recruiter transfer
-     - holiday first call => callback scheduled to next business window
-     - client-level business-hours override => dynamic variables use client settings
-   - This prevents regression.
+A single SQL migration that:
 
-6. Review agent prompt/tool behavior
-   - Because the actual conversation script likely lives in the ElevenLabs dashboard, I would also verify the prompt/tool instructions for any logic tied to:
-     - `callback_purpose`
-     - `is_after_hours_callback`
-     - `has_calendar_connections`
-   - If the prompt currently says “transfer when calendars exist,” it should be updated to:
-     - after-hours/holiday: schedule for next business day
-     - business hours: transfer or offer live recruiter options if desired
+- **Deletes 8 junk application records** by their known IDs (5 Mick Foley + 3 test data)
+- **Updates the 14 active feed-synced R.E. Garrison job listings** to use canonical titles and normalized state abbreviations
+- **Fixes the one job listing** with state `Totam perspiciatis` (deactivate it as junk)
 
-Files likely involved
-- `supabase/functions/elevenlabs-outbound-call/index.ts`
-- `supabase/functions/agent-scheduling/index.ts`
-- `supabase/functions/agent-scheduling/index.test.ts`
-- Possibly ElevenLabs dashboard prompt/tool configuration (outside repo)
+#### 3. Files changed
 
-Expected outcome
-- New applications after hours still get screened immediately.
-- The AI no longer tries to transfer to a recruiter at night or on holidays.
-- Follow-up action becomes: schedule next valid business-day callback, using recruiter calendars when available, or fallback scheduling when not.
+- `supabase/functions/sync-cdl-feeds/index.ts` -- add title template map, state normalization function, apply both during job processing
+- New migration SQL -- one-time cleanup of junk records and existing data correction
 
-Technical details
-- Root-cause line: `callback_purpose: hasCalendarConnections ? 'recruiter_transfer' : 'business_hours_callback'`
-- Correct design: calendar availability should affect how the callback is scheduled, not whether the AI attempts a live recruiter transfer after hours.
-- `next_business_datetime()` already handles business-day + holiday skipping, so the cleanest fix is to correct metadata and agent context rather than redesign scheduling logic.
+### Technical details
+
+- The state normalizer will be a simple object map (`{ 'alabama': 'AL', ... }`) plus a check for already-valid 2-letter codes
+- Title templates are per-client so other clients (Pemberton, Danny Herman, etc.) can have their own canonical format added later without code changes
+- The `| {State}` suffix uses the **full state name** (matching the existing canonical pattern visible in the DB: `| Alabama`, `| New York`, etc.)
+
