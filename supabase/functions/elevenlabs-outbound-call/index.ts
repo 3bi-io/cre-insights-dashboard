@@ -40,7 +40,148 @@ interface ProcessQueueResult {
   results: Array<{ call_id: string; status: string; error?: string }>;
 }
 
-Deno.serve(async (req) => {
+async function getOrganizationCallSettings(
+  supabase: ReturnType<typeof getServiceClient>,
+  organizationId: string,
+  clientId?: string | null,
+  fields = '*',
+): Promise<Record<string, unknown> | null> {
+  if (clientId) {
+    const { data: clientSettings } = await supabase
+      .from('organization_call_settings')
+      .select(fields)
+      .eq('organization_id', organizationId)
+      .eq('client_id', clientId)
+      .maybeSingle();
+
+    if (clientSettings) return clientSettings as Record<string, unknown>;
+  }
+
+  const { data: orgSettings } = await supabase
+    .from('organization_call_settings')
+    .select(fields)
+    .eq('organization_id', organizationId)
+    .is('client_id', null)
+    .maybeSingle();
+
+  return (orgSettings as Record<string, unknown> | null) || null;
+}
+
+async function hasActiveCalendarConnections(
+  supabase: ReturnType<typeof getServiceClient>,
+  organizationId: string,
+  clientId?: string | null,
+): Promise<boolean> {
+  if (clientId) {
+    const { data: clientConnection } = await supabase
+      .from('recruiter_calendar_connections')
+      .select('id')
+      .eq('organization_id', organizationId)
+      .eq('client_id', clientId)
+      .eq('status', 'active')
+      .limit(1)
+      .maybeSingle();
+
+    if (clientConnection) return true;
+  }
+
+  const { data: orgConnection } = await supabase
+    .from('recruiter_calendar_connections')
+    .select('id')
+    .eq('organization_id', organizationId)
+    .is('client_id', null)
+    .eq('status', 'active')
+    .limit(1)
+    .maybeSingle();
+
+  return !!orgConnection;
+}
+
+function getDateInTimezone(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+export function deriveBusinessHoursContext(
+  metadata: Record<string, unknown>,
+  now: Date = new Date(),
+) {
+  const orgTz = (metadata._business_hours_timezone as string) || 'America/Chicago';
+  const orgStart = (metadata._business_hours_start as string) || '09:00';
+  const orgEnd = (metadata._business_hours_end as string) || '16:30';
+  const configuredBusinessDays = typeof metadata._business_days === 'string' && metadata._business_days.length > 0
+    ? metadata._business_days.split(',').map((value) => Number(value)).filter((value) => !Number.isNaN(value))
+    : [1, 2, 3, 4, 5];
+  const nowLocal = new Date(now.toLocaleString('en-US', { timeZone: orgTz }));
+  const hour = nowLocal.getHours();
+  const minute = nowLocal.getMinutes();
+  const currentTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  const dayOfWeek = nowLocal.getDay() === 0 ? 7 : nowLocal.getDay();
+  const isBusinessDay = configuredBusinessDays.includes(dayOfWeek);
+
+  const [startH, startM] = orgStart.split(':').map(Number);
+  const [endH, endM] = orgEnd.split(':').map(Number);
+  const nowMinutes = hour * 60 + minute;
+  const startMinutes = (startH || 9) * 60 + (startM || 0);
+  const endMinutes = (endH || 16) * 60 + (endM || 30);
+  const computedWithinBusinessHours = isBusinessDay && nowMinutes >= startMinutes && nowMinutes < endMinutes;
+  const isHoliday = (metadata._is_holiday as string) === 'yes';
+  const isAfterHoursCallback = (metadata.is_after_hours_callback as boolean) || false;
+  const explicitAfterHours = metadata._is_after_hours as string | undefined;
+  const isAfterHours = isAfterHoursCallback
+    ? (!computedWithinBusinessHours || isHoliday)
+    : explicitAfterHours
+      ? explicitAfterHours === 'yes'
+      : (!computedWithinBusinessHours || isHoliday);
+  const explicitAllowLiveTransfer = metadata._allow_live_transfer as string | undefined;
+  const allowLiveTransfer = (isAfterHours || isHoliday)
+    ? 'no'
+    : (explicitAllowLiveTransfer === 'no' && !isAfterHoursCallback ? 'no' : 'yes');
+  const afterHoursAction = (isAfterHours || isHoliday)
+    ? ((metadata._after_hours_action as string) || 'schedule_next_business_day')
+    : 'transfer_if_requested';
+
+  return {
+    orgTz,
+    orgStart,
+    orgEnd,
+    currentTime,
+    isHoliday,
+    isAfterHours,
+    allowLiveTransfer,
+    afterHoursAction,
+    isBusinessDay,
+    hasCalendar: (metadata._has_calendar_connections as string) || 'unknown',
+  };
+}
+
+export function createAfterHoursCallbackMetadata(
+  metadata: Record<string, unknown>,
+  options: {
+    originalCallId: string;
+    originalConversationId: string | null;
+    hasCalendarConnections: boolean;
+    schedulingMethod: string;
+  },
+): Record<string, unknown> {
+  return {
+    ...(metadata || {}),
+    is_after_hours_callback: true,
+    callback_purpose: 'business_hours_callback',
+    original_call_id: options.originalCallId,
+    original_conversation_id: options.originalConversationId,
+    triggered_by: 'after_hours_auto_callback',
+    no_calendar_fallback: !options.hasCalendarConnections,
+    scheduling_method: options.schedulingMethod,
+  };
+}
+
+if (import.meta.main) {
+  Deno.serve(async (req) => {
   const origin = req.headers.get('origin') || '*';
   const corsHeaders = getCorsHeaders(origin);
 
@@ -740,7 +881,8 @@ Deno.serve(async (req) => {
     logger.error('Error in elevenlabs-outbound-call', { error });
     return errorResponse((error as Error).message || 'Internal server error', 500, undefined, origin);
   }
-});
+  });
+}
 
 // Process a single outbound call
 async function processOutboundCall(
