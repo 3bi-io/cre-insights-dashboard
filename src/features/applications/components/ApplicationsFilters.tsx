@@ -106,11 +106,19 @@ export const ApplicationsFilters = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Sources</SelectItem>
-            <SelectItem value="Meta">Meta</SelectItem>
-            <SelectItem value="Indeed">Indeed</SelectItem>
-            <SelectItem value="LinkedIn">LinkedIn</SelectItem>
-            <SelectItem value="Direct">Direct Apply</SelectItem>
-            <SelectItem value="Referral">Referral</SelectItem>
+            {sourceOptions.length > 0 ? (
+              sourceOptions.map((src) => (
+                <SelectItem key={src} value={src}>{src}</SelectItem>
+              ))
+            ) : (
+              <>
+                <SelectItem value="Meta">Meta</SelectItem>
+                <SelectItem value="Indeed">Indeed</SelectItem>
+                <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                <SelectItem value="Direct">Direct Apply</SelectItem>
+                <SelectItem value="Referral">Referral</SelectItem>
+              </>
+            )}
           </SelectContent>
         </Select>
       </FilterSection>
