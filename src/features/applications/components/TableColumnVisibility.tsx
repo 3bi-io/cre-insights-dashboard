@@ -16,6 +16,7 @@ export interface ColumnVisibility {
   contact: boolean;
   location: boolean;
   date: boolean;
+  source: boolean;
   status: boolean;
   recruiter: boolean;
   actions: boolean;
