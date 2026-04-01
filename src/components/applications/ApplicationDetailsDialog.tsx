@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Eye, Calendar, Phone, Mail, ExternalLink, User, Briefcase, MapPin, Loader2, PhoneCall, ChevronDown, Shield, Clock } from 'lucide-react';
+import { Eye, Calendar, Phone, Mail, ExternalLink, User, Briefcase, MapPin, Loader2, PhoneCall, ChevronDown, Shield, Clock, Globe, Code } from 'lucide-react';
 import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
 import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
 import { OutboundCallHistory } from '@/components/voice/OutboundCallHistory';
@@ -23,6 +23,7 @@ import {
   getClientName,
   getJobDisplayTitle 
 } from '@/features/applications/utils/applicationFormatters';
+import { getAttributionSummary } from '@/features/applications/utils/applicationFormatters';
 import { getStatusColor } from '@/features/applications/utils/statusColors';
 
 interface ApplicationDetailsDialogProps {
@@ -37,7 +38,8 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
   const [isBGCHistoryOpen, setIsBGCHistoryOpen] = useState(false);
   const [isActivityTimelineOpen, setIsActivityTimelineOpen] = useState(true);
   const [isCommHistoryOpen, setIsCommHistoryOpen] = useState(false);
-  // Use zip code lookup for city and state display
+  const [isAttributionOpen, setIsAttributionOpen] = useState(false);
+  const [isRawPayloadOpen, setIsRawPayloadOpen] = useState(false);
   const { city: lookupCity, state: lookupState, isLoading: isLookingUp } = useZipCodeLookup(application.zip);
 
   // Get city and state with fallback logic
@@ -259,6 +261,92 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
               )}
             </div>
           </div>
+
+          <Separator />
+
+          {/* Source & Attribution */}
+          <Collapsible open={isAttributionOpen} onOpenChange={setIsAttributionOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between px-0 hover:bg-transparent">
+                <span className="flex items-center gap-2 text-lg font-semibold">
+                  <Globe className="w-4 h-4" />
+                  Source & Attribution
+                </span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isAttributionOpen ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              {(() => {
+                const attribution = getAttributionSummary(application);
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Source</label>
+                      <p className="text-sm">{attribution.sourceLabel}</p>
+                    </div>
+                    {attribution.rawSource && attribution.rawSource !== attribution.sourceLabel && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Raw Source</label>
+                        <p className="text-sm font-mono text-xs">{attribution.rawSource}</p>
+                      </div>
+                    )}
+                    {attribution.utmSource && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">UTM Source</label>
+                        <p className="text-sm">{attribution.utmSource}</p>
+                      </div>
+                    )}
+                    {attribution.utmMedium && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">UTM Medium</label>
+                        <p className="text-sm">{attribution.utmMedium}</p>
+                      </div>
+                    )}
+                    {attribution.utmCampaign && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">UTM Campaign</label>
+                        <p className="text-sm">{attribution.utmCampaign}</p>
+                      </div>
+                    )}
+                    {attribution.referralSource && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Referral Source</label>
+                        <p className="text-sm">{attribution.referralSource}</p>
+                      </div>
+                    )}
+                    {attribution.howDidYouHear && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">How Did You Hear</label>
+                        <p className="text-sm">{attribution.howDidYouHear}</p>
+                      </div>
+                    )}
+                    {!attribution.hasAttribution && !attribution.rawSource && (
+                      <p className="text-sm text-muted-foreground col-span-2">No attribution data available</p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Raw Payload */}
+              {application.raw_payload && (
+                <div className="mt-4">
+                  <Collapsible open={isRawPayloadOpen} onOpenChange={setIsRawPayloadOpen}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <Code className="w-3 h-3" />
+                        {isRawPayloadOpen ? 'Hide' : 'Show'} Raw Payload
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-2">
+                      <pre className="text-xs bg-muted p-3 rounded-md overflow-auto max-h-64 font-mono">
+                        {JSON.stringify(application.raw_payload, null, 2)}
+                      </pre>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              )}
+            </CollapsibleContent>
+          </Collapsible>
 
           <Separator />
 

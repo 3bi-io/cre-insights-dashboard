@@ -23,6 +23,7 @@ interface ApplicationsFiltersProps {
   onClientChange?: (value: string) => void;
   clients?: Array<{ id: string; name: string; company?: string | null }>;
   showClientFilter?: boolean;
+  sourceOptions?: string[];
 }
 
 export const ApplicationsFilters = ({
@@ -42,6 +43,7 @@ export const ApplicationsFilters = ({
   onClientChange,
   clients = [],
   showClientFilter = false,
+  sourceOptions = [],
 }: ApplicationsFiltersProps) => {
   const isMobile = useIsMobile();
 
@@ -89,9 +91,10 @@ export const ApplicationsFilters = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="A">Class A (CDL + Exp)</SelectItem>
-            <SelectItem value="B">Class B (CDL, No Exp)</SelectItem>
-            <SelectItem value="C">Class C (No CDL)</SelectItem>
+            <SelectItem value="D">Experienced Driver (D)</SelectItem>
+            <SelectItem value="SC">New CDL Holder (SC)</SelectItem>
+            <SelectItem value="SR">Student Ready (SR)</SelectItem>
+            <SelectItem value="N/A">Uncategorized (N/A)</SelectItem>
           </SelectContent>
         </Select>
       </FilterSection>
@@ -103,11 +106,19 @@ export const ApplicationsFilters = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Sources</SelectItem>
-            <SelectItem value="Meta">Meta</SelectItem>
-            <SelectItem value="Indeed">Indeed</SelectItem>
-            <SelectItem value="LinkedIn">LinkedIn</SelectItem>
-            <SelectItem value="Direct">Direct Apply</SelectItem>
-            <SelectItem value="Referral">Referral</SelectItem>
+            {sourceOptions.length > 0 ? (
+              sourceOptions.map((src) => (
+                <SelectItem key={src} value={src}>{src}</SelectItem>
+              ))
+            ) : (
+              <>
+                <SelectItem value="Meta">Meta</SelectItem>
+                <SelectItem value="Indeed">Indeed</SelectItem>
+                <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                <SelectItem value="Direct">Direct Apply</SelectItem>
+                <SelectItem value="Referral">Referral</SelectItem>
+              </>
+            )}
           </SelectContent>
         </Select>
       </FilterSection>
@@ -200,9 +211,10 @@ export const ApplicationsFilters = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="A">Class A (CDL + Exp)</SelectItem>
-                <SelectItem value="B">Class B (CDL, No Exp)</SelectItem>
-                <SelectItem value="C">Class C (No CDL)</SelectItem>
+                <SelectItem value="D">Experienced Driver (D)</SelectItem>
+                <SelectItem value="SC">New CDL Holder (SC)</SelectItem>
+                <SelectItem value="SR">Student Ready (SR)</SelectItem>
+                <SelectItem value="N/A">Uncategorized (N/A)</SelectItem>
               </SelectContent>
             </Select>
 
@@ -212,11 +224,19 @@ export const ApplicationsFilters = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Sources</SelectItem>
-                <SelectItem value="Meta">Meta</SelectItem>
-                <SelectItem value="Indeed">Indeed</SelectItem>
-                <SelectItem value="LinkedIn">LinkedIn</SelectItem>
-                <SelectItem value="Direct">Direct Apply</SelectItem>
-                <SelectItem value="Referral">Referral</SelectItem>
+                {sourceOptions.length > 0 ? (
+                  sourceOptions.map((src) => (
+                    <SelectItem key={src} value={src}>{src}</SelectItem>
+                  ))
+                ) : (
+                  <>
+                    <SelectItem value="Meta">Meta</SelectItem>
+                    <SelectItem value="Indeed">Indeed</SelectItem>
+                    <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                    <SelectItem value="Direct">Direct Apply</SelectItem>
+                    <SelectItem value="Referral">Referral</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
 

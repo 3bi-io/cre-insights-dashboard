@@ -24,7 +24,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { getApplicantName, getApplicantEmail, getClientName, getApplicantCategory, getFormType } from '@/utils/applicationHelpers';
-import { getJobDisplayTitle } from '@/features/applications/utils/applicationFormatters';
+import { getJobDisplayTitle, getSourceDisplay } from '@/features/applications/utils/applicationFormatters';
 import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
 import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
 import type { Application, Recruiter } from '@/types/common.types';
@@ -211,6 +211,9 @@ export const ApplicationsTableView: React.FC<ApplicationsTableViewProps> = ({
                     onSort={handleSort}
                   />
                 </TableHead>
+               )}
+              {columnVisibility.source && (
+                <TableHead className="w-[120px]">Source</TableHead>
               )}
               {columnVisibility.status && (
                 <TableHead className="w-[140px]">
@@ -325,6 +328,15 @@ export const ApplicationsTableView: React.FC<ApplicationsTableViewProps> = ({
                       <Calendar className="w-3 h-3 flex-shrink-0" />
                       <span>{new Date(application.applied_at).toLocaleDateString()}</span>
                     </div>
+                    </TableCell>
+                  )}
+
+                  {/* Source */}
+                  {columnVisibility.source && (
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs" title={application.utm_source ? `UTM: ${application.utm_source}` : application.source || undefined}>
+                        {getSourceDisplay(application)}
+                      </Badge>
                     </TableCell>
                   )}
 

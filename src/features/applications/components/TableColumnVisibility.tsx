@@ -16,6 +16,7 @@ export interface ColumnVisibility {
   contact: boolean;
   location: boolean;
   date: boolean;
+  source: boolean;
   status: boolean;
   recruiter: boolean;
   actions: boolean;
@@ -76,6 +77,12 @@ export const TableColumnVisibility = ({
           onCheckedChange={() => onColumnVisibilityChange('date')}
         >
           Date
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem
+          checked={columnVisibility.source}
+          onCheckedChange={() => onColumnVisibilityChange('source')}
+        >
+          Source
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
           checked={columnVisibility.status}

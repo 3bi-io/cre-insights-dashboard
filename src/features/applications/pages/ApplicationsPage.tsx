@@ -39,6 +39,7 @@ const ApplicationsPage = () => {
     contact: true,
     location: true,
     date: true,
+    source: true,
     status: true,
     recruiter: true,
     actions: true,
