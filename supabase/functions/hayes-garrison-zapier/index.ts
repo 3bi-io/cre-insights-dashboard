@@ -48,6 +48,13 @@ function mapFields(body: Record<string, unknown>) {
     exp: pick(body, 'exp', 'experience', 'years_experience', 'driving_experience'),
     job_title: pick(body, 'job_title', 'jobTitle', 'position', 'job'),
     notes: pick(body, 'notes', 'comments', 'additional_info', 'message'),
+    // ── Attribution / source fields ──
+    lead_source: pick(body, 'lead_source', 'source', 'lead_origin', 'traffic_source'),
+    platform: pick(body, 'platform', 'lead_platform', 'source_platform'),
+    utm_source: pick(body, 'utm_source', 'utmSource'),
+    utm_medium: pick(body, 'utm_medium', 'utmMedium'),
+    utm_campaign: pick(body, 'utm_campaign', 'utmCampaign'),
+    how_did_you_hear: pick(body, 'how_did_you_hear', 'hear_about_us', 'how_heard'),
   };
 }
 
