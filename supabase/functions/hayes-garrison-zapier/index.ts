@@ -156,12 +156,15 @@ Deno.serve(async (req) => {
       cdl_class: fields.cdl_class,
       exp: fields.exp,
       notes: fields.notes,
-      source: 'zapier',
+      source: fields.lead_source || 'zapier',
+      referral_source: fields.platform,
+      how_did_you_hear: fields.how_did_you_hear,
       status: 'pending',
-      utm_source: 'zapier',
-      utm_medium: 'webhook',
-      utm_campaign: 're-garrison',
+      utm_source: fields.utm_source || 'zapier',
+      utm_medium: fields.utm_medium || 'webhook',
+      utm_campaign: fields.utm_campaign || 're-garrison',
       applied_at: new Date().toISOString(),
+      raw_payload: body,
     };
 
     const { data: application, error: insertError } = await insertApplication(supabase, applicationData);
