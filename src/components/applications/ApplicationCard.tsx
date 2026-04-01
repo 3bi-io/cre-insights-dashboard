@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Eye, MessageCircle, Calendar, Phone, ExternalLink, Edit, Mail, MoreVertical, Upload, MapPin, Loader2, FileCheck, CheckCircle2 } from 'lucide-react';
 import { getApplicantName, getApplicantEmail, getClientName, getApplicantCategory, getFormType } from '@/utils/applicationHelpers';
-import { getJobDisplayTitle } from '@/features/applications/utils/applicationFormatters';
+import { getJobDisplayTitle, getSourceDisplay } from '@/features/applications/utils/applicationFormatters';
 import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
