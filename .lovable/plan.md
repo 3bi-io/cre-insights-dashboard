@@ -1,46 +1,36 @@
 
 
-## Plan: Title Standardization, State Normalization, and Junk Cleanup
+## Plan: Raw Payload Logging + Source/Platform Passthrough for hayes-garrison-zapier
 
-### What we're fixing
-
-1. **Raw feed titles** -- All 14 active R.E. Garrison feed-synced jobs have titles like `Job 14558J14549` instead of the canonical format: `CDL-A Drivers: Top Tier Lease Purchase Program! $0 Down, No Credit Check! | {State}`
-2. **Inconsistent state values** -- Some records use full names (`New York`, `Totam perspiciatis`) instead of 2-letter abbreviations (`NY`, `TX`)
-3. **8 junk test records** -- 5 "Mick Foley" and 3 "test data" applications need deletion
-
----
+### Problem
+The Zapier handler hardcodes `source: 'zapier'`, `utm_source: 'zapier'`, `utm_medium: 'webhook'`, discarding any actual lead origin (Facebook, Indeed, etc.) present in the Zapier payload. There is also no way to debug what Zapier actually sent.
 
 ### Changes
 
-#### 1. Add title standardization and state normalization to `sync-cdl-feeds/index.ts`
+#### 1. Migration: Add `raw_payload` JSONB column to `applications`
+- Add `raw_payload JSONB NULL` to the `applications` table
+- This stores the complete inbound payload for debugging any source
 
-- Add a **client title template map** at the top of the file, keyed by clientId:
-  ```
-  'be8b645e-...' => 'CDL-A Drivers: Top Tier Lease Purchase Program! $0 Down, No Credit Check!'
-  ```
-- Add a **US state abbreviation lookup** (full name to 2-letter code)
-- In `syncClientFeed`, after building `jobData`:
-  - Normalize `state` through the lookup (e.g. `New York` → `NY`, already-abbreviated values pass through)
-  - If a title template exists for this client, replace the raw feed title with `{template} | {StateName}` (using the full state name for the suffix, matching the existing canonical pattern like `| Alabama`, `| New York`)
-  - Rebuild `location` from normalized city + state
-- This runs on every sync, so existing raw-titled jobs get corrected on the next cycle
+#### 2. Update `hayes-garrison-zapier/index.ts`
 
-#### 2. Migration: Clean up junk records and fix existing data
+**Expand `mapFields`** to extract source/platform/UTM fields from the payload:
+- `lead_source` / `source` / `lead_origin` / `traffic_source` → used as `source` (fallback: `'zapier'`)
+- `platform` / `lead_platform` / `source_platform` → stored in `referral_source`
+- `utm_source` / `utmSource` → used as `utm_source` (fallback: `'zapier'`)
+- `utm_medium` / `utmMedium` → used as `utm_medium` (fallback: `'webhook'`)
+- `utm_campaign` / `utmCampaign` → used as `utm_campaign` (fallback: `'re-garrison'`)
+- `how_did_you_hear` / `hear_about_us` → stored in `how_did_you_hear`
 
-A single SQL migration that:
+**Store raw payload**: Pass `raw_payload: body` (the original JSON object) into the application insert.
 
-- **Deletes 8 junk application records** by their known IDs (5 Mick Foley + 3 test data)
-- **Updates the 14 active feed-synced R.E. Garrison job listings** to use canonical titles and normalized state abbreviations
-- **Fixes the one job listing** with state `Totam perspiciatis` (deactivate it as junk)
+**Log raw payload**: Add a `logger.info` call with the raw body keys for observability.
 
-#### 3. Files changed
+### Files changed
+- New migration SQL — adds `raw_payload` column
+- `supabase/functions/hayes-garrison-zapier/index.ts` — source passthrough + raw payload storage
 
-- `supabase/functions/sync-cdl-feeds/index.ts` -- add title template map, state normalization function, apply both during job processing
-- New migration SQL -- one-time cleanup of junk records and existing data correction
-
-### Technical details
-
-- The state normalizer will be a simple object map (`{ 'alabama': 'AL', ... }`) plus a check for already-valid 2-letter codes
-- Title templates are per-client so other clients (Pemberton, Danny Herman, etc.) can have their own canonical format added later without code changes
-- The `| {State}` suffix uses the **full state name** (matching the existing canonical pattern visible in the DB: `| Alabama`, `| New York`, etc.)
+### What this enables
+- Zapier payloads that include `lead_source: 'facebook'` or `utm_source: 'indeed'` will flow through to the application record
+- The raw payload is always preserved for debugging field mapping issues
+- Hardcoded values become fallbacks only, not overwrites
 
