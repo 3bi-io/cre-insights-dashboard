@@ -81,6 +81,12 @@ export interface Application {
   display_fields?: Record<string, unknown>;
   elevenlabs_call_transcript?: string;
   twic_card?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  raw_payload?: Record<string, unknown>;
+  ats_readiness_score?: number;
+  first_response_at?: string;
   // Relations
   job_listings?: {
     title?: string;

@@ -79,6 +79,12 @@ export const TableColumnVisibility = ({
           Date
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
+          checked={columnVisibility.source}
+          onCheckedChange={() => onColumnVisibilityChange('source')}
+        >
+          Source
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem
           checked={columnVisibility.status}
           onCheckedChange={() => onColumnVisibilityChange('status')}
         >

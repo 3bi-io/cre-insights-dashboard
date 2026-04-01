@@ -244,3 +244,90 @@ export const formatShortDate = (dateString?: string): string => {
   if (!dateString) return 'N/A';
   return new Date(dateString).toLocaleString();
 };
+
+/**
+ * Source display mapping: converts raw internal source codes to human-readable labels
+ */
+const SOURCE_DISPLAY_MAP: Record<string, string> = {
+  'hayes-re-garrison-inbound': 'R.E. Garrison',
+  'hayes-garrison-zapier': 'R.E. Garrison (Zapier)',
+  'ziprecruiter-webhook': 'ZipRecruiter',
+  'ziprecruiter': 'ZipRecruiter',
+  'cdl-jobcast': 'CDL JobCast',
+  'cdl-jobcast-inbound': 'CDL JobCast',
+  'direct application': 'Direct',
+  'direct': 'Direct',
+  'meta': 'Meta Ads',
+  'facebook': 'Facebook',
+  'instagram': 'Instagram',
+  'tiktok': 'TikTok',
+  'indeed': 'Indeed',
+  'linkedin': 'LinkedIn',
+  'google': 'Google',
+  'zapier': 'Zapier',
+  'referral': 'Referral',
+  'submit-application': 'Direct Apply',
+  'inbound-applications': 'Inbound API',
+};
+
+/**
+ * Returns a human-readable source label for display in the UI
+ */
+export const getSourceDisplay = (app: AnyApplication): string => {
+  const rawSource = (app.source || '').trim();
+  const normalizedSource = rawSource.toLowerCase();
+
+  // Check exact match first
+  if (SOURCE_DISPLAY_MAP[normalizedSource]) {
+    return SOURCE_DISPLAY_MAP[normalizedSource];
+  }
+
+  // Check partial matches for compound source strings
+  for (const [key, label] of Object.entries(SOURCE_DISPLAY_MAP)) {
+    if (normalizedSource.includes(key)) {
+      return label;
+    }
+  }
+
+  // Fall back to utm_source if available and source is empty/generic
+  if ((!rawSource || normalizedSource === 'web' || normalizedSource === 'other') && app.utm_source) {
+    return app.utm_source;
+  }
+
+  // Return raw source with basic formatting, or 'Unknown'
+  return rawSource || 'Unknown';
+};
+
+/**
+ * Returns structured attribution data for detail views
+ */
+export interface AttributionSummary {
+  sourceLabel: string;
+  rawSource: string | null;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  referralSource: string | null;
+  howDidYouHear: string | null;
+  hasAttribution: boolean;
+}
+
+export const getAttributionSummary = (app: AnyApplication): AttributionSummary => {
+  const sourceLabel = getSourceDisplay(app);
+  const utmSource = app.utm_source || null;
+  const utmMedium = app.utm_medium || null;
+  const utmCampaign = app.utm_campaign || null;
+  const referralSource = app.referral_source || null;
+  const howDidYouHear = app.how_did_you_hear || null;
+
+  return {
+    sourceLabel,
+    rawSource: app.source || null,
+    utmSource,
+    utmMedium,
+    utmCampaign,
+    referralSource,
+    howDidYouHear,
+    hasAttribution: !!(utmSource || utmMedium || utmCampaign || referralSource || howDidYouHear),
+  };
+};
