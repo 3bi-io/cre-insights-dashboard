@@ -48,6 +48,13 @@ function mapFields(body: Record<string, unknown>) {
     exp: pick(body, 'exp', 'experience', 'years_experience', 'driving_experience'),
     job_title: pick(body, 'job_title', 'jobTitle', 'position', 'job'),
     notes: pick(body, 'notes', 'comments', 'additional_info', 'message'),
+    // ── Attribution / source fields ──
+    lead_source: pick(body, 'lead_source', 'source', 'lead_origin', 'traffic_source'),
+    platform: pick(body, 'platform', 'lead_platform', 'source_platform'),
+    utm_source: pick(body, 'utm_source', 'utmSource'),
+    utm_medium: pick(body, 'utm_medium', 'utmMedium'),
+    utm_campaign: pick(body, 'utm_campaign', 'utmCampaign'),
+    how_did_you_hear: pick(body, 'how_did_you_hear', 'hear_about_us', 'how_heard'),
   };
 }
 
@@ -66,6 +73,8 @@ Deno.serve(async (req) => {
 
   try {
     const body = (await req.json()) as Record<string, unknown>;
+
+    logger.info('Zapier payload received', { keys: Object.keys(body) });
 
     const fields = mapFields(body);
 
@@ -147,12 +156,15 @@ Deno.serve(async (req) => {
       cdl_class: fields.cdl_class,
       exp: fields.exp,
       notes: fields.notes,
-      source: 'zapier',
+      source: fields.lead_source || 'zapier',
+      referral_source: fields.platform,
+      how_did_you_hear: fields.how_did_you_hear,
       status: 'pending',
-      utm_source: 'zapier',
-      utm_medium: 'webhook',
-      utm_campaign: 're-garrison',
+      utm_source: fields.utm_source || 'zapier',
+      utm_medium: fields.utm_medium || 'webhook',
+      utm_campaign: fields.utm_campaign || 're-garrison',
       applied_at: new Date().toISOString(),
+      raw_payload: body,
     };
 
     const { data: application, error: insertError } = await insertApplication(supabase, applicationData);
