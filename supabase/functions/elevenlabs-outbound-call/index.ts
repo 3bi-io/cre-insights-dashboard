@@ -1647,43 +1647,42 @@ function buildDynamicVariables(
   vars.company_name = (organization?.name as string) || 'our company';
   vars.company_description = (organization?.description as string) || '';
   
-  // Business hours context — use org timezone if available, fallback to CST
-  const orgTz = (metadata._business_hours_timezone as string) || 'America/Chicago';
-  const orgStart = (metadata._business_hours_start as string) || '09:00';
-  const orgEnd = (metadata._business_hours_end as string) || '16:30';
-  const nowLocal = new Date(new Date().toLocaleString('en-US', { timeZone: orgTz }));
-  const hour = nowLocal.getHours();
-  const minute = nowLocal.getMinutes();
-  const currentTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-  const dayOfWeek = nowLocal.getDay(); // 0=Sun, 6=Sat
-  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
-  
-  const [startH, startM] = orgStart.split(':').map(Number);
-  const [endH, endM] = orgEnd.split(':').map(Number);
-  const nowMinutes = hour * 60 + minute;
-  const startMinutes = (startH || 9) * 60 + (startM || 0);
-  const endMinutes = (endH || 16) * 60 + (endM || 30);
-  const isWithinBusinessHours = isWeekday && nowMinutes >= startMinutes && nowMinutes < endMinutes;
-  
+  // Business hours context — use org/client timezone and explicit after-hours instructions
+  const businessHoursContext = deriveBusinessHoursContext(metadata);
+  const {
+    orgTz,
+    orgStart,
+    orgEnd,
+    currentTime,
+    isHoliday,
+    isAfterHours,
+    allowLiveTransfer,
+    afterHoursAction,
+    isBusinessDay,
+    hasCalendar,
+  } = businessHoursContext;
+
   const tzLabel = orgTz.replace(/_/g, ' ').split('/').pop() || orgTz;
-  vars.is_after_hours = isWithinBusinessHours ? 'no' : 'yes';
+  vars.is_after_hours = isAfterHours ? 'yes' : 'no';
   vars.current_time = currentTime;
   vars.current_time_cst = currentTime; // backward compat
-  vars.is_weekend = !isWeekday ? 'yes' : 'no';
+  vars.is_weekend = !isBusinessDay ? 'yes' : 'no';
   
   // Calendar awareness — check if org has calendar connections (passed via metadata)
-  const hasCalendar = (metadata._has_calendar_connections as string) || 'unknown';
   vars.has_calendar_connections = hasCalendar;
+  vars.is_holiday = isHoliday ? 'yes' : 'no';
+  vars.allow_live_transfer = allowLiveTransfer;
+  vars.after_hours_action = afterHoursAction;
   
   // Business hours note — varies based on both time AND calendar availability
-  if (isWithinBusinessHours) {
+  if (!isAfterHours && !isHoliday) {
     vars.business_hours_note = hasCalendar === 'yes'
       ? `Business hours (${orgStart}-${orgEnd} ${tzLabel}). Recruiter transfer available. Calendar scheduling available.`
       : `Business hours (${orgStart}-${orgEnd} ${tzLabel}). No recruiter calendars connected.`;
   } else {
     vars.business_hours_note = hasCalendar === 'yes'
-      ? `After hours (${orgStart}-${orgEnd} ${tzLabel}). No live transfers. Calendar scheduling available.`
-      : `After hours (${orgStart}-${orgEnd} ${tzLabel}). No live transfers. Recruiter will call back next business day.`;
+      ? `${isHoliday ? 'Holiday' : 'After hours'} (${orgStart}-${orgEnd} ${tzLabel}). No live transfers. Use calendar scheduling for the next business day.`
+      : `${isHoliday ? 'Holiday' : 'After hours'} (${orgStart}-${orgEnd} ${tzLabel}). No live transfers. Recruiter will call back next business day.`;
   }
 
   // Trucking-specific job context inference
@@ -1708,8 +1707,6 @@ function buildDynamicVariables(
   vars.follow_up_attempt = (metadata._follow_up_attempt as string) || '0';
   vars.previous_call_outcome = (metadata._previous_call_outcome as string) || '';
   vars.previous_conversation_summary = (metadata._previous_conversation_summary as string) || '';
-  vars.is_holiday = (metadata._is_holiday as string) || 'no';
-
   // After-hours callback context — tells the agent this is a scheduled callback from a previous after-hours screening
   const isAfterHoursCallback = (metadata.is_after_hours_callback as boolean) || false;
   vars.is_after_hours_callback = isAfterHoursCallback ? 'yes' : 'no';
