@@ -295,6 +295,7 @@ async function processApplication(
     utm_medium: utmMedium,
     utm_campaign: utmCampaign,
     applied_at: new Date().toISOString(),
+    raw_payload: data,
   };
   
   const { data: application, error } = await insertApplication(supabase, applicationData);
