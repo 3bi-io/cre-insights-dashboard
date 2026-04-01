@@ -51,6 +51,60 @@ const DEFAULT_UTM = {
   medium: 'job_board',
 };
 
+// Client-specific canonical title templates
+// When a template exists, raw feed titles (e.g. "Job 14558J14549") are replaced
+// with "{template} | {Full State Name}"
+const CLIENT_TITLE_TEMPLATES: Record<string, string> = {
+  'be8b645e-d480-4c22-8e75-b09a7fc1db7a': 'CDL-A Drivers: Top Tier Lease Purchase Program! $0 Down, No Credit Check!',
+};
+
+// US state full-name → 2-letter abbreviation lookup
+const STATE_ABBREVIATIONS: Record<string, string> = {
+  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
+  'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
+  'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
+  'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
+  'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS',
+  'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
+  'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
+  'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
+  'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+  'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
+  'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV',
+  'wisconsin': 'WI', 'wyoming': 'WY', 'district of columbia': 'DC',
+};
+
+// Reverse lookup: abbreviation → full name (for title suffixes)
+const STATE_FULL_NAMES: Record<string, string> = {};
+for (const [full, abbr] of Object.entries(STATE_ABBREVIATIONS)) {
+  STATE_FULL_NAMES[abbr] = full.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+}
+
+/**
+ * Normalize a state value to its 2-letter abbreviation.
+ * Returns the original value if it's already a valid abbreviation or unrecognized.
+ */
+function normalizeState(state: string | null | undefined): string | null {
+  if (!state) return null;
+  const trimmed = state.trim();
+  // Already a valid 2-letter abbreviation?
+  if (trimmed.length === 2 && STATE_FULL_NAMES[trimmed.toUpperCase()]) {
+    return trimmed.toUpperCase();
+  }
+  // Look up full name
+  const abbr = STATE_ABBREVIATIONS[trimmed.toLowerCase()];
+  return abbr || trimmed; // pass through if unrecognized
+}
+
+/**
+ * Get the full state name for a title suffix from an abbreviation.
+ */
+function getStateFullName(stateAbbr: string | null): string | null {
+  if (!stateAbbr) return null;
+  return STATE_FULL_NAMES[stateAbbr.toUpperCase()] || stateAbbr;
+}
+
 /**
  * Generate internal apply URL with UTM parameters
  */
@@ -242,8 +296,6 @@ async function syncClientFeed(
       }
 
       feedJobIds.add(jobId);
-      const location = job.city && job.state ? `${job.city}, ${job.state}` : 
-                      job.city || job.state || job.location || null;
 
       // For new jobs, we'll set apply_url after insert when we have the ID
       // For existing jobs, we'll update the apply_url during the update
@@ -251,12 +303,30 @@ async function syncClientFeed(
       // Get sponsorship tier from mapping
       const sponsorshipTier = await getSponsorshipTier(supabase, job.jobreferrer || null);
       
+      // Normalize state to 2-letter abbreviation
+      const rawState = job.state || null;
+      const normalizedState = normalizeState(rawState);
+      
+      // Rebuild location with normalized state
+      const normalizedLocation = job.city && normalizedState ? `${job.city}, ${normalizedState}` : 
+                      job.city || normalizedState || job.location || null;
+
+      // Apply client title template if available
+      const titleTemplate = CLIENT_TITLE_TEMPLATES[feed.clientId];
+      let finalTitle = job.title || 'Untitled Position';
+      if (titleTemplate && normalizedState) {
+        const fullStateName = getStateFullName(normalizedState);
+        finalTitle = `${titleTemplate} | ${fullStateName}`;
+      } else if (titleTemplate) {
+        finalTitle = titleTemplate;
+      }
+
       const jobData = {
-        title: job.title || 'Untitled Position',
+        title: finalTitle,
         job_summary: job.description || null,
-        location,
+        location: normalizedLocation,
         city: job.city || null,
-        state: job.state || null,
+        state: normalizedState,
         salary_min: job.salary_min || null,
         salary_max: job.salary_max || null,
         salary_type: job.salary_type || 'yearly',
