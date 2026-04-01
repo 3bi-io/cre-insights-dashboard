@@ -23,6 +23,7 @@ import {
   getClientName,
   getJobDisplayTitle 
 } from '@/features/applications/utils/applicationFormatters';
+import { getAttributionSummary } from '@/features/applications/utils/applicationFormatters';
 import { getStatusColor } from '@/features/applications/utils/statusColors';
 
 interface ApplicationDetailsDialogProps {
