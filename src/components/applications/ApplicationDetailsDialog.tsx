@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Eye, Calendar, Phone, Mail, ExternalLink, User, Briefcase, MapPin, Loader2, PhoneCall, ChevronDown, Shield, Clock } from 'lucide-react';
+import { Eye, Calendar, Phone, Mail, ExternalLink, User, Briefcase, MapPin, Loader2, PhoneCall, ChevronDown, Shield, Clock, Globe, Code } from 'lucide-react';
 import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
 import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
 import { OutboundCallHistory } from '@/components/voice/OutboundCallHistory';
