@@ -305,12 +305,30 @@ async function syncClientFeed(
       // Get sponsorship tier from mapping
       const sponsorshipTier = await getSponsorshipTier(supabase, job.jobreferrer || null);
       
+      // Normalize state to 2-letter abbreviation
+      const rawState = job.state || null;
+      const normalizedState = normalizeState(rawState);
+      
+      // Rebuild location with normalized state
+      const normalizedLocation = job.city && normalizedState ? `${job.city}, ${normalizedState}` : 
+                      job.city || normalizedState || job.location || null;
+
+      // Apply client title template if available
+      const titleTemplate = CLIENT_TITLE_TEMPLATES[feed.clientId];
+      let finalTitle = job.title || 'Untitled Position';
+      if (titleTemplate && normalizedState) {
+        const fullStateName = getStateFullName(normalizedState);
+        finalTitle = `${titleTemplate} | ${fullStateName}`;
+      } else if (titleTemplate) {
+        finalTitle = titleTemplate;
+      }
+
       const jobData = {
-        title: job.title || 'Untitled Position',
+        title: finalTitle,
         job_summary: job.description || null,
-        location,
+        location: normalizedLocation,
         city: job.city || null,
-        state: job.state || null,
+        state: normalizedState,
         salary_min: job.salary_min || null,
         salary_max: job.salary_max || null,
         salary_type: job.salary_type || 'yearly',
