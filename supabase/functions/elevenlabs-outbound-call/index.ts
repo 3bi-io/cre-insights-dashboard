@@ -1535,7 +1535,7 @@ function normalizePhoneNumber(phone: string): string | null {
 }
 
 // Build dynamic variables for ElevenLabs agent personalization
-function buildDynamicVariables(
+export function buildDynamicVariables(
   application: Record<string, unknown> | null,
   jobListing: Record<string, unknown> | null,
   organization: Record<string, unknown> | null,
