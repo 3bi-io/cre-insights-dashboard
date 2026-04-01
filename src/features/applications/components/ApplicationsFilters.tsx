@@ -23,6 +23,7 @@ interface ApplicationsFiltersProps {
   onClientChange?: (value: string) => void;
   clients?: Array<{ id: string; name: string; company?: string | null }>;
   showClientFilter?: boolean;
+  sourceOptions?: string[];
 }
 
 export const ApplicationsFilters = ({
