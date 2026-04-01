@@ -117,6 +117,7 @@
         "npm:leaflet@^1.9.4",
         "npm:lovable-tagger@^1.1.11",
         "npm:lucide-react@0.462",
+        "npm:marked@^17.0.5",
         "npm:next-themes@0.3",
         "npm:postcss@^8.4.47",
         "npm:react-day-picker@^8.10.1",

@@ -7,6 +7,7 @@ import { getCorsHeaders } from "../_shared/cors-config.ts";
 import { successResponse, errorResponse } from "../_shared/response.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { getServiceClient } from "../_shared/supabase-client.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const logger = createLogger('elevenlabs-outbound-call');
@@ -40,7 +41,148 @@ interface ProcessQueueResult {
   results: Array<{ call_id: string; status: string; error?: string }>;
 }
 
-Deno.serve(async (req) => {
+async function getOrganizationCallSettings(
+  supabase: ReturnType<typeof getServiceClient>,
+  organizationId: string,
+  clientId?: string | null,
+  fields = '*',
+): Promise<Record<string, unknown> | null> {
+  if (clientId) {
+    const { data: clientSettings } = await supabase
+      .from('organization_call_settings')
+      .select(fields)
+      .eq('organization_id', organizationId)
+      .eq('client_id', clientId)
+      .maybeSingle();
+
+    if (clientSettings) return clientSettings as Record<string, unknown>;
+  }
+
+  const { data: orgSettings } = await supabase
+    .from('organization_call_settings')
+    .select(fields)
+    .eq('organization_id', organizationId)
+    .is('client_id', null)
+    .maybeSingle();
+
+  return (orgSettings as Record<string, unknown> | null) || null;
+}
+
+async function hasActiveCalendarConnections(
+  supabase: ReturnType<typeof getServiceClient>,
+  organizationId: string,
+  clientId?: string | null,
+): Promise<boolean> {
+  if (clientId) {
+    const { data: clientConnection } = await supabase
+      .from('recruiter_calendar_connections')
+      .select('id')
+      .eq('organization_id', organizationId)
+      .eq('client_id', clientId)
+      .eq('status', 'active')
+      .limit(1)
+      .maybeSingle();
+
+    if (clientConnection) return true;
+  }
+
+  const { data: orgConnection } = await supabase
+    .from('recruiter_calendar_connections')
+    .select('id')
+    .eq('organization_id', organizationId)
+    .is('client_id', null)
+    .eq('status', 'active')
+    .limit(1)
+    .maybeSingle();
+
+  return !!orgConnection;
+}
+
+function getDateInTimezone(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+export function deriveBusinessHoursContext(
+  metadata: Record<string, unknown>,
+  now: Date = new Date(),
+) {
+  const orgTz = (metadata._business_hours_timezone as string) || 'America/Chicago';
+  const orgStart = (metadata._business_hours_start as string) || '09:00';
+  const orgEnd = (metadata._business_hours_end as string) || '16:30';
+  const configuredBusinessDays = typeof metadata._business_days === 'string' && metadata._business_days.length > 0
+    ? metadata._business_days.split(',').map((value) => Number(value)).filter((value) => !Number.isNaN(value))
+    : [1, 2, 3, 4, 5];
+  const nowLocal = new Date(now.toLocaleString('en-US', { timeZone: orgTz }));
+  const hour = nowLocal.getHours();
+  const minute = nowLocal.getMinutes();
+  const currentTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  const dayOfWeek = nowLocal.getDay() === 0 ? 7 : nowLocal.getDay();
+  const isBusinessDay = configuredBusinessDays.includes(dayOfWeek);
+
+  const [startH, startM] = orgStart.split(':').map(Number);
+  const [endH, endM] = orgEnd.split(':').map(Number);
+  const nowMinutes = hour * 60 + minute;
+  const startMinutes = (startH || 9) * 60 + (startM || 0);
+  const endMinutes = (endH || 16) * 60 + (endM || 30);
+  const computedWithinBusinessHours = isBusinessDay && nowMinutes >= startMinutes && nowMinutes < endMinutes;
+  const isHoliday = (metadata._is_holiday as string) === 'yes';
+  const isAfterHoursCallback = (metadata.is_after_hours_callback as boolean) || false;
+  const explicitAfterHours = metadata._is_after_hours as string | undefined;
+  const isAfterHours = isAfterHoursCallback
+    ? (!computedWithinBusinessHours || isHoliday)
+    : explicitAfterHours
+      ? explicitAfterHours === 'yes'
+      : (!computedWithinBusinessHours || isHoliday);
+  const explicitAllowLiveTransfer = metadata._allow_live_transfer as string | undefined;
+  const allowLiveTransfer = (isAfterHours || isHoliday)
+    ? 'no'
+    : (explicitAllowLiveTransfer === 'no' && !isAfterHoursCallback ? 'no' : 'yes');
+  const afterHoursAction = (isAfterHours || isHoliday)
+    ? ((metadata._after_hours_action as string) || 'schedule_next_business_day')
+    : 'transfer_if_requested';
+
+  return {
+    orgTz,
+    orgStart,
+    orgEnd,
+    currentTime,
+    isHoliday,
+    isAfterHours,
+    allowLiveTransfer,
+    afterHoursAction,
+    isBusinessDay,
+    hasCalendar: (metadata._has_calendar_connections as string) || 'unknown',
+  };
+}
+
+export function createAfterHoursCallbackMetadata(
+  metadata: Record<string, unknown>,
+  options: {
+    originalCallId: string;
+    originalConversationId: string | null;
+    hasCalendarConnections: boolean;
+    schedulingMethod: string;
+  },
+): Record<string, unknown> {
+  return {
+    ...(metadata || {}),
+    is_after_hours_callback: true,
+    callback_purpose: 'business_hours_callback',
+    original_call_id: options.originalCallId,
+    original_conversation_id: options.originalConversationId,
+    triggered_by: 'after_hours_auto_callback',
+    no_calendar_fallback: !options.hasCalendarConnections,
+    scheduling_method: options.schedulingMethod,
+  };
+}
+
+if (import.meta.main) {
+  Deno.serve(async (req) => {
   const origin = req.headers.get('origin') || '*';
   const corsHeaders = getCorsHeaders(origin);
 
@@ -740,7 +882,8 @@ Deno.serve(async (req) => {
     logger.error('Error in elevenlabs-outbound-call', { error });
     return errorResponse((error as Error).message || 'Internal server error', 500, undefined, origin);
   }
-});
+  });
+}
 
 // Process a single outbound call
 async function processOutboundCall(
@@ -775,14 +918,14 @@ async function processOutboundCall(
       const retryCount = (queuedCall.retry_count as number) || 0;
       let dynamicMaxAttempts = 3; // fallback
       if (queuedCall.organization_id) {
-        const { data: retrySettings } = await supabase
-          .from('organization_call_settings')
-          .select('max_attempts')
-          .eq('organization_id', queuedCall.organization_id)
-          .is('client_id', null)
-          .maybeSingle();
+        const retrySettings = await getOrganizationCallSettings(
+          supabase,
+          queuedCall.organization_id,
+          (queuedCall.metadata as Record<string, unknown>)?.client_id as string | null,
+          'max_attempts',
+        );
         if (retrySettings?.max_attempts) {
-          dynamicMaxAttempts = retrySettings.max_attempts;
+          dynamicMaxAttempts = retrySettings.max_attempts as number;
         }
       }
       if (retryCount >= dynamicMaxAttempts) {
@@ -1045,44 +1188,51 @@ async function processOutboundCall(
 
     // Fetch org call settings for timezone-aware business hours in dynamic variables
     if (organizationId) {
-      const { data: callSettings } = await supabase
-        .from('organization_call_settings')
-        .select('business_hours_start, business_hours_end, business_hours_timezone')
-        .eq('organization_id', organizationId)
-        .is('client_id', null)
-        .maybeSingle();
+      const callSettings = await getOrganizationCallSettings(
+        supabase,
+        organizationId,
+        clientId,
+        'business_hours_start, business_hours_end, business_hours_timezone, business_days',
+      );
       
       if (callSettings) {
         metadata._business_hours_timezone = callSettings.business_hours_timezone;
-        metadata._business_hours_start = callSettings.business_hours_start?.substring(0, 5);
-        metadata._business_hours_end = callSettings.business_hours_end?.substring(0, 5);
+        metadata._business_hours_start = (callSettings.business_hours_start as string | undefined)?.substring(0, 5);
+        metadata._business_hours_end = (callSettings.business_hours_end as string | undefined)?.substring(0, 5);
+        const businessDays = callSettings.business_days as number[] | undefined;
+        if (Array.isArray(businessDays) && businessDays.length > 0) {
+          metadata._business_days = businessDays.join(',');
+        }
       }
       
-      // Check if org/client has active calendar connections for agent awareness
-      let calConnFound = false;
-      if (clientId) {
-        const { data: clientCalConn } = await supabase
-          .from('recruiter_calendar_connections')
-          .select('id')
-          .eq('organization_id', organizationId)
-          .eq('client_id', clientId)
-          .eq('status', 'active')
-          .limit(1)
-          .maybeSingle();
-        if (clientCalConn) calConnFound = true;
-      }
-      if (!calConnFound) {
-        const { data: orgCalConn } = await supabase
-          .from('recruiter_calendar_connections')
-          .select('id')
-          .eq('organization_id', organizationId)
-          .is('client_id', null)
-          .eq('status', 'active')
-          .limit(1)
-          .maybeSingle();
-        if (orgCalConn) calConnFound = true;
-      }
+      const calConnFound = await hasActiveCalendarConnections(supabase, organizationId, clientId);
       metadata._has_calendar_connections = calConnFound ? 'yes' : 'no';
+
+      const todayInOrgTimezone = getDateInTimezone(new Date(), metadata._business_hours_timezone as string || 'America/Chicago');
+      let holidayFound = false;
+
+      const { data: orgHoliday } = await supabase
+        .from('organization_holidays')
+        .select('id')
+        .eq('organization_id', organizationId)
+        .eq('holiday_date', todayInOrgTimezone)
+        .limit(1)
+        .maybeSingle();
+
+      if (orgHoliday) {
+        holidayFound = true;
+      } else {
+        const { data: globalHoliday } = await supabase
+          .from('organization_holidays')
+          .select('id')
+          .is('organization_id', null)
+          .eq('holiday_date', todayInOrgTimezone)
+          .limit(1)
+          .maybeSingle();
+        holidayFound = !!globalHoliday;
+      }
+
+      metadata._is_holiday = holidayFound ? 'yes' : 'no';
     }
 
     // Inject follow-up context into dynamic variables if this is a retry call
@@ -1227,21 +1377,8 @@ async function processOutboundCall(
       const isAfterHoursFirstAttempt = currentRetryCount === 0 && metadata.is_after_hours_callback !== true;
       
       if (isAfterHoursFirstAttempt && organizationId) {
-        // Check if we're outside business hours right now
-        const orgTz = (metadata._business_hours_timezone as string) || 'America/Chicago';
-        const orgStart = (metadata._business_hours_start as string) || '09:00';
-        const orgEnd = (metadata._business_hours_end as string) || '16:30';
-        const nowLocal = new Date(new Date().toLocaleString('en-US', { timeZone: orgTz }));
-        const localHour = nowLocal.getHours();
-        const localMinute = nowLocal.getMinutes();
-        const dayOfWeek = nowLocal.getDay();
-        const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
-        const [sH, sM] = orgStart.split(':').map(Number);
-        const [eH, eM] = orgEnd.split(':').map(Number);
-        const nowMins = localHour * 60 + localMinute;
-        const startMins = (sH || 9) * 60 + (sM || 0);
-        const endMins = (eH || 16) * 60 + (eM || 30);
-        const currentlyAfterHours = !isWeekday || nowMins < startMins || nowMins >= endMins;
+        const businessHoursContext = deriveBusinessHoursContext(metadata);
+        const currentlyAfterHours = businessHoursContext.isAfterHours;
         
         if (currentlyAfterHours) {
           // Check if a callback already exists for this application to avoid duplicates
@@ -1265,30 +1402,7 @@ async function processOutboundCall(
           if (!callbackExists) {
             const orgClientId = (metadata.client_id as string) || clientId || null;
             
-            // Check if org/client has calendar connections
-            let hasCalendarConnections = false;
-            if (orgClientId) {
-              const { data: clientCalConns } = await supabase
-                .from('recruiter_calendar_connections')
-                .select('id')
-                .eq('organization_id', organizationId)
-                .eq('client_id', orgClientId)
-                .eq('status', 'active')
-                .limit(1)
-                .maybeSingle();
-              if (clientCalConns) hasCalendarConnections = true;
-            }
-            if (!hasCalendarConnections) {
-              const { data: orgCalConns } = await supabase
-                .from('recruiter_calendar_connections')
-                .select('id')
-                .eq('organization_id', organizationId)
-                .is('client_id', null)
-                .eq('status', 'active')
-                .limit(1)
-                .maybeSingle();
-              if (orgCalConns) hasCalendarConnections = true;
-            }
+            const hasCalendarConnections = await hasActiveCalendarConnections(supabase, organizationId, orgClientId);
             
             let callbackAt: string;
             let schedulingMethod: string;
@@ -1353,16 +1467,12 @@ async function processOutboundCall(
               schedulingMethod = 'next_business_datetime';
             }
             
-            const callbackMetadata: Record<string, unknown> = {
-              ...(metadata || {}),
-              is_after_hours_callback: true,
-              callback_purpose: hasCalendarConnections ? 'recruiter_transfer' : 'business_hours_callback',
-              original_call_id: callRecord.id,
-              original_conversation_id: elevenLabsData.conversation_id || null,
-              triggered_by: 'after_hours_auto_callback',
-              no_calendar_fallback: !hasCalendarConnections,
-              scheduling_method: schedulingMethod,
-            };
+            const callbackMetadata = createAfterHoursCallbackMetadata(metadata, {
+              originalCallId: callRecord.id,
+              originalConversationId: elevenLabsData.conversation_id || null,
+              hasCalendarConnections,
+              schedulingMethod,
+            });
             
             const { data: callbackCall, error: callbackError } = await supabase
               .from('outbound_calls')
@@ -1425,7 +1535,7 @@ function normalizePhoneNumber(phone: string): string | null {
 }
 
 // Build dynamic variables for ElevenLabs agent personalization
-function buildDynamicVariables(
+export function buildDynamicVariables(
   application: Record<string, unknown> | null,
   jobListing: Record<string, unknown> | null,
   organization: Record<string, unknown> | null,
@@ -1537,43 +1647,42 @@ function buildDynamicVariables(
   vars.company_name = (organization?.name as string) || 'our company';
   vars.company_description = (organization?.description as string) || '';
   
-  // Business hours context — use org timezone if available, fallback to CST
-  const orgTz = (metadata._business_hours_timezone as string) || 'America/Chicago';
-  const orgStart = (metadata._business_hours_start as string) || '09:00';
-  const orgEnd = (metadata._business_hours_end as string) || '16:30';
-  const nowLocal = new Date(new Date().toLocaleString('en-US', { timeZone: orgTz }));
-  const hour = nowLocal.getHours();
-  const minute = nowLocal.getMinutes();
-  const currentTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-  const dayOfWeek = nowLocal.getDay(); // 0=Sun, 6=Sat
-  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
-  
-  const [startH, startM] = orgStart.split(':').map(Number);
-  const [endH, endM] = orgEnd.split(':').map(Number);
-  const nowMinutes = hour * 60 + minute;
-  const startMinutes = (startH || 9) * 60 + (startM || 0);
-  const endMinutes = (endH || 16) * 60 + (endM || 30);
-  const isWithinBusinessHours = isWeekday && nowMinutes >= startMinutes && nowMinutes < endMinutes;
-  
+  // Business hours context — use org/client timezone and explicit after-hours instructions
+  const businessHoursContext = deriveBusinessHoursContext(metadata);
+  const {
+    orgTz,
+    orgStart,
+    orgEnd,
+    currentTime,
+    isHoliday,
+    isAfterHours,
+    allowLiveTransfer,
+    afterHoursAction,
+    isBusinessDay,
+    hasCalendar,
+  } = businessHoursContext;
+
   const tzLabel = orgTz.replace(/_/g, ' ').split('/').pop() || orgTz;
-  vars.is_after_hours = isWithinBusinessHours ? 'no' : 'yes';
+  vars.is_after_hours = isAfterHours ? 'yes' : 'no';
   vars.current_time = currentTime;
   vars.current_time_cst = currentTime; // backward compat
-  vars.is_weekend = !isWeekday ? 'yes' : 'no';
+  vars.is_weekend = !isBusinessDay ? 'yes' : 'no';
   
   // Calendar awareness — check if org has calendar connections (passed via metadata)
-  const hasCalendar = (metadata._has_calendar_connections as string) || 'unknown';
   vars.has_calendar_connections = hasCalendar;
+  vars.is_holiday = isHoliday ? 'yes' : 'no';
+  vars.allow_live_transfer = allowLiveTransfer;
+  vars.after_hours_action = afterHoursAction;
   
   // Business hours note — varies based on both time AND calendar availability
-  if (isWithinBusinessHours) {
+  if (!isAfterHours && !isHoliday) {
     vars.business_hours_note = hasCalendar === 'yes'
       ? `Business hours (${orgStart}-${orgEnd} ${tzLabel}). Recruiter transfer available. Calendar scheduling available.`
       : `Business hours (${orgStart}-${orgEnd} ${tzLabel}). No recruiter calendars connected.`;
   } else {
     vars.business_hours_note = hasCalendar === 'yes'
-      ? `After hours (${orgStart}-${orgEnd} ${tzLabel}). No live transfers. Calendar scheduling available.`
-      : `After hours (${orgStart}-${orgEnd} ${tzLabel}). No live transfers. Recruiter will call back next business day.`;
+      ? `${isHoliday ? 'Holiday' : 'After hours'} (${orgStart}-${orgEnd} ${tzLabel}). No live transfers. Use calendar scheduling for the next business day.`
+      : `${isHoliday ? 'Holiday' : 'After hours'} (${orgStart}-${orgEnd} ${tzLabel}). No live transfers. Recruiter will call back next business day.`;
   }
 
   // Trucking-specific job context inference
@@ -1598,8 +1707,6 @@ function buildDynamicVariables(
   vars.follow_up_attempt = (metadata._follow_up_attempt as string) || '0';
   vars.previous_call_outcome = (metadata._previous_call_outcome as string) || '';
   vars.previous_conversation_summary = (metadata._previous_conversation_summary as string) || '';
-  vars.is_holiday = (metadata._is_holiday as string) || 'no';
-
   // After-hours callback context — tells the agent this is a scheduled callback from a previous after-hours screening
   const isAfterHoursCallback = (metadata.is_after_hours_callback as boolean) || false;
   vars.is_after_hours_callback = isAfterHoursCallback ? 'yes' : 'no';
