@@ -38,7 +38,8 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
   const [isBGCHistoryOpen, setIsBGCHistoryOpen] = useState(false);
   const [isActivityTimelineOpen, setIsActivityTimelineOpen] = useState(true);
   const [isCommHistoryOpen, setIsCommHistoryOpen] = useState(false);
-  // Use zip code lookup for city and state display
+  const [isAttributionOpen, setIsAttributionOpen] = useState(false);
+  const [isRawPayloadOpen, setIsRawPayloadOpen] = useState(false);
   const { city: lookupCity, state: lookupState, isLoading: isLookingUp } = useZipCodeLookup(application.zip);
 
   // Get city and state with fallback logic
