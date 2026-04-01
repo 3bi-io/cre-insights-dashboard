@@ -296,8 +296,6 @@ async function syncClientFeed(
       }
 
       feedJobIds.add(jobId);
-      const location = job.city && job.state ? `${job.city}, ${job.state}` : 
-                      job.city || job.state || job.location || null;
 
       // For new jobs, we'll set apply_url after insert when we have the ID
       // For existing jobs, we'll update the apply_url during the update
