@@ -91,9 +91,10 @@ export const ApplicationsFilters = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="A">Class A (CDL + Exp)</SelectItem>
-            <SelectItem value="B">Class B (CDL, No Exp)</SelectItem>
-            <SelectItem value="C">Class C (No CDL)</SelectItem>
+            <SelectItem value="D">Experienced Driver (D)</SelectItem>
+            <SelectItem value="SC">New CDL Holder (SC)</SelectItem>
+            <SelectItem value="SR">Student Ready (SR)</SelectItem>
+            <SelectItem value="N/A">Uncategorized (N/A)</SelectItem>
           </SelectContent>
         </Select>
       </FilterSection>
