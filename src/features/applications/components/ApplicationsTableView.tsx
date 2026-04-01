@@ -331,6 +331,15 @@ export const ApplicationsTableView: React.FC<ApplicationsTableViewProps> = ({
                     </TableCell>
                   )}
 
+                  {/* Source */}
+                  {columnVisibility.source && (
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs" title={application.utm_source ? `UTM: ${application.utm_source}` : application.source || undefined}>
+                        {getSourceDisplay(application)}
+                      </Badge>
+                    </TableCell>
+                  )}
+
                   {/* Status */}
                   {columnVisibility.status && (
                     <TableCell>

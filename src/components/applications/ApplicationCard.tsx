@@ -135,6 +135,11 @@ const ApplicationCard = ({
                 <Calendar className="w-4 h-4 flex-shrink-0" />
                 <span className="text-xs">{new Date(application.applied_at).toLocaleDateString()}</span>
               </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs">
+                  {getSourceDisplay(application)}
+                </Badge>
+              </div>
             </div>
             
             {clientName && (

@@ -264,6 +264,92 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
 
           <Separator />
 
+          {/* Source & Attribution */}
+          <Collapsible open={isAttributionOpen} onOpenChange={setIsAttributionOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between px-0 hover:bg-transparent">
+                <span className="flex items-center gap-2 text-lg font-semibold">
+                  <Globe className="w-4 h-4" />
+                  Source & Attribution
+                </span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isAttributionOpen ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              {(() => {
+                const attribution = getAttributionSummary(application);
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Source</label>
+                      <p className="text-sm">{attribution.sourceLabel}</p>
+                    </div>
+                    {attribution.rawSource && attribution.rawSource !== attribution.sourceLabel && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Raw Source</label>
+                        <p className="text-sm font-mono text-xs">{attribution.rawSource}</p>
+                      </div>
+                    )}
+                    {attribution.utmSource && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">UTM Source</label>
+                        <p className="text-sm">{attribution.utmSource}</p>
+                      </div>
+                    )}
+                    {attribution.utmMedium && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">UTM Medium</label>
+                        <p className="text-sm">{attribution.utmMedium}</p>
+                      </div>
+                    )}
+                    {attribution.utmCampaign && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">UTM Campaign</label>
+                        <p className="text-sm">{attribution.utmCampaign}</p>
+                      </div>
+                    )}
+                    {attribution.referralSource && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Referral Source</label>
+                        <p className="text-sm">{attribution.referralSource}</p>
+                      </div>
+                    )}
+                    {attribution.howDidYouHear && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">How Did You Hear</label>
+                        <p className="text-sm">{attribution.howDidYouHear}</p>
+                      </div>
+                    )}
+                    {!attribution.hasAttribution && !attribution.rawSource && (
+                      <p className="text-sm text-muted-foreground col-span-2">No attribution data available</p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Raw Payload */}
+              {application.raw_payload && (
+                <div className="mt-4">
+                  <Collapsible open={isRawPayloadOpen} onOpenChange={setIsRawPayloadOpen}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <Code className="w-3 h-3" />
+                        {isRawPayloadOpen ? 'Hide' : 'Show'} Raw Payload
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-2">
+                      <pre className="text-xs bg-muted p-3 rounded-md overflow-auto max-h-64 font-mono">
+                        {JSON.stringify(application.raw_payload, null, 2)}
+                      </pre>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              )}
+            </CollapsibleContent>
+          </Collapsible>
+
+          <Separator />
+
           {/* Application Details */}
           <div>
             <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">

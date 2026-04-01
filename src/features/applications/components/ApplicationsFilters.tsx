@@ -43,6 +43,7 @@ export const ApplicationsFilters = ({
   onClientChange,
   clients = [],
   showClientFilter = false,
+  sourceOptions = [],
 }: ApplicationsFiltersProps) => {
   const isMobile = useIsMobile();
 
