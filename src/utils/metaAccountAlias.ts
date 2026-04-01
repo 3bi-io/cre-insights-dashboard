@@ -59,7 +59,7 @@ export const transformAccountDataForDisplay = <T extends MetaAccountData>(accoun
     ...account,
     account_id: getDisplayAccountId(account.account_id),
     // Update display name if it's the CR England account
-    account_name: account.account_id === '1594827328159714' 
+    account_name: account.account_id === '1686173129171496' 
       ? 'cre-25-0801' 
       : account.account_name
   };
