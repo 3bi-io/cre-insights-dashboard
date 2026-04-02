@@ -1,34 +1,42 @@
 
 
-## Plan: Update Meta Ad Account ID to 1686173129171496
+## Plan: Fix Job Title — Replace "CO" with "LP" for R.E. Garrison Jobs
 
 ### Problem
-The CR England Meta Ad Account ID is changing from `1594827328159714` to `1686173129171496`. This ID is hardcoded in 3 locations and referenced in the alias system. All references need updating, plus a database migration to update existing records.
+R.E. Garrison job titles from CDL JobCast arrive with "CO" (Company) prefix (e.g., "CO - Solo") but should display "LP" (Lease Purchase) since this is a Lease Purchase program. The `cdl-jobcast-inbound` endpoint stores raw feed titles without applying any title template or correction.
+
+### Root Cause
+Two sync paths handle R.E. Garrison jobs:
+1. **`sync-cdl-feeds`** — Has `CLIENT_TITLE_TEMPLATES` that overrides titles entirely, but the template produces a long marketing title, not the short code format.
+2. **`cdl-jobcast-inbound`** — Stores `job.title` verbatim (line 203), with no title correction at all.
+
+Neither path corrects "CO" → "LP" for the R.E. Garrison Lease Purchase program.
 
 ### Changes
 
-#### 1. Database Migration
-Update `account_id` across all Meta tables from `1594827328159714` to `1686173129171496`:
-- `meta_ad_accounts`
-- `meta_campaigns`
-- `meta_ad_sets`
-- `meta_ads`
-- `meta_daily_spend`
+#### 1. Add title correction map in both sync functions
+Add a client-specific title replacement map for R.E. Garrison that replaces "CO" with "LP" in job type prefixes:
 
-(Same pattern as the previous migration `20250917011454`)
+**`supabase/functions/sync-cdl-feeds/index.ts`**
+- After the title template logic (lines 314–322), add a replacement step: if the client is R.E. Garrison and the title starts with "CO", replace "CO" with "LP".
+- This handles cases where the title template is not applied (e.g., when state is missing).
 
-#### 2. `src/utils/metaAccountAlias.ts`
-- Update alias mapping: `'897639563274136': '1686173129171496'`
-- Update the hardcoded check on line 62 from `'1594827328159714'` to `'1686173129171496'`
+**`supabase/functions/cdl-jobcast-inbound/index.ts`**
+- Before building `jobData` (line 202), apply the same "CO" → "LP" replacement for R.E. Garrison's client ID.
 
-#### 3. `supabase/functions/meta-leads-cron/index.ts`
-- Update `CR_ENGLAND_ACCOUNT_ID` from `'1594827328159714'` to `'1686173129171496'`
+#### 2. Migration to fix existing job titles
+Run an UPDATE on `job_listings` to replace "CO" with "LP" at the start of titles for R.E. Garrison jobs that still have the wrong prefix.
 
-#### 4. `src/components/platforms/MetaPlatformActions.tsx`
-No code change needed — it derives the actual ID from `metaAccountAlias.ts` via `getActualAccountId()`.
+```sql
+UPDATE job_listings
+SET title = 'LP' || substring(title from 3),
+    updated_at = now()
+WHERE client_id = 'be8b645e-d480-4c22-8e75-b09a7fc1db7a'
+  AND title LIKE 'CO %';
+```
 
-### Files changed (2 code files + 1 migration)
-- `src/utils/metaAccountAlias.ts` — update alias mapping and display name check
-- `supabase/functions/meta-leads-cron/index.ts` — update hardcoded account ID
-- New migration — update all `account_id` values in Meta tables
+### Files changed (2 code + 1 migration)
+- `supabase/functions/sync-cdl-feeds/index.ts` — add "CO" → "LP" replacement after title template logic
+- `supabase/functions/cdl-jobcast-inbound/index.ts` — add "CO" → "LP" replacement before jobData construction
+- New migration — fix existing "CO" titles to "LP" for R.E. Garrison jobs
 
