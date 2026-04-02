@@ -1,40 +1,39 @@
 
 
-## Plan: Fix Missing Job Titles for R.E. Garrison Auto-Created Listings
+## Plan: Add Experience & Compliance Sections to Applicant Quick View
 
 ### Problem
-When inbound applications arrive via `hayes-client-handler.ts` for R.E. Garrison with a `job_id` that doesn't match an existing listing, the `application-processor.ts` creates a new listing with a fallback title of `Job {job_id}` (e.g., "Job 14558J14038"). This happens because no `jobTitle` is passed to `findOrCreateJobListing`. There are currently **14 job listings** with this problem.
-
-Additionally, `hayes-client-handler.ts` job sync (lines 177, 199) doesn't apply the CO→LP title fix that was added to `sync-cdl-feeds` and `cdl-jobcast-inbound`.
+The `ApplicantQuickView` sheet only shows contact info, stage, source, applied date, readiness score, ATS status, recruiter, and notes. It's missing CDL/experience details and compliance/background fields — data that exists in the `applications` table but isn't queried or rendered.
 
 ### Changes
 
-#### 1. Fix `hayes-client-handler.ts` — Pass proper title when creating listings
-In the `processApplication` function (line 258), pass the R.E. Garrison title template as `jobTitle` to `findOrCreateJobListing`, with state suffix if available:
-```
-jobTitle: "CDL-A Drivers: Top Tier Lease Purchase Program! $0 Down, No Credit Check!" + state suffix
-```
+#### 1. Update `useClientApplications` query to fetch missing fields
+**File:** `src/features/clients/hooks/useClientApplications.ts`
+- Add to the select: `cdl, cdl_class, cdl_state, cdl_endorsements, cdl_expiration_date, exp, driving_experience_years, months, violation_history, accident_history, convicted_felony, felony_details, can_pass_drug_test, can_pass_physical, background_check_consent, veteran, work_authorization, dot_physical_date, medical_card_expiration, hazmat_endorsement, twic_card`
+- Add corresponding fields to the `ClientApplication` interface
 
-#### 2. Fix `hayes-client-handler.ts` — Apply CO→LP in job sync
-In the `syncJobsFromFeed` function, apply the same CO→LP title replacement before writing to `job_listings` (lines 177 and 199), matching the fix in `sync-cdl-feeds`.
+#### 2. Add Experience section to `ApplicantQuickView`
+**File:** `src/features/clients/components/ats/ApplicantQuickView.tsx`
+- New **Experience** section after the Details Grid showing:
+  - CDL Class (e.g. "Class A")
+  - CDL State + expiration date
+  - Endorsements (as badges)
+  - Years of experience / months
+  - Veteran status
 
-#### 3. Fix existing data — Update 14 "Job %" titles
-Update the 14 R.E. Garrison listings with `title LIKE 'Job %'` to use the proper title template with their state:
-```sql
-UPDATE job_listings
-SET title = 'CDL-A Drivers: Top Tier Lease Purchase Program! $0 Down, No Credit Check! | ' || state,
-    updated_at = now()
-WHERE client_id = 'be8b645e-d480-4c22-8e75-b09a7fc1db7a'
-  AND title LIKE 'Job %'
-  AND state IS NOT NULL;
-```
+#### 3. Add Compliance section to `ApplicantQuickView`
+- New **Compliance** section after Experience showing:
+  - Drug test eligibility
+  - Physical eligibility
+  - Background check consent
+  - Violation history
+  - Accident history
+  - Felony status + details
+  - DOT physical / medical card dates
+  - HAZMAT / TWIC status
+- Each item rendered conditionally (only when data exists), with check/x icons for yes/no fields
 
-### Technical Detail
-- The title template is defined in `sync-cdl-feeds/index.ts` as `CLIENT_TITLE_TEMPLATES['be8b645e-...']`
-- The `findOrCreateJobListing` function in `application-processor.ts` accepts an optional `jobTitle` param — it just isn't being passed
-- Trigger suppression (`trg_google_indexing_notify`) needed for the data update per project conventions
-
-### Files changed (1 code file + 1 data update)
-- `supabase/functions/_shared/hayes-client-handler.ts` — pass `jobTitle` in `processApplication`, add CO→LP fix in `syncJobsFromFeed`
-- Data update via insert tool — fix 14 existing "Job %" titles
+### Files changed (2)
+- `src/features/clients/hooks/useClientApplications.ts` — expand query + interface
+- `src/features/clients/components/ats/ApplicantQuickView.tsx` — add Experience & Compliance sections
 
