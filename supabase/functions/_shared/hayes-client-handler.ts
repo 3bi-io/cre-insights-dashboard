@@ -271,10 +271,18 @@ async function processApplication(
   // Normalize phone
   const normalizedPhone = normalizePhone(data.phone);
   
+  // Build job title for auto-creation (R.E. Garrison uses title template)
+  let jobTitle: string | undefined;
+  if (config.clientId === RE_GARRISON_CLIENT_ID) {
+    const stateSuffix = data.state ? ` | ${data.state}` : '';
+    jobTitle = `${RE_GARRISON_TITLE_TEMPLATE}${stateSuffix}`;
+  }
+
   // Find or create job listing (scoped to this client)
   const jobResult = await findOrCreateJobListing(supabase, {
     jobListingId: data.job_listing_id,
     jobId: data.job_id,
+    jobTitle,
     organizationId: HAYES_ORG_ID,
     clientId: config.clientId,
     city: data.city,
