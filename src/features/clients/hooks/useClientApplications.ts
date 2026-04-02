@@ -80,6 +80,12 @@ export function useClientApplications(clientId: string | null) {
           status, source, applied_at, created_at, updated_at,
           ats_readiness_score, city, state, notes, recruiter_id,
           first_response_at, tenstreet_sync_status, driverreach_sync_status,
+          cdl, cdl_class, cdl_state, cdl_endorsements, cdl_expiration_date,
+          exp, driving_experience_years, months,
+          violation_history, accident_history, convicted_felony, felony_details,
+          can_pass_drug_test, can_pass_physical, background_check_consent,
+          veteran, work_authorization, dot_physical_date, medical_card_expiration,
+          hazmat_endorsement, twic_card,
           job_listings(id, title, job_title),
           recruiters(id, first_name, last_name)
         `)
