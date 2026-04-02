@@ -199,8 +199,14 @@ async function handleJobsImport(
           ? generateApplyUrl(existingJobId, clientName, utmParams)
           : null; // Will be updated after insert
 
+        // Fix R.E. Garrison titles: replace "CO" prefix with "LP" (Lease Purchase)
+        let finalTitle = (job.title as string) || 'Untitled Position';
+        if (clientId === 'be8b645e-d480-4c22-8e75-b09a7fc1db7a' && finalTitle.startsWith('CO ')) {
+          finalTitle = 'LP' + finalTitle.substring(2);
+        }
+
         const jobData = {
-          title: (job.title as string) || 'Untitled Position',
+          title: finalTitle,
           job_summary: (job.description as string) || null,
           location,
           city: (job.city as string) || null,
