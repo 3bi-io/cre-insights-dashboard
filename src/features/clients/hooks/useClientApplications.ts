@@ -22,6 +22,27 @@ export interface ClientApplication {
   first_response_at: string | null;
   tenstreet_sync_status: string | null;
   driverreach_sync_status: string | null;
+  cdl: string | null;
+  cdl_class: string | null;
+  cdl_state: string | null;
+  cdl_endorsements: string[] | null;
+  cdl_expiration_date: string | null;
+  exp: string | null;
+  driving_experience_years: number | null;
+  months: string | null;
+  violation_history: string | null;
+  accident_history: string | null;
+  convicted_felony: string | null;
+  felony_details: string | null;
+  can_pass_drug_test: string | null;
+  can_pass_physical: string | null;
+  background_check_consent: string | null;
+  veteran: string | null;
+  work_authorization: string | null;
+  dot_physical_date: string | null;
+  medical_card_expiration: string | null;
+  hazmat_endorsement: string | null;
+  twic_card: string | null;
   job_listings: {
     id: string;
     title: string | null;
