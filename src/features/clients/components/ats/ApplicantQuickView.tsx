@@ -169,6 +169,144 @@ const ApplicantQuickView: React.FC<ApplicantQuickViewProps> = ({
             </Card>
           </div>
 
+          {/* Experience */}
+          {(application.cdl_class || application.driving_experience_years != null || (application.cdl_endorsements && application.cdl_endorsements.length > 0)) && (
+            <>
+              <Separator />
+              <div>
+                <h4 className="text-sm font-medium mb-3 flex items-center gap-1.5">
+                  <Truck className="w-4 h-4" /> Experience
+                </h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  {application.cdl_class && (
+                    <div>
+                      <span className="text-muted-foreground text-xs">CDL Class</span>
+                      <p className="font-medium">{application.cdl_class}</p>
+                    </div>
+                  )}
+                  {application.cdl_state && (
+                    <div>
+                      <span className="text-muted-foreground text-xs">CDL State</span>
+                      <p className="font-medium">{application.cdl_state}</p>
+                    </div>
+                  )}
+                  {application.cdl_expiration_date && (
+                    <div>
+                      <span className="text-muted-foreground text-xs">CDL Expires</span>
+                      <p className="font-medium">{format(new Date(application.cdl_expiration_date), 'MMM d, yyyy')}</p>
+                    </div>
+                  )}
+                  {application.driving_experience_years != null && (
+                    <div>
+                      <span className="text-muted-foreground text-xs">Experience</span>
+                      <p className="font-medium">{application.driving_experience_years} yr{application.driving_experience_years !== 1 ? 's' : ''}</p>
+                    </div>
+                  )}
+                  {application.veteran && (
+                    <div>
+                      <span className="text-muted-foreground text-xs">Veteran</span>
+                      <p className="font-medium">{application.veteran}</p>
+                    </div>
+                  )}
+                </div>
+                {application.cdl_endorsements && application.cdl_endorsements.length > 0 && (
+                  <div className="mt-2">
+                    <span className="text-muted-foreground text-xs">Endorsements</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {application.cdl_endorsements.map((e) => (
+                        <Badge key={e} variant="secondary" className="text-xs">{e}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Compliance */}
+          {(application.can_pass_drug_test || application.can_pass_physical || application.background_check_consent || application.violation_history || application.accident_history || application.convicted_felony || application.dot_physical_date || application.hazmat_endorsement || application.twic_card) && (
+            <>
+              <Separator />
+              <div>
+                <h4 className="text-sm font-medium mb-3 flex items-center gap-1.5">
+                  <Shield className="w-4 h-4" /> Compliance
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {application.can_pass_drug_test && (
+                    <div className="flex items-center gap-1.5">
+                      {application.can_pass_drug_test.toLowerCase() === 'yes' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <XCircle className="w-3.5 h-3.5 text-red-500" />}
+                      <span>Drug Test</span>
+                    </div>
+                  )}
+                  {application.can_pass_physical && (
+                    <div className="flex items-center gap-1.5">
+                      {application.can_pass_physical.toLowerCase() === 'yes' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <XCircle className="w-3.5 h-3.5 text-red-500" />}
+                      <span>Physical</span>
+                    </div>
+                  )}
+                  {application.background_check_consent && (
+                    <div className="flex items-center gap-1.5">
+                      {application.background_check_consent.toLowerCase() === 'yes' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <XCircle className="w-3.5 h-3.5 text-red-500" />}
+                      <span>Background Check</span>
+                    </div>
+                  )}
+                  {application.convicted_felony && (
+                    <div className="flex items-center gap-1.5">
+                      {application.convicted_felony.toLowerCase() === 'no' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <XCircle className="w-3.5 h-3.5 text-red-500" />}
+                      <span>No Felony</span>
+                    </div>
+                  )}
+                  {application.hazmat_endorsement && (
+                    <div className="flex items-center gap-1.5">
+                      {application.hazmat_endorsement.toLowerCase() === 'yes' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <XCircle className="w-3.5 h-3.5 text-muted-foreground" />}
+                      <span>HAZMAT</span>
+                    </div>
+                  )}
+                  {application.twic_card && (
+                    <div className="flex items-center gap-1.5">
+                      {application.twic_card.toLowerCase() === 'yes' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <XCircle className="w-3.5 h-3.5 text-muted-foreground" />}
+                      <span>TWIC Card</span>
+                    </div>
+                  )}
+                </div>
+                {(application.dot_physical_date || application.medical_card_expiration) && (
+                  <div className="grid grid-cols-2 gap-3 mt-3 text-sm">
+                    {application.dot_physical_date && (
+                      <div>
+                        <span className="text-muted-foreground text-xs">DOT Physical</span>
+                        <p className="font-medium">{format(new Date(application.dot_physical_date), 'MMM d, yyyy')}</p>
+                      </div>
+                    )}
+                    {application.medical_card_expiration && (
+                      <div>
+                        <span className="text-muted-foreground text-xs">Medical Card Exp</span>
+                        <p className="font-medium">{format(new Date(application.medical_card_expiration), 'MMM d, yyyy')}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {application.violation_history && (
+                  <div className="mt-2">
+                    <span className="text-muted-foreground text-xs">Violations</span>
+                    <p className="text-sm mt-0.5">{application.violation_history}</p>
+                  </div>
+                )}
+                {application.accident_history && (
+                  <div className="mt-2">
+                    <span className="text-muted-foreground text-xs">Accidents</span>
+                    <p className="text-sm mt-0.5">{application.accident_history}</p>
+                  </div>
+                )}
+                {application.felony_details && (
+                  <div className="mt-2">
+                    <span className="text-muted-foreground text-xs">Felony Details</span>
+                    <p className="text-sm mt-0.5">{application.felony_details}</p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
           {/* Recruiter */}
           {application.recruiters && (
             <>
