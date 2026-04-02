@@ -170,6 +170,8 @@ async function syncJobsFromFeed(
   const utmCampaign = config.utmCampaign || config.clientSlug;
   
   for (const job of jobs) {
+      // Apply client-specific title corrections (e.g., CO→LP for R.E. Garrison)
+      job.title = applyTitleCorrections(job.title, config.clientId);
     try {
       // Check if job exists
       const { data: existingJob } = await supabase
