@@ -17,6 +17,21 @@ import { autoPostToATS } from './ats-adapters/auto-post-engine.ts';
 // Hayes organization ID
 const HAYES_ORG_ID = '84214b48-7b51-45bc-ad7f-723bcf50466c';
 
+// R.E. Garrison client ID and title template
+const RE_GARRISON_CLIENT_ID = 'be8b645e-d480-4c22-8e75-b09a7fc1db7a';
+const RE_GARRISON_TITLE_TEMPLATE = 'CDL-A Drivers: Top Tier Lease Purchase Program! $0 Down, No Credit Check!';
+
+/**
+ * Apply client-specific title corrections:
+ * - R.E. Garrison: Replace "CO " prefix with "LP " (Lease Purchase program)
+ */
+function applyTitleCorrections(title: string, clientId: string): string {
+  if (clientId === RE_GARRISON_CLIENT_ID && title.startsWith('CO ')) {
+    return 'LP ' + title.slice(3);
+  }
+  return title;
+}
+
 /**
  * Configuration for a Hayes client endpoint
  */
@@ -155,6 +170,8 @@ async function syncJobsFromFeed(
   const utmCampaign = config.utmCampaign || config.clientSlug;
   
   for (const job of jobs) {
+      // Apply client-specific title corrections (e.g., CO→LP for R.E. Garrison)
+      job.title = applyTitleCorrections(job.title, config.clientId);
     try {
       // Check if job exists
       const { data: existingJob } = await supabase
@@ -254,10 +271,18 @@ async function processApplication(
   // Normalize phone
   const normalizedPhone = normalizePhone(data.phone);
   
+  // Build job title for auto-creation (R.E. Garrison uses title template)
+  let jobTitle: string | undefined;
+  if (config.clientId === RE_GARRISON_CLIENT_ID) {
+    const stateSuffix = data.state ? ` | ${data.state}` : '';
+    jobTitle = `${RE_GARRISON_TITLE_TEMPLATE}${stateSuffix}`;
+  }
+
   // Find or create job listing (scoped to this client)
   const jobResult = await findOrCreateJobListing(supabase, {
     jobListingId: data.job_listing_id,
     jobId: data.job_id,
+    jobTitle,
     organizationId: HAYES_ORG_ID,
     clientId: config.clientId,
     city: data.city,
