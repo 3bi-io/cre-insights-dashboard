@@ -321,6 +321,11 @@ async function syncClientFeed(
         finalTitle = titleTemplate;
       }
 
+      // Fix R.E. Garrison titles: replace "CO" prefix with "LP" (Lease Purchase)
+      if (feed.clientId === 'be8b645e-d480-4c22-8e75-b09a7fc1db7a' && finalTitle.startsWith('CO ')) {
+        finalTitle = 'LP' + finalTitle.substring(2);
+      }
+
       const jobData = {
         title: finalTitle,
         job_summary: job.description || null,
