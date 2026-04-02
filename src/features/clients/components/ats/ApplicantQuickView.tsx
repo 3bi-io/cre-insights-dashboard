@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import {
   User, Mail, Phone, MapPin, Calendar, Briefcase, ArrowRight,
-  CheckCircle2, Send, ExternalLink,
+  CheckCircle2, Send, ExternalLink, Shield, Truck, XCircle,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { STAGES, getSourceStyle, getStageConfig } from './stageConfig';
