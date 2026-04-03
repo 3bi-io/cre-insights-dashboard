@@ -1,44 +1,30 @@
 
 
-## Plan: Fix `resolveTrackingLinkId` to Handle Native JSON Arrays
+## Plan: Retry 4 Failed Double Nickel Deliveries
 
-### Problem
-The `resolveTrackingLinkId` method (line 645) only checks `typeof rawIds === 'string'`. When `tracking_link_ids` is stored as a native JSON array (already parsed by Supabase's JSONB handling), the check fails and falls through to the legacy fallback, returning an empty string. Double Nickel rejects the empty `trackingLinkId` with "Invalid request body".
+### Context
+The `resolveTrackingLinkId` fix has been applied but the edge function needs to be redeployed before retrying. Once deployed, we retry each failed application via the existing `ats-integration` edge function's `send_application` action.
 
-### Change
+### Steps
 
-**File:** `supabase/functions/_shared/ats-adapters/rest-json-adapter.ts` (lines 642-658)
+#### 1. Deploy the updated `ats-integration` edge function
+The fix is in the shared adapter code used by this function. Deploy it so the tracking link resolution works correctly.
 
-Update `resolveTrackingLinkId` to handle three cases:
-1. **Already an array** — use first element directly
-2. **JSON string** — parse and use first element (existing behavior)
-3. **Plain string** — use as-is (existing behavior)
-4. **Fallback** — legacy `trackingLinkId` / `tracking_link_id`
+#### 2. Retry each failed application
+Call the `ats-integration` edge function 4 times with `action: 'send_application'` for each application ID against connection `b531dbe2-278c-47b7-a39b-f951d3e3d6cc`:
+- `a8d92b5a-a947-42e7-ace5-3e0e6d547bcc` (Randy Henderson)
+- `f0516cc6-c716-4602-b655-fd44632396c0` (Jen Wessell)
+- `839ffe77-7335-47b6-a864-4a33dc32b073` (K m)
+- `b92721d6-85c5-479a-b5be-f6c6921015ff` (Christopher J)
 
-```typescript
-private resolveTrackingLinkId(creds: Record<string, unknown>): string {
-  const rawIds = creds.tracking_link_ids;
-  if (rawIds) {
-    // Already a parsed array (native JSONB)
-    if (Array.isArray(rawIds) && rawIds.length > 0) {
-      return String(rawIds[0]);
-    }
-    // JSON array string
-    if (typeof rawIds === 'string') {
-      try {
-        const parsed = JSON.parse(rawIds);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return String(parsed[0]);
-        }
-      } catch {
-        return String(rawIds);
-      }
-    }
-  }
-  return String(creds.trackingLinkId || creds.tracking_link_id || '');
-}
-```
+#### 3. Verify results
+Check the `ats_sync_logs` table for new entries to confirm each retry succeeded.
 
-### Files changed (1)
-- `supabase/functions/_shared/ats-adapters/rest-json-adapter.ts` — add `Array.isArray` check before the string check
+### Technical details
+- Uses existing `supabase.functions.invoke('ats-integration', { body: { action: 'send_application', connection_id, application_id } })`
+- No code changes needed — only deployment + invocation
+- The fix in `rest-json-adapter.ts` (Array.isArray check) will now correctly resolve the tracking link ID from the JSONB array
+
+### Files changed: 0
+This is an operational task (deploy + invoke), no code changes required.
 
