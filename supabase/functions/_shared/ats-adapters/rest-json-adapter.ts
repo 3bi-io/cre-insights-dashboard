@@ -664,13 +664,15 @@ export class RESTJSONAdapter extends BaseATSAdapter {
 
   private buildDoubleNickelPayload(app: ApplicationData): Record<string, unknown> {
     const creds = this.credentials;
+    // Validate zip — exclude masked/invalid values
+    const zip = app.zip && /^\d{5}(-\d{4})?$/.test(app.zip) ? app.zip : undefined;
     return {
       firstName: app.first_name,
       middleName: app.middle_name || undefined,
       lastName: app.last_name,
       phone: this.formatPhone(app.phone),
       email: app.applicant_email || app.email,
-      zipCode: app.zip || undefined,
+      zipCode: zip,
       cdlExperience: app.driving_experience_years != null
         ? Number(app.driving_experience_years)
         : undefined,
