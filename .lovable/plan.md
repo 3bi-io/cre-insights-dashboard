@@ -1,12 +1,44 @@
 
 
-## Plan: Update X/Twitter Handle from `applyai_jobs` to `applyai_x`
+## Plan: Fix `resolveTrackingLinkId` to Handle Native JSON Arrays
 
-### Changes (3 files)
+### Problem
+The `resolveTrackingLinkId` method (line 645) only checks `typeof rawIds === 'string'`. When `tracking_link_ids` is stored as a native JSON array (already parsed by Supabase's JSONB handling), the check fails and falls through to the legacy fallback, returning an empty string. Double Nickel rejects the empty `trackingLinkId` with "Invalid request body".
 
-1. **`src/components/SEO.tsx`** — Update default `twitterSite` and `twitterCreator` props from `@applyai_jobs` to `@applyai_x`
+### Change
 
-2. **`src/components/public/PublicFooter.tsx`** — Update X link href from `https://x.com/applyai_jobs` to `https://x.com/applyai_x`
+**File:** `supabase/functions/_shared/ats-adapters/rest-json-adapter.ts` (lines 642-658)
 
-3. **`src/pages/public/LandingPage.tsx`** — Update structured data (JSON-LD) `sameAs` URL from `https://x.com/applyai_jobs` to `https://x.com/applyai_x`
+Update `resolveTrackingLinkId` to handle three cases:
+1. **Already an array** — use first element directly
+2. **JSON string** — parse and use first element (existing behavior)
+3. **Plain string** — use as-is (existing behavior)
+4. **Fallback** — legacy `trackingLinkId` / `tracking_link_id`
+
+```typescript
+private resolveTrackingLinkId(creds: Record<string, unknown>): string {
+  const rawIds = creds.tracking_link_ids;
+  if (rawIds) {
+    // Already a parsed array (native JSONB)
+    if (Array.isArray(rawIds) && rawIds.length > 0) {
+      return String(rawIds[0]);
+    }
+    // JSON array string
+    if (typeof rawIds === 'string') {
+      try {
+        const parsed = JSON.parse(rawIds);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return String(parsed[0]);
+        }
+      } catch {
+        return String(rawIds);
+      }
+    }
+  }
+  return String(creds.trackingLinkId || creds.tracking_link_id || '');
+}
+```
+
+### Files changed (1)
+- `supabase/functions/_shared/ats-adapters/rest-json-adapter.ts` — add `Array.isArray` check before the string check
 
