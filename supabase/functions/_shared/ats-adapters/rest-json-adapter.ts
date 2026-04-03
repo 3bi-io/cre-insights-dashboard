@@ -640,20 +640,25 @@ export class RESTJSONAdapter extends BaseATSAdapter {
   }
 
   private resolveTrackingLinkId(creds: Record<string, unknown>): string {
-    // Priority 1: New multi-value tracking_link_ids (JSON array string)
     const rawIds = creds.tracking_link_ids;
-    if (rawIds && typeof rawIds === 'string') {
-      try {
-        const parsed = JSON.parse(rawIds);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return String(parsed[0]);
+    if (rawIds) {
+      // Already a parsed array (native JSONB)
+      if (Array.isArray(rawIds) && rawIds.length > 0) {
+        return String(rawIds[0]);
+      }
+      // JSON array string
+      if (typeof rawIds === 'string') {
+        try {
+          const parsed = JSON.parse(rawIds);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return String(parsed[0]);
+          }
+        } catch {
+          return String(rawIds);
         }
-      } catch {
-        // Not valid JSON, treat as single value
-        return String(rawIds);
       }
     }
-    // Priority 2: Legacy single trackingLinkId
+    // Legacy single trackingLinkId
     return String(creds.trackingLinkId || creds.tracking_link_id || '');
   }
 
