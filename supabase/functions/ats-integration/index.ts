@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
   try {
     const supabase = getServiceClient();
 
-    // Require authentication
+    // Require authentication — support service-role for internal retries
     const authHeader = req.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(
@@ -41,17 +41,27 @@ Deno.serve(async (req) => {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const userClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } }
-    });
-    const { data: { user }, error: authError } = await userClient.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Invalid or expired token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const isServiceRole = token === serviceRoleKey;
+    let userId: string;
+
+    if (isServiceRole) {
+      // Service-role bypass for internal/admin retries
+      userId = 'service-role';
+      logger.info('Service-role invocation');
+    } else {
+      const userClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+        global: { headers: { Authorization: authHeader } }
+      });
+      const { data: { user }, error: authError } = await userClient.auth.getUser(token);
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Invalid or expired token' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      userId = user.id;
     }
-    const userId: string = user.id;
 
     // Parse request
     const request: ATSRequest = await req.json();
@@ -85,18 +95,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Verify user belongs to the connection's organization
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('organization_id')
-      .eq('id', userId)
-      .single();
+    // Verify user belongs to the connection's organization (skip for service-role)
+    if (!isServiceRole) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', userId)
+        .single();
 
-    if (!profile || profile.organization_id !== connection.organization_id) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Forbidden: organization mismatch' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      if (!profile || profile.organization_id !== connection.organization_id) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Forbidden: organization mismatch' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     const system = connection.ats_system as ATSSystem;
