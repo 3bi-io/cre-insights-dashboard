@@ -702,6 +702,7 @@ export class RESTJSONAdapter extends BaseATSAdapter {
       const body = this.buildDoubleNickelPayload(app);
 
       this.log('info', 'Sending application to Double Nickel', { endpoint: url, application_id: app.id });
+      this.log('info', 'Double Nickel payload', { payload: JSON.stringify(body) });
 
       const response = await this.executeWithRetry(
         async () => fetch(url, { method: 'POST', headers, body: JSON.stringify(body) }),
