@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
       }
 
       const recruiterName = escapeHtml(profile.full_name?.split(' ')[0] || 'Recruiter');
-      const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+      const dateStr = new Date(`${centralDate}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: DEFAULT_TIMEZONE });
 
       const callRows = recruiterCallbacks.map(cb => {
         const time = new Date(cb.scheduled_start).toLocaleTimeString('en-US', {
