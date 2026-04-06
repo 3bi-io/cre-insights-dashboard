@@ -1,5 +1,8 @@
-// Admin retry function for failed ATS deliveries — uses service role internally
+// Admin retry function for failed ATS deliveries — requires super_admin role
 import { getServiceClient } from '../_shared/supabase-client.ts';
+import { verifyUserRole } from '../_shared/auth.ts';
+import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-config.ts';
+import { enforceRateLimit, getRateLimitIdentifier } from '../_shared/rate-limiter.ts';
 import { createATSAdapter } from '../_shared/ats-adapters/index.ts';
 import { enrichWithTranscript } from '../_shared/ats-adapters/transcript-enrichment.ts';
 import { createLogger } from '../_shared/logger.ts';
@@ -7,17 +10,21 @@ import type { ApplicationData } from '../_shared/ats-adapters/types.ts';
 
 const logger = createLogger('ats-retry');
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflightResponse = handleCorsPreflightIfNeeded(req);
+  if (preflightResponse) return preflightResponse;
+
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
 
   try {
+    // Verify caller is super_admin
+    await verifyUserRole(req, 'super_admin');
+
+    // Rate limit: 10 retries per minute per user
+    const identifier = getRateLimitIdentifier(req, true);
+    await enforceRateLimit(identifier, { maxRequests: 10, windowMs: 60000, keyPrefix: 'ats-retry' });
+
     const supabase = getServiceClient();
     const { connection_id, application_id } = await req.json();
 
@@ -76,17 +83,15 @@ Deno.serve(async (req) => {
       activeMapping as any
     );
 
-    // Prepare application data
+    // Prepare application data and enrich with transcript
     const appData: ApplicationData = application as any;
-    
-    // Enrich with transcript if available
-    const enrichedData = await enrichWithTranscript(supabase, appData);
+    const enrichedData = await enrichWithTranscript(supabase, appData) as ApplicationData;
 
     // Send to ATS
     const result = await adapter.sendApplication(enrichedData);
 
-    // Log sync result
-    await supabase.from('ats_sync_logs').insert({
+    // Log sync result with error checking
+    const { error: logError } = await supabase.from('ats_sync_logs').insert({
       ats_connection_id: connection_id,
       application_id,
       action: 'send_application',
@@ -95,11 +100,19 @@ Deno.serve(async (req) => {
       error_message: result.error || null,
     });
 
-    // Update sync stats
-    await supabase.rpc('increment_ats_sync_stats', {
+    if (logError) {
+      logger.warn('Failed to insert sync log', { error: logError.message, application_id });
+    }
+
+    // Update sync stats with error checking
+    const { error: statsError } = await supabase.rpc('increment_ats_sync_stats', {
       p_connection_id: connection_id,
       p_success: result.success,
     });
+
+    if (statsError) {
+      logger.warn('Failed to increment sync stats', { error: statsError.message, connection_id });
+    }
 
     return new Response(
       JSON.stringify(result),
@@ -109,7 +122,7 @@ Deno.serve(async (req) => {
     logger.error('Retry failed', error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: error.message?.includes('Unauthorized') || error.message?.includes('Forbidden') ? 403 : 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
