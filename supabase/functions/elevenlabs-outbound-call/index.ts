@@ -10,6 +10,7 @@ import { getServiceClient } from "../_shared/supabase-client.ts";
 import { detectVoicemail } from "../_shared/voicemail-detection.ts";
 import { sendVoicemailVerificationSms } from "../_shared/sms-verification.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { DEFAULT_TIMEZONE } from "../_shared/constants.ts";
 
 const logger = createLogger('elevenlabs-outbound-call');
 

@@ -11,6 +11,7 @@ import { getServiceClient } from '../_shared/supabase-client.ts';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-config.ts';
 import { getSender } from '../_shared/email-config.ts';
 import { createLogger } from '../_shared/logger.ts';
+import { DEFAULT_TIMEZONE } from '../_shared/constants.ts';
 
 const logger = createLogger('morning-digest');
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || '';

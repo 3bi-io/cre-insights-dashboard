@@ -12,6 +12,7 @@
 import { getServiceClient } from '../_shared/supabase-client.ts';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-config.ts';
 import { createLogger } from '../_shared/logger.ts';
+import { DEFAULT_TIMEZONE } from '../_shared/constants.ts';
 
 const logger = createLogger('agent-scheduling');
 
