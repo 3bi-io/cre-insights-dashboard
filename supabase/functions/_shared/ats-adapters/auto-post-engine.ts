@@ -9,6 +9,7 @@ import { enrichWithTranscript } from './transcript-enrichment.ts';
 import { calculateReadinessScore } from './readiness-scorer.ts';
 import type { ATSSystem, ATSConnection, FieldMapping, ApplicationData, ATSResponse } from './types.ts';
 import { createLogger } from '../logger.ts';
+import { isDoubleNickelAllowed, DOUBLENICKEL_SLUG } from '../ats-constants.ts';
 
 const logger = createLogger('auto-post-engine');
 
