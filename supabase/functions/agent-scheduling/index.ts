@@ -466,7 +466,7 @@ async function handleBookCallback(
   const supabase = getServiceClient();
   const { data: prefs } = await supabase
     .from('recruiter_availability_preferences')
-    .select('default_call_duration_minutes, auto_accept_bookings, max_daily_callbacks')
+    .select('default_call_duration_minutes, auto_accept_bookings, max_daily_callbacks, timezone')
     .eq('user_id', recruiter_user_id)
     .maybeSingle();
 
