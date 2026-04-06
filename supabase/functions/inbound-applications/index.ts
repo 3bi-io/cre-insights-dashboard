@@ -1078,8 +1078,8 @@ const handler = async (req: Request): Promise<Response> => {
       phone: normalizePhone(applicationData.phone),
       
       city: applicationData.city,
-      state: applicationData.state,
-      zip: applicationData.zip,
+      state: normalizeState(applicationData.state),
+      zip: sanitizeZip(applicationData.zip),
       address_1: applicationData.address_1,
       address_2: applicationData.address_2,
       country: applicationData.country,
