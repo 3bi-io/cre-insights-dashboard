@@ -43,6 +43,7 @@ export interface ClientApplication {
   medical_card_expiration: string | null;
   hazmat_endorsement: string | null;
   twic_card: string | null;
+  raw_payload: Record<string, unknown> | null;
   job_listings: {
     id: string;
     title: string | null;
