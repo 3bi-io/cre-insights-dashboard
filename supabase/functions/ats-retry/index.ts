@@ -6,6 +6,7 @@ import { enforceRateLimit, getRateLimitIdentifier } from '../_shared/rate-limite
 import { createATSAdapter } from '../_shared/ats-adapters/index.ts';
 import { enrichWithTranscript } from '../_shared/ats-adapters/transcript-enrichment.ts';
 import { createLogger } from '../_shared/logger.ts';
+import { isDoubleNickelAllowed } from '../_shared/ats-constants.ts';
 import type { ApplicationData } from '../_shared/ats-adapters/types.ts';
 
 const logger = createLogger('ats-retry');
