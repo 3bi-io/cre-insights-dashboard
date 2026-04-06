@@ -1,4 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('syndication-push');
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
