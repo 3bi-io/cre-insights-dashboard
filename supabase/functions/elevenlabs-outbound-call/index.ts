@@ -265,27 +265,13 @@ if (import.meta.main) {
           if (elStatus === 'done' || elStatus === 'ended') {
             durationSeconds = convData.metadata?.call_duration_secs || null;
             
-            // --- Voicemail Detection (two-pronged) ---
-            // 1. Check if ElevenLabs voicemail_detection tool was triggered
+            // --- Voicemail Detection (shared utility) ---
             const toolCalls = convData.analysis?.tool_calls || [];
-            const vmToolTriggered = Array.isArray(toolCalls) && toolCalls.some(
-              (tc: Record<string, unknown>) => tc.tool_name === 'voicemail_detection' || tc.name === 'voicemail_detection'
-            );
-            
-            // 2. Transcript-based fallback: scan for voicemail indicator phrases
             const transcriptText = Array.isArray(convData.transcript)
-              ? convData.transcript.map((t: Record<string, unknown>) => String(t.message || '')).join(' ').toLowerCase()
+              ? convData.transcript.map((t: Record<string, unknown>) => String(t.message || '')).join(' ')
               : '';
-            const vmPhrases = [
-              'leave a message', 'leave your message', 'after the tone', 'after the beep',
-              'not available', 'unavailable right now', 'please record your message',
-              'voicemail', 'mailbox', 'press one', 'press 1 for',
-              'at the tone', 'cannot take your call', 'can\'t come to the phone',
-              'not able to take', 'record a message', 'leave your name',
-            ];
-            const vmTranscriptMatch = vmPhrases.some(phrase => transcriptText.includes(phrase));
-            
-            voicemailDetected = vmToolTriggered || vmTranscriptMatch;
+            const vmResult = detectVoicemail(toolCalls, transcriptText);
+            voicemailDetected = vmResult.detected;
             
             // If call ended with 0 or no duration, driver didn't answer
             if (!durationSeconds || durationSeconds <= 0) {
