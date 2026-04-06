@@ -280,7 +280,7 @@ if (import.meta.main) {
             } else if (voicemailDetected) {
               // Voicemail detected regardless of duration — mark as no_answer
               mappedStatus = 'no_answer';
-              logger.info(`Call ${call.id} voicemail detected (tool: ${vmToolTriggered}, transcript: ${vmTranscriptMatch}, duration: ${durationSeconds}s) - marking as no_answer`);
+              logger.info(`Call ${call.id} voicemail detected (tool: ${vmResult.toolTriggered}, transcript: ${vmResult.transcriptMatch}, duration: ${durationSeconds}s) - marking as no_answer`);
             } else {
               mappedStatus = 'completed';
             }
