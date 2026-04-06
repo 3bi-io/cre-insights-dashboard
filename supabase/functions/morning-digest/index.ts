@@ -2,7 +2,8 @@
  * Morning Digest Edge Function
  * 
  * Sends daily email digest to recruiters with their AI-scheduled callbacks.
- * Designed to run as a cron job at 7:30 AM CST (13:30 UTC).
+ * Designed to run as a cron job at 7:30 AM CDT (12:30 UTC).
+ * During CST (winter) this fires at 6:30 AM — acceptable seasonal drift.
  * 
  * Can also be triggered manually with action: 'send_digest' or 'preview'
  */
@@ -60,10 +61,21 @@ Deno.serve(async (req) => {
     }
 
     const supabase = getServiceClient();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Derive "today" in Central time, then build UTC boundaries for the query.
+    // This ensures late-evening Central callbacks aren't missed by a UTC-midnight boundary.
+    const centralDate = new Intl.DateTimeFormat('en-CA', {
+      timeZone: DEFAULT_TIMEZONE,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date()); // e.g. "2026-04-06"
+
+    // Construct Central midnight → next Central midnight as UTC timestamps
+    const today = new Date(`${centralDate}T00:00:00`);
+    const todayUtc = new Date(today.toLocaleString('en-US', { timeZone: DEFAULT_TIMEZONE }));
+    // Use Temporal-safe approach: offset = local-representation minus UTC-representation
+    const offsetMs = today.getTime() - todayUtc.getTime();
+    const dayStartUtc = new Date(today.getTime() + offsetMs);
+    const dayEndUtc = new Date(dayStartUtc.getTime() + 24 * 60 * 60 * 1000);
 
     let query = supabase
       .from('scheduled_callbacks')
@@ -71,8 +83,8 @@ Deno.serve(async (req) => {
         *,
         recruiter_calendar_connections!calendar_connection_id(email)
       `)
-      .gte('scheduled_start', today.toISOString())
-      .lt('scheduled_start', tomorrow.toISOString())
+      .gte('scheduled_start', dayStartUtc.toISOString())
+      .lt('scheduled_start', dayEndUtc.toISOString())
       .in('status', ['pending', 'confirmed'])
       .eq('digest_email_sent', false)
       .order('scheduled_start', { ascending: true });
@@ -129,7 +141,7 @@ Deno.serve(async (req) => {
       }
 
       const recruiterName = escapeHtml(profile.full_name?.split(' ')[0] || 'Recruiter');
-      const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+      const dateStr = new Date(`${centralDate}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: DEFAULT_TIMEZONE });
 
       const callRows = recruiterCallbacks.map(cb => {
         const time = new Date(cb.scheduled_start).toLocaleTimeString('en-US', {
