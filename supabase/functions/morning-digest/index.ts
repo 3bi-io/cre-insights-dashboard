@@ -93,8 +93,12 @@ Deno.serve(async (req) => {
       .gte('scheduled_start', dayStartUtc.toISOString())
       .lt('scheduled_start', dayEndUtc.toISOString())
       .in('status', ['pending', 'confirmed'])
-      .eq('digest_email_sent', false)
       .order('scheduled_start', { ascending: true });
+
+    // In preview mode, include already-digested callbacks for historical testing
+    if (action !== 'preview') {
+      query = query.eq('digest_email_sent', false);
+    }
 
     if (targetUserId) {
       query = query.eq('recruiter_user_id', targetUserId);
