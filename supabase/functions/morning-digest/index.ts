@@ -50,10 +50,17 @@ Deno.serve(async (req) => {
     let action = 'send_digest';
     let targetUserId: string | null = null;
 
+    let previewDate: string | null = null;
+
     if (req.method === 'POST') {
       const body = await req.json().catch(() => ({}));
       action = body.action || 'send_digest';
       targetUserId = body.userId || null;
+      previewDate = body.previewDate || null;
+    }
+
+    if (previewDate && !/^\d{4}-\d{2}-\d{2}$/.test(previewDate)) {
+      throw new Error('Invalid previewDate format – expected YYYY-MM-DD');
     }
 
     if (targetUserId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetUserId)) {
