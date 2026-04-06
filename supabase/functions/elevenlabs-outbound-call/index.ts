@@ -113,7 +113,7 @@ export function deriveBusinessHoursContext(
   metadata: Record<string, unknown>,
   now: Date = new Date(),
 ) {
-  const orgTz = (metadata._business_hours_timezone as string) || 'America/Chicago';
+  const orgTz = (metadata._business_hours_timezone as string) || DEFAULT_TIMEZONE;
   const orgStart = (metadata._business_hours_start as string) || '09:00';
   const orgEnd = (metadata._business_hours_end as string) || '16:30';
   const configuredBusinessDays = typeof metadata._business_days === 'string' && metadata._business_days.length > 0
