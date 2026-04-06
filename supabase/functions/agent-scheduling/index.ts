@@ -253,7 +253,7 @@ async function handleCheckAvailability(
       }
       
       // Fetch org's configured timezone for display
-      let displayTz = 'America/Chicago';
+      let displayTz = DEFAULT_TIMEZONE;
       let displayTzLabel = 'Central Time';
       try {
         const { data: orgSettings } = await supabase
