@@ -61,10 +61,21 @@ Deno.serve(async (req) => {
     }
 
     const supabase = getServiceClient();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Derive "today" in Central time, then build UTC boundaries for the query.
+    // This ensures late-evening Central callbacks aren't missed by a UTC-midnight boundary.
+    const centralDate = new Intl.DateTimeFormat('en-CA', {
+      timeZone: DEFAULT_TIMEZONE,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date()); // e.g. "2026-04-06"
+
+    // Construct Central midnight → next Central midnight as UTC timestamps
+    const today = new Date(`${centralDate}T00:00:00`);
+    const todayUtc = new Date(today.toLocaleString('en-US', { timeZone: DEFAULT_TIMEZONE }));
+    // Use Temporal-safe approach: offset = local-representation minus UTC-representation
+    const offsetMs = today.getTime() - todayUtc.getTime();
+    const dayStartUtc = new Date(today.getTime() + offsetMs);
+    const dayEndUtc = new Date(dayStartUtc.getTime() + 24 * 60 * 60 * 1000);
 
     let query = supabase
       .from('scheduled_callbacks')
