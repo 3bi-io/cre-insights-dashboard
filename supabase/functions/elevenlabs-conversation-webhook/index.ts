@@ -17,21 +17,18 @@
 
 import { createLogger } from "../_shared/logger.ts";
 import { getServiceClient } from "../_shared/supabase-client.ts";
+import { getCorsHeaders, handleCorsPreflightIfNeeded } from "../_shared/cors-config.ts";
 import { normalizeSpokenEmail, isValidEmail } from "../_shared/email-utils.ts";
 import { lookupCityState } from "../_shared/zip-lookup.ts";
 import { extractFromTranscript } from "../_shared/transcript-parser.ts";
 import { normalizePhone } from "../_shared/phone-utils.ts";
+import { detectVoicemail } from "../_shared/voicemail-detection.ts";
+import { sendVoicemailVerificationSms } from "../_shared/sms-verification.ts";
 
 const logger = createLogger('elevenlabs-conversation-webhook');
 
 // Deduplication window
 const DEDUP_WINDOW_HOURS = 24;
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-elevenlabs-signature',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
 
 // Helper to extract values from ElevenLabs data_collection_results
 function getValue(
