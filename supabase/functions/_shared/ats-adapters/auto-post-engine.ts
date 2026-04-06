@@ -9,6 +9,7 @@ import { enrichWithTranscript } from './transcript-enrichment.ts';
 import { calculateReadinessScore } from './readiness-scorer.ts';
 import type { ATSSystem, ATSConnection, FieldMapping, ApplicationData, ATSResponse } from './types.ts';
 import { createLogger } from '../logger.ts';
+import { isDoubleNickelAllowed, DOUBLENICKEL_SLUG } from '../ats-constants.ts';
 
 const logger = createLogger('auto-post-engine');
 
@@ -102,6 +103,15 @@ export async function autoPostToATS(
       // Check if auto-post is enabled for this connection
       if (!conn.is_auto_post_enabled) {
         logger.debug('Skipping - auto-post not enabled', { correlationId, ats: conn.ats_slug });
+        summary.skipped++;
+        continue;
+      }
+
+      // Double Nickel client restriction: only R.E. Garrison
+      if (!isDoubleNickelAllowed(conn.ats_slug, options?.clientId)) {
+        logger.error('Double Nickel routing blocked — non-Garrison client', null, {
+          correlationId, ats: conn.ats_slug, clientId: options?.clientId
+        });
         summary.skipped++;
         continue;
       }

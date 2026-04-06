@@ -17,7 +17,7 @@
  * - No JWT verification (external webhook)
  * - ClientId validation against organization credentials
  * - Idempotency checking (duplicate PacketId handling)
- * - IP allowlisting (TODO: configure Tenstreet IP ranges)
+ * - IP allowlisting (not yet implemented — Tenstreet IP ranges not published)
  */
 
 import { getServiceClient } from '../_shared/supabase-client.ts';

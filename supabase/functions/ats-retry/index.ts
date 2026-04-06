@@ -6,6 +6,7 @@ import { enforceRateLimit, getRateLimitIdentifier } from '../_shared/rate-limite
 import { createATSAdapter } from '../_shared/ats-adapters/index.ts';
 import { enrichWithTranscript } from '../_shared/ats-adapters/transcript-enrichment.ts';
 import { createLogger } from '../_shared/logger.ts';
+import { isDoubleNickelAllowed } from '../_shared/ats-constants.ts';
 import type { ApplicationData } from '../_shared/ats-adapters/types.ts';
 
 const logger = createLogger('ats-retry');
@@ -48,6 +49,18 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: 'Connection not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Double Nickel client restriction: only R.E. Garrison
+    const systemSlug = (connection.ats_system as any)?.slug;
+    if (!isDoubleNickelAllowed(systemSlug, connection.client_id)) {
+      logger.error('Double Nickel retry blocked — non-Garrison client', null, {
+        connection_id, client_id: connection.client_id
+      });
+      return new Response(
+        JSON.stringify({ success: false, error: 'Double Nickel is restricted to R.E. Garrison client only' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

@@ -1,4 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('syndication-push');
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,7 +51,7 @@ Deno.serve(async (req) => {
     if (orgError) throw orgError;
 
     const uniqueOrgIds = [...new Set((orgs || []).map((r) => r.organization_id))];
-    console.log(`Found ${uniqueOrgIds.length} organizations with active jobs`);
+    logger.info(`Found ${uniqueOrgIds.length} organizations with active jobs`);
 
     const feedBaseUrl = `${SUPABASE_URL}/functions/v1/universal-xml-feed`;
     const results: Record<string, { success: string[]; failed: string[] }> = {};
@@ -100,9 +103,7 @@ Deno.serve(async (req) => {
       completedAt: new Date().toISOString(),
     };
 
-    console.log(
-      `Syndication push complete: ${totalSuccess} success, ${totalFailed} failed across ${uniqueOrgIds.length} orgs`
-    );
+    logger.info(`Syndication push complete: ${totalSuccess} success, ${totalFailed} failed across ${uniqueOrgIds.length} orgs`);
 
     return new Response(JSON.stringify(summary), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

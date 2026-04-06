@@ -4,6 +4,8 @@ import { getServiceClient } from '../_shared/supabase-client.ts';
 import { createATSAdapter } from '../_shared/ats-adapters/index.ts';
 import { enrichWithTranscript } from '../_shared/ats-adapters/transcript-enrichment.ts';
 import { createLogger } from '../_shared/logger.ts';
+import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-config.ts';
+import { isDoubleNickelAllowed } from '../_shared/ats-constants.ts';
 import type { 
   ATSRequest, 
   ATSResponse, 
@@ -15,16 +17,12 @@ import type {
 
 const logger = createLogger('ats-integration');
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
 Deno.serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflightResponse = handleCorsPreflightIfNeeded(req);
+  if (preflightResponse) return preflightResponse;
+
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
 
   const startTime = Date.now();
   
@@ -118,6 +116,17 @@ Deno.serve(async (req) => {
 
     // Create adapter
     const adapter = createATSAdapter(system, atsConnection, fieldMapping);
+
+    // Double Nickel client restriction: only R.E. Garrison
+    if (!isDoubleNickelAllowed(system.slug, atsConnection.client_id)) {
+      logger.error('Double Nickel request blocked — non-Garrison client', null, {
+        connection_id, client_id: atsConnection.client_id
+      });
+      return new Response(
+        JSON.stringify({ success: false, error: 'Double Nickel is restricted to R.E. Garrison client only' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     let result: ATSResponse;
 

@@ -1,4 +1,7 @@
 import { verifyUser, isSafeUrl } from '../_shared/auth.ts';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('firecrawl-map');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,7 +52,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Mapping URL:', formattedUrl);
+    logger.info('Mapping URL', { url: formattedUrl });
 
     const response = await fetch('https://api.firecrawl.dev/v1/map', {
       method: 'POST',
