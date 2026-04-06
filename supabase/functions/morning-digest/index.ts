@@ -2,7 +2,8 @@
  * Morning Digest Edge Function
  * 
  * Sends daily email digest to recruiters with their AI-scheduled callbacks.
- * Designed to run as a cron job at 7:30 AM CST (13:30 UTC).
+ * Designed to run as a cron job at 7:30 AM CDT (12:30 UTC).
+ * During CST (winter) this fires at 6:30 AM — acceptable seasonal drift.
  * 
  * Can also be triggered manually with action: 'send_digest' or 'preview'
  */
