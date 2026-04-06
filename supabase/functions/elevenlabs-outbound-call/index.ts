@@ -518,11 +518,9 @@ if (import.meta.main) {
             }
             }
 
-            // === SMS VERIFICATION FOLLOW-UP ===
-            // On first no_answer or voicemail detection, send verification SMS
+            // === SMS VERIFICATION FOLLOW-UP (shared utility) ===
             if ((mappedStatus === 'no_answer' || voicemailDetected) && ((fullCall.retry_count as number) || 0) === 0) {
               try {
-                // Check if SMS followup already sent
                 const { data: callRecord } = await supabase
                   .from('outbound_calls')
                   .select('sms_followup_sent')
@@ -530,116 +528,13 @@ if (import.meta.main) {
                   .single();
 
                 if (callRecord && !callRecord.sms_followup_sent && fullCall.application_id) {
-                  // Fetch application details for verification message
-                  const { data: appData } = await supabase
-                    .from('applications')
-                    .select('first_name, last_name, city, state, cdl, cdl_class, exp, phone, consent_to_sms, job_listing_id, employment_history, ssn, date_of_birth, emergency_contact_name, convicted_felony, military_service, medical_card_expiration, enrichment_status')
-                    .eq('id', fullCall.application_id)
-                    .single();
-
-                  if (appData && appData.consent_to_sms !== 'no' && appData.phone) {
-                    // Check if already enriched (has detailed form data)
-                    const isEnriched = (
-                      (appData.employment_history && (Array.isArray(appData.employment_history) ? (appData.employment_history as unknown[]).length > 0 : true)) ||
-                      appData.ssn || appData.date_of_birth || appData.emergency_contact_name ||
-                      appData.convicted_felony || appData.military_service || appData.medical_card_expiration ||
-                      appData.enrichment_status === 'enriched'
-                    );
-
-                    if (!isEnriched) {
-                      // Fetch client name from job listing
-                      let clientName = 'our company';
-                      if (appData.job_listing_id) {
-                        const { data: jobData } = await supabase
-                          .from('job_listings')
-                          .select('client_id, clients(name)')
-                          .eq('id', appData.job_listing_id)
-                          .single();
-                        if (jobData?.clients && typeof jobData.clients === 'object' && 'name' in jobData.clients) {
-                          clientName = (jobData.clients as { name: string }).name;
-                        }
-                      }
-
-                      // Check org-level SMS followup setting
-                      let smsFollowupEnabled = true;
-                      if (fullCall.organization_id) {
-                        const { data: orgFeature } = await supabase
-                          .from('organization_features')
-                          .select('enabled')
-                          .eq('organization_id', fullCall.organization_id)
-                          .eq('feature_name', 'sms_followup')
-                          .maybeSingle();
-                        if (orgFeature && orgFeature.enabled === false) {
-                          smsFollowupEnabled = false;
-                        }
-                      }
-
-                      if (smsFollowupEnabled) {
-                        // Build verification message with personalization
-                        const firstName = appData.first_name || 'there';
-                        const lastName = appData.last_name || '';
-                        const location = [appData.city, appData.state].filter(Boolean).join(', ') || 'Not provided';
-                        const cdlInfo = appData.cdl_class ? `Class ${appData.cdl_class}` : (appData.cdl || 'Not provided');
-                        const experience = appData.exp || 'Not provided';
-
-                        // Fetch job title for personalization
-                        let jobTitle = 'driver';
-                        if (appData.job_listing_id) {
-                          const { data: jobTitleData } = await supabase
-                            .from('job_listings')
-                            .select('title, job_title')
-                            .eq('id', appData.job_listing_id)
-                            .single();
-                          if (jobTitleData) {
-                            jobTitle = jobTitleData.title || jobTitleData.job_title || 'driver';
-                          }
-                        }
-
-                        const verificationMsg = `Hi ${firstName}! We tried reaching you about your ${jobTitle} application with ${clientName}.\n\nHere's what we have:\n• Name: ${firstName} ${lastName}\n• Location: ${location}\n• CDL: ${cdlInfo}\n• Experience: ${experience}\n\nReply YES to confirm or EDIT to update.\nReply STOP to opt out.`;
-
-                        // Send via shared Twilio client
-                        const { sendSms: sendTwilioSms, hasTwilioCredentials } = await import('../_shared/twilio-client.ts');
-
-                        if (hasTwilioCredentials()) {
-                          const smsResult = await sendTwilioSms(appData.phone, verificationMsg);
-
-                          if (smsResult.success) {
-                            logger.info(`Verification SMS sent for call ${call.id}`, { twilio_sid: smsResult.sid });
-
-                            // Normalize phone for session lookup
-                            const digits = appData.phone.replace(/[^\d]/g, '');
-                            const sessionPhone = digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : (digits.length === 10 ? digits : digits);
-
-                            // Create verification session with personalization data
-                            await supabase.from('sms_verification_sessions').insert({
-                              application_id: fullCall.application_id,
-                              outbound_call_id: call.id,
-                              phone_number: sessionPhone,
-                              status: 'pending_confirmation',
-                              verification_message: verificationMsg,
-                              client_name: clientName,
-                              job_listing_id: appData.job_listing_id,
-                              applicant_first_name: appData.first_name || null,
-                              job_title: jobTitle,
-                            });
-
-                            // Mark SMS followup as sent
-                            await supabase
-                              .from('outbound_calls')
-                              .update({ sms_followup_sent: true, updated_at: new Date().toISOString() })
-                              .eq('id', call.id);
-
-                            syncResults.push({ call_id: call.id, status: 'sms_verification_sent' });
-                          } else {
-                            logger.error(`Failed to send verification SMS for call ${call.id}`, { error: smsResult.error });
-                          }
-                        } else {
-                          logger.warn('Twilio credentials not configured - skipping SMS verification');
-                        }
-                      }
-                    } else {
-                      logger.info(`Application ${fullCall.application_id} already enriched - skipping SMS verification`);
-                    }
+                  const sent = await sendVoicemailVerificationSms(supabase, {
+                    callId: call.id,
+                    applicationId: fullCall.application_id,
+                    organizationId: fullCall.organization_id || null,
+                  });
+                  if (sent) {
+                    syncResults.push({ call_id: call.id, status: 'sms_verification_sent' });
                   }
                 }
               } catch (smsError) {

@@ -139,10 +139,11 @@ interface ElevenLabsWebhookPayload {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflightResponse = handleCorsPreflightIfNeeded(req);
+  if (preflightResponse) return preflightResponse;
 
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
   const startTime = Date.now();
 
   try {
