@@ -83,8 +83,8 @@ Deno.serve(async (req) => {
         *,
         recruiter_calendar_connections!calendar_connection_id(email)
       `)
-      .gte('scheduled_start', today.toISOString())
-      .lt('scheduled_start', tomorrow.toISOString())
+      .gte('scheduled_start', dayStartUtc.toISOString())
+      .lt('scheduled_start', dayEndUtc.toISOString())
       .in('status', ['pending', 'confirmed'])
       .eq('digest_email_sent', false)
       .order('scheduled_start', { ascending: true });
