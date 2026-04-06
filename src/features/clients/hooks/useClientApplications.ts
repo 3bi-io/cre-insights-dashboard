@@ -86,7 +86,7 @@ export function useClientApplications(clientId: string | null) {
           violation_history, accident_history, convicted_felony, felony_details,
           can_pass_drug_test, can_pass_physical, background_check_consent,
           veteran, work_authorization, dot_physical_date, medical_card_expiration,
-          hazmat_endorsement, twic_card,
+          hazmat_endorsement, twic_card, raw_payload,
           job_listings(id, title, job_title),
           recruiters(id, first_name, last_name)
         `)
