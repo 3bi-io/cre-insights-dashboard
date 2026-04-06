@@ -13,6 +13,7 @@ import { createLogger } from './logger.ts';
 import { wrapHandler } from './error-handler.ts';
 import { findOrCreateJobListing, normalizePhone, insertApplication } from './application-processor.ts';
 import { autoPostToATS } from './ats-adapters/auto-post-engine.ts';
+import { normalizeState, sanitizeZip } from './geo-normalize.ts';
 
 // Hayes organization ID
 const HAYES_ORG_ID = '84214b48-7b51-45bc-ad7f-723bcf50466c';
@@ -308,8 +309,8 @@ async function processApplication(
     phone: normalizedPhone || data.phone || null,
     applicant_email: data.applicant_email || data.email || null,
     city: data.city || null,
-    state: data.state || null,
-    zip: data.zip || null,
+    state: normalizeState(data.state) || null,
+    zip: sanitizeZip(data.zip) || null,
     cdl: data.cdl || null,
     cdl_class: data.cdl_class || null,
     exp: data.exp || null,

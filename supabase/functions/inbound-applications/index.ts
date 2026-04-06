@@ -16,6 +16,7 @@ import {
   getOrganizationFromJobId 
 } from "../_shared/application-processor.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { normalizeState, sanitizeZip } from "../_shared/geo-normalize.ts";
 
 const logger = createLogger('inbound-applications');
 
@@ -1078,8 +1079,8 @@ const handler = async (req: Request): Promise<Response> => {
       phone: normalizePhone(applicationData.phone),
       
       city: applicationData.city,
-      state: applicationData.state,
-      zip: applicationData.zip,
+      state: normalizeState(applicationData.state),
+      zip: sanitizeZip(applicationData.zip),
       address_1: applicationData.address_1,
       address_2: applicationData.address_2,
       country: applicationData.country,

@@ -122,6 +122,17 @@ const ApplicantQuickView: React.FC<ApplicantQuickViewProps> = ({
                 <Badge className={cn('text-xs', sourceStyle.bg, sourceStyle.text)} variant="secondary">
                   {application.source || 'Unknown'}
                 </Badge>
+                {(() => {
+                  const upstream = (application.raw_payload as Record<string, unknown>)?.source as string | undefined;
+                  if (upstream && upstream !== application.source) {
+                    return (
+                      <div className="text-[11px] text-muted-foreground mt-1">
+                        via {upstream}
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </CardContent>
             </Card>
             <Card>
