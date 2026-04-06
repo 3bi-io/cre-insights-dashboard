@@ -677,7 +677,16 @@ export class RESTJSONAdapter extends BaseATSAdapter {
         ? Number(app.driving_experience_years)
         : undefined,
       trackingLinkId: this.resolveTrackingLinkId(creds),
-      companyId: String(creds.companyId || creds.company_id || ''),
+      companyId: (() => {
+        const id = String(creds.companyId || creds.company_id || '');
+        if (!id) {
+          this.log('warn', 'Empty companyId in Double Nickel payload — API may reject this request', {
+            has_companyId: !!creds.companyId,
+            has_company_id: !!creds.company_id,
+          });
+        }
+        return id;
+      })(),
     };
   }
 
