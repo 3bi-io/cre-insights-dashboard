@@ -466,7 +466,7 @@ async function handleBookCallback(
   const supabase = getServiceClient();
   const { data: prefs } = await supabase
     .from('recruiter_availability_preferences')
-    .select('default_call_duration_minutes, auto_accept_bookings, max_daily_callbacks')
+    .select('default_call_duration_minutes, auto_accept_bookings, max_daily_callbacks, timezone')
     .eq('user_id', recruiter_user_id)
     .maybeSingle();
 
@@ -474,11 +474,23 @@ async function handleBookCallback(
   const duration: number = (prefsData?.default_call_duration_minutes as number) || 15;
   const autoAccept: boolean = (prefsData?.auto_accept_bookings as boolean) ?? true;
   const maxDaily: number = (prefsData?.max_daily_callbacks as number) || 20;
+  const recruiterTz: string = (prefsData?.timezone as string) || 'America/Chicago';
 
-  const dayStart = new Date(slotDate);
-  dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(slotDate);
-  dayEnd.setHours(23, 59, 59, 999);
+  // Compute day boundaries in recruiter's local timezone (mirrors handleCheckAvailability)
+  function localToUtc(localDate: Date, tzName: string): Date {
+    const utcStr = localDate.toLocaleString('en-US', { timeZone: 'UTC' });
+    const tzStr = localDate.toLocaleString('en-US', { timeZone: tzName });
+    const diff = new Date(utcStr).getTime() - new Date(tzStr).getTime();
+    return new Date(localDate.getTime() + diff);
+  }
+
+  // Get the date string in recruiter's local timezone from the selected slot (which is UTC)
+  const slotInRecruiterTz = new Date(slotDate.toLocaleString('en-US', { timeZone: recruiterTz }));
+  const dateStr = slotInRecruiterTz.toLocaleDateString('en-CA'); // YYYY-MM-DD
+  const dayStartLocal = new Date(`${dateStr}T00:00:00`);
+  const dayEndLocal = new Date(`${dateStr}T23:59:59.999`);
+  const dayStart = localToUtc(dayStartLocal, recruiterTz);
+  const dayEnd = localToUtc(dayEndLocal, recruiterTz);
 
   const { count: existingCallbacks } = await supabase
     .from('scheduled_callbacks')
@@ -571,6 +583,11 @@ async function handleBookCallback(
   );
 }
 
+/**
+ * Intentional alias for handleCheckAvailability.
+ * ElevenLabs agent tools are configured with separate "get_next_slots" and
+ * "check_availability" actions; both resolve to the same availability logic.
+ */
 async function handleGetNextSlots(
   params: SchedulingParams,
   headers: Record<string, string>
