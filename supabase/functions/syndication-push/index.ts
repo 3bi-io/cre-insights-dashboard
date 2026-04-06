@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     if (orgError) throw orgError;
 
     const uniqueOrgIds = [...new Set((orgs || []).map((r) => r.organization_id))];
-    console.log(`Found ${uniqueOrgIds.length} organizations with active jobs`);
+    logger.info(`Found ${uniqueOrgIds.length} organizations with active jobs`);
 
     const feedBaseUrl = `${SUPABASE_URL}/functions/v1/universal-xml-feed`;
     const results: Record<string, { success: string[]; failed: string[] }> = {};
