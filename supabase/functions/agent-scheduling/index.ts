@@ -306,7 +306,7 @@ async function handleCheckAvailability(
     const maxDaily: number = (prefsData?.max_daily_callbacks as number) || 20;
     const minNoticeHours: number = (prefsData?.min_booking_notice_hours as number) || 1;
     const allowSameDay: boolean = (prefsData?.allow_same_day_booking as boolean) ?? true;
-    const recruiterTz = (prefsData?.timezone as string) || 'America/Chicago';
+    const recruiterTz = (prefsData?.timezone as string) || DEFAULT_TIMEZONE;
 
     const tz = driver_timezone || recruiterTz;
     const now = new Date();
