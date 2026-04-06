@@ -4,6 +4,8 @@ import { getServiceClient } from '../_shared/supabase-client.ts';
 import { createATSAdapter } from '../_shared/ats-adapters/index.ts';
 import { enrichWithTranscript } from '../_shared/ats-adapters/transcript-enrichment.ts';
 import { createLogger } from '../_shared/logger.ts';
+import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-config.ts';
+import { isDoubleNickelAllowed } from '../_shared/ats-constants.ts';
 import type { 
   ATSRequest, 
   ATSResponse, 
@@ -14,11 +16,6 @@ import type {
 } from '../_shared/ats-adapters/types.ts';
 
 const logger = createLogger('ats-integration');
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
