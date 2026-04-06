@@ -16,6 +16,7 @@ import {
   getOrganizationFromJobId 
 } from "../_shared/application-processor.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { normalizeState, sanitizeZip } from "../_shared/geo-normalize.ts";
 
 const logger = createLogger('inbound-applications');
 
