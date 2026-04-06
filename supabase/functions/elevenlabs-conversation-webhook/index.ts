@@ -73,7 +73,7 @@ function getValue(
  * Check if a duplicate application exists within the dedup window
  */
 async function isDuplicate(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof getServiceClient>,
   email: string | undefined,
   phone: string | null,
   jobListingId: string | null,
