@@ -583,6 +583,11 @@ async function handleBookCallback(
   );
 }
 
+/**
+ * Intentional alias for handleCheckAvailability.
+ * ElevenLabs agent tools are configured with separate "get_next_slots" and
+ * "check_availability" actions; both resolve to the same availability logic.
+ */
 async function handleGetNextSlots(
   params: SchedulingParams,
   headers: Record<string, string>
