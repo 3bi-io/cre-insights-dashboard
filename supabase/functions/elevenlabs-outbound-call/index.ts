@@ -456,7 +456,7 @@ if (import.meta.main) {
                               // Add 15-45min random offset within window for natural timing
                               const offsetMinutes = 15 + Math.floor(Math.random() * 30);
                               
-                              const tz = (followUpSettings?.business_hours_timezone as string) || 'America/Chicago';
+                              const tz = (followUpSettings?.business_hours_timezone as string) || DEFAULT_TIMEZONE;
                               // Construct time in org timezone
                               const dateStr = smartTime.toLocaleDateString('en-CA', { timeZone: tz }); // YYYY-MM-DD
                               const targetLocal = new Date(`${dateStr}T${String(windowStartHour).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}:00`);
