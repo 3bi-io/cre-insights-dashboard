@@ -402,7 +402,7 @@ async function handleCheckAvailability(
     );
   }
 
-  const tz = driver_timezone || 'America/Chicago';
+  const tz = driver_timezone || DEFAULT_TIMEZONE;
   // deno-lint-ignore no-explicit-any
   const topSlots = bestResult.slots.slice(0, 3).map((s: any) => {
     const time = new Date(s.start);
