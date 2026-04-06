@@ -170,7 +170,7 @@ const ApplicantQuickView: React.FC<ApplicantQuickViewProps> = ({
           </div>
 
           {/* Experience */}
-          {(application.cdl_class || application.driving_experience_years != null || (application.cdl_endorsements && application.cdl_endorsements.length > 0)) && (
+          {(application.cdl_class || application.driving_experience_years != null || (application.cdl_endorsements && application.cdl_endorsements.length > 0) || application.cdl || application.exp) && (
             <>
               <Separator />
               <div>
@@ -178,10 +178,10 @@ const ApplicantQuickView: React.FC<ApplicantQuickViewProps> = ({
                   <Truck className="w-4 h-4" /> Experience
                 </h4>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  {application.cdl_class && (
+                  {(application.cdl_class || (!application.cdl_class && application.cdl)) && (
                     <div>
-                      <span className="text-muted-foreground text-xs">CDL Class</span>
-                      <p className="font-medium">{application.cdl_class}</p>
+                      <span className="text-muted-foreground text-xs">{application.cdl_class ? 'CDL Class' : 'CDL'}</span>
+                      <p className="font-medium">{application.cdl_class || application.cdl}</p>
                     </div>
                   )}
                   {application.cdl_state && (
@@ -196,10 +196,14 @@ const ApplicantQuickView: React.FC<ApplicantQuickViewProps> = ({
                       <p className="font-medium">{format(new Date(application.cdl_expiration_date), 'MMM d, yyyy')}</p>
                     </div>
                   )}
-                  {application.driving_experience_years != null && (
+                  {(application.driving_experience_years != null || (!application.driving_experience_years && application.exp)) && (
                     <div>
                       <span className="text-muted-foreground text-xs">Experience</span>
-                      <p className="font-medium">{application.driving_experience_years} yr{application.driving_experience_years !== 1 ? 's' : ''}</p>
+                      <p className="font-medium">
+                        {application.driving_experience_years != null
+                          ? `${application.driving_experience_years} yr${application.driving_experience_years !== 1 ? 's' : ''}`
+                          : application.exp}
+                      </p>
                     </div>
                   )}
                   {application.veteran && (
