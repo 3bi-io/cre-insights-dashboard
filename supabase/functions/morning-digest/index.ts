@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
         const time = new Date(cb.scheduled_start).toLocaleTimeString('en-US', {
           hour: 'numeric',
           minute: '2-digit',
-          timeZone: 'America/Chicago',
+          timeZone: DEFAULT_TIMEZONE,
         });
         const driverName = escapeHtml(cb.driver_name || 'Driver');
         const phone = escapeHtml(cb.driver_phone || 'N/A');

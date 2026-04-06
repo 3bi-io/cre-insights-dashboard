@@ -1091,7 +1091,7 @@ async function processOutboundCall(
       const calConnFound = await hasActiveCalendarConnections(supabase, organizationId, clientId);
       metadata._has_calendar_connections = calConnFound ? 'yes' : 'no';
 
-      const todayInOrgTimezone = getDateInTimezone(new Date(), metadata._business_hours_timezone as string || 'America/Chicago');
+      const todayInOrgTimezone = getDateInTimezone(new Date(), metadata._business_hours_timezone as string || DEFAULT_TIMEZONE);
       let holidayFound = false;
 
       const { data: orgHoliday } = await supabase

@@ -475,7 +475,7 @@ async function handleBookCallback(
   const duration: number = (prefsData?.default_call_duration_minutes as number) || 15;
   const autoAccept: boolean = (prefsData?.auto_accept_bookings as boolean) ?? true;
   const maxDaily: number = (prefsData?.max_daily_callbacks as number) || 20;
-  const recruiterTz: string = (prefsData?.timezone as string) || 'America/Chicago';
+  const recruiterTz: string = (prefsData?.timezone as string) || DEFAULT_TIMEZONE;
 
   // Compute day boundaries in recruiter's local timezone (mirrors handleCheckAvailability)
   function localToUtc(localDate: Date, tzName: string): Date {
