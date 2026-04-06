@@ -50,10 +50,17 @@ Deno.serve(async (req) => {
     let action = 'send_digest';
     let targetUserId: string | null = null;
 
+    let previewDate: string | null = null;
+
     if (req.method === 'POST') {
       const body = await req.json().catch(() => ({}));
       action = body.action || 'send_digest';
       targetUserId = body.userId || null;
+      previewDate = body.previewDate || null;
+    }
+
+    if (previewDate && !/^\d{4}-\d{2}-\d{2}$/.test(previewDate)) {
+      throw new Error('Invalid previewDate format – expected YYYY-MM-DD');
     }
 
     if (targetUserId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetUserId)) {
@@ -64,7 +71,7 @@ Deno.serve(async (req) => {
 
     // Derive "today" in Central time, then build UTC boundaries for the query.
     // This ensures late-evening Central callbacks aren't missed by a UTC-midnight boundary.
-    const centralDate = new Intl.DateTimeFormat('en-CA', {
+    const centralDate = previewDate || new Intl.DateTimeFormat('en-CA', {
       timeZone: DEFAULT_TIMEZONE,
       year: 'numeric', month: '2-digit', day: '2-digit',
     }).format(new Date()); // e.g. "2026-04-06"
@@ -86,8 +93,12 @@ Deno.serve(async (req) => {
       .gte('scheduled_start', dayStartUtc.toISOString())
       .lt('scheduled_start', dayEndUtc.toISOString())
       .in('status', ['pending', 'confirmed'])
-      .eq('digest_email_sent', false)
       .order('scheduled_start', { ascending: true });
+
+    // In preview mode, include already-digested callbacks for historical testing
+    if (action !== 'preview') {
+      query = query.eq('digest_email_sent', false);
+    }
 
     if (targetUserId) {
       query = query.eq('recruiter_user_id', targetUserId);
