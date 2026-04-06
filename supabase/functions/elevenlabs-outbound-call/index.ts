@@ -7,7 +7,8 @@ import { getCorsHeaders } from "../_shared/cors-config.ts";
 import { successResponse, errorResponse } from "../_shared/response.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { getServiceClient } from "../_shared/supabase-client.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { detectVoicemail } from "../_shared/voicemail-detection.ts";
+import { sendVoicemailVerificationSms } from "../_shared/sms-verification.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const logger = createLogger('elevenlabs-outbound-call');
