@@ -11,6 +11,7 @@ import { getServiceClient } from '../_shared/supabase-client.ts';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-config.ts';
 import { getSender } from '../_shared/email-config.ts';
 import { createLogger } from '../_shared/logger.ts';
+import { DEFAULT_TIMEZONE } from '../_shared/constants.ts';
 
 const logger = createLogger('morning-digest');
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || '';
@@ -134,7 +135,7 @@ Deno.serve(async (req) => {
         const time = new Date(cb.scheduled_start).toLocaleTimeString('en-US', {
           hour: 'numeric',
           minute: '2-digit',
-          timeZone: 'America/Chicago',
+          timeZone: DEFAULT_TIMEZONE,
         });
         const driverName = escapeHtml(cb.driver_name || 'Driver');
         const phone = escapeHtml(cb.driver_phone || 'N/A');

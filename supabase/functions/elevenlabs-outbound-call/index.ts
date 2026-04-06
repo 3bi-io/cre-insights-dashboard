@@ -10,6 +10,7 @@ import { getServiceClient } from "../_shared/supabase-client.ts";
 import { detectVoicemail } from "../_shared/voicemail-detection.ts";
 import { sendVoicemailVerificationSms } from "../_shared/sms-verification.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { DEFAULT_TIMEZONE } from "../_shared/constants.ts";
 
 const logger = createLogger('elevenlabs-outbound-call');
 
@@ -112,7 +113,7 @@ export function deriveBusinessHoursContext(
   metadata: Record<string, unknown>,
   now: Date = new Date(),
 ) {
-  const orgTz = (metadata._business_hours_timezone as string) || 'America/Chicago';
+  const orgTz = (metadata._business_hours_timezone as string) || DEFAULT_TIMEZONE;
   const orgStart = (metadata._business_hours_start as string) || '09:00';
   const orgEnd = (metadata._business_hours_end as string) || '16:30';
   const configuredBusinessDays = typeof metadata._business_days === 'string' && metadata._business_days.length > 0
@@ -455,7 +456,7 @@ if (import.meta.main) {
                               // Add 15-45min random offset within window for natural timing
                               const offsetMinutes = 15 + Math.floor(Math.random() * 30);
                               
-                              const tz = (followUpSettings?.business_hours_timezone as string) || 'America/Chicago';
+                              const tz = (followUpSettings?.business_hours_timezone as string) || DEFAULT_TIMEZONE;
                               // Construct time in org timezone
                               const dateStr = smartTime.toLocaleDateString('en-CA', { timeZone: tz }); // YYYY-MM-DD
                               const targetLocal = new Date(`${dateStr}T${String(windowStartHour).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}:00`);
@@ -1090,7 +1091,7 @@ async function processOutboundCall(
       const calConnFound = await hasActiveCalendarConnections(supabase, organizationId, clientId);
       metadata._has_calendar_connections = calConnFound ? 'yes' : 'no';
 
-      const todayInOrgTimezone = getDateInTimezone(new Date(), metadata._business_hours_timezone as string || 'America/Chicago');
+      const todayInOrgTimezone = getDateInTimezone(new Date(), metadata._business_hours_timezone as string || DEFAULT_TIMEZONE);
       let holidayFound = false;
 
       const { data: orgHoliday } = await supabase

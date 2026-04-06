@@ -12,6 +12,7 @@
 import { getServiceClient } from '../_shared/supabase-client.ts';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-config.ts';
 import { createLogger } from '../_shared/logger.ts';
+import { DEFAULT_TIMEZONE } from '../_shared/constants.ts';
 
 const logger = createLogger('agent-scheduling');
 
@@ -252,7 +253,7 @@ async function handleCheckAvailability(
       }
       
       // Fetch org's configured timezone for display
-      let displayTz = 'America/Chicago';
+      let displayTz = DEFAULT_TIMEZONE;
       let displayTzLabel = 'Central Time';
       try {
         const { data: orgSettings } = await supabase
@@ -305,7 +306,7 @@ async function handleCheckAvailability(
     const maxDaily: number = (prefsData?.max_daily_callbacks as number) || 20;
     const minNoticeHours: number = (prefsData?.min_booking_notice_hours as number) || 1;
     const allowSameDay: boolean = (prefsData?.allow_same_day_booking as boolean) ?? true;
-    const recruiterTz = (prefsData?.timezone as string) || 'America/Chicago';
+    const recruiterTz = (prefsData?.timezone as string) || DEFAULT_TIMEZONE;
 
     const tz = driver_timezone || recruiterTz;
     const now = new Date();
@@ -401,7 +402,7 @@ async function handleCheckAvailability(
     );
   }
 
-  const tz = driver_timezone || 'America/Chicago';
+  const tz = driver_timezone || DEFAULT_TIMEZONE;
   // deno-lint-ignore no-explicit-any
   const topSlots = bestResult.slots.slice(0, 3).map((s: any) => {
     const time = new Date(s.start);
@@ -474,7 +475,7 @@ async function handleBookCallback(
   const duration: number = (prefsData?.default_call_duration_minutes as number) || 15;
   const autoAccept: boolean = (prefsData?.auto_accept_bookings as boolean) ?? true;
   const maxDaily: number = (prefsData?.max_daily_callbacks as number) || 20;
-  const recruiterTz: string = (prefsData?.timezone as string) || 'America/Chicago';
+  const recruiterTz: string = (prefsData?.timezone as string) || DEFAULT_TIMEZONE;
 
   // Compute day boundaries in recruiter's local timezone (mirrors handleCheckAvailability)
   function localToUtc(localDate: Date, tzName: string): Date {
