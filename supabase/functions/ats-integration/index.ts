@@ -117,6 +117,17 @@ Deno.serve(async (req) => {
     // Create adapter
     const adapter = createATSAdapter(system, atsConnection, fieldMapping);
 
+    // Double Nickel client restriction: only R.E. Garrison
+    if (!isDoubleNickelAllowed(system.slug, atsConnection.client_id)) {
+      logger.error('Double Nickel request blocked — non-Garrison client', null, {
+        connection_id, client_id: atsConnection.client_id
+      });
+      return new Response(
+        JSON.stringify({ success: false, error: 'Double Nickel is restricted to R.E. Garrison client only' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     let result: ATSResponse;
 
     switch (action) {

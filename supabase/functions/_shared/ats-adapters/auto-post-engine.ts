@@ -107,6 +107,15 @@ export async function autoPostToATS(
         continue;
       }
 
+      // Double Nickel client restriction: only R.E. Garrison
+      if (!isDoubleNickelAllowed(conn.ats_slug, options?.clientId)) {
+        logger.error('Double Nickel routing blocked — non-Garrison client', null, {
+          correlationId, ats: conn.ats_slug, clientId: options?.clientId
+        });
+        summary.skipped++;
+        continue;
+      }
+
       // Check if the status matches auto-post trigger (if configured)
       if (conn.auto_post_on_status && conn.auto_post_on_status.length > 0) {
         const appStatus = applicationData.status as string || 'pending';

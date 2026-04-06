@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Mapping URL:', formattedUrl);
+    logger.info('Mapping URL', { url: formattedUrl });
 
     const response = await fetch('https://api.firecrawl.dev/v1/map', {
       method: 'POST',

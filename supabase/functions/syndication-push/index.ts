@@ -103,9 +103,7 @@ Deno.serve(async (req) => {
       completedAt: new Date().toISOString(),
     };
 
-    console.log(
-      `Syndication push complete: ${totalSuccess} success, ${totalFailed} failed across ${uniqueOrgIds.length} orgs`
-    );
+    logger.info(`Syndication push complete: ${totalSuccess} success, ${totalFailed} failed across ${uniqueOrgIds.length} orgs`);
 
     return new Response(JSON.stringify(summary), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

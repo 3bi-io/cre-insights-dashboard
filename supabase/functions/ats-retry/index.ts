@@ -52,6 +52,18 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Double Nickel client restriction: only R.E. Garrison
+    const systemSlug = (connection.ats_system as any)?.slug;
+    if (!isDoubleNickelAllowed(systemSlug, connection.client_id)) {
+      logger.error('Double Nickel retry blocked — non-Garrison client', null, {
+        connection_id, client_id: connection.client_id
+      });
+      return new Response(
+        JSON.stringify({ success: false, error: 'Double Nickel is restricted to R.E. Garrison client only' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Fetch application
     const { data: application, error: appError } = await supabase
       .from('applications')
