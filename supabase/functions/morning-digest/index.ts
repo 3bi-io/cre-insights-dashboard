@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
 
     // Derive "today" in Central time, then build UTC boundaries for the query.
     // This ensures late-evening Central callbacks aren't missed by a UTC-midnight boundary.
-    const centralDate = new Intl.DateTimeFormat('en-CA', {
+    const centralDate = previewDate || new Intl.DateTimeFormat('en-CA', {
       timeZone: DEFAULT_TIMEZONE,
       year: 'numeric', month: '2-digit', day: '2-digit',
     }).format(new Date()); // e.g. "2026-04-06"
