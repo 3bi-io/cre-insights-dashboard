@@ -1,93 +1,97 @@
 
 
-# Plan: Enforce Double Nickel → R.E. Garrison Restriction End-to-End + Production Readiness
+# Review: ElevenLabs Voice Agent Scheduling Functions
 
-## Part 1: Double Nickel Client Restriction
+## Functions Reviewed
 
-### 1A. Database Constraint (Migration)
-
-Add a validation trigger on `ats_connections` that prevents inserting or updating a row with `ats_system_id` pointing to the Double Nickel system unless `client_id = 'be8b645e-d480-4c22-8e75-b09a7fc1db7a'` (R.E. Garrison).
-
-We use a trigger (not a CHECK constraint) because the validation requires a join to `ats_systems` to resolve the slug. The trigger will:
-- Look up the `ats_systems.slug` for the row's `ats_system_id`
-- If slug = `'doublenickel'` and `client_id` is not `'be8b645e-d480-4c22-8e75-b09a7fc1db7a'`, raise an exception
-- Fire on INSERT and UPDATE
-
-```sql
-CREATE OR REPLACE FUNCTION public.enforce_doublenickel_garrison_only()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
-DECLARE v_slug TEXT;
-BEGIN
-  SELECT slug INTO v_slug FROM ats_systems WHERE id = NEW.ats_system_id;
-  IF v_slug = 'doublenickel' AND (NEW.client_id IS NULL OR NEW.client_id != 'be8b645e-d480-4c22-8e75-b09a7fc1db7a') THEN
-    RAISE EXCEPTION 'Double Nickel connections are restricted to R.E. Garrison client only';
-  END IF;
-  RETURN NEW;
-END; $$;
-
-CREATE TRIGGER trg_enforce_doublenickel_garrison
-  BEFORE INSERT OR UPDATE ON ats_connections
-  FOR EACH ROW EXECUTE FUNCTION enforce_doublenickel_garrison_only();
-```
-
-### 1B. Runtime Guard in `auto-post-engine.ts`
-
-Inside the connection processing loop (after line ~99), add a check: if `conn.ats_slug === 'doublenickel'` and `options?.clientId !== 'be8b645e-...'`, skip the connection with a logged error. This catches any mis-routed auto-post at runtime.
-
-### 1C. Runtime Guard in `ats-retry/index.ts`
-
-After fetching the connection and its system (line ~52), check if the system slug is `doublenickel` and the connection's `client_id` doesn't match Garrison. Return 403 with error if violated.
-
-### 1D. Runtime Guard in `ats-integration/index.ts`
-
-After the adapter is created (line ~120), add the same slug check before `send_application` is processed.
-
-### 1E. Shared Constant
-
-Add `DOUBLENICKEL_ALLOWED_CLIENT_ID` to a shared constants file (or inline it in each of the 3 files above) to avoid hardcoding the UUID in multiple places.
-
-### 1F. Guard in `hayes-client-handler.ts`
-
-The handler already passes `config.clientId` to `autoPostToATS`. The guard in 1B covers this. No additional change needed in the handler itself — the engine will reject non-Garrison clients.
+| Function | Lines | Purpose |
+|----------|-------|---------|
+| `agent-scheduling` | 583 | Webhook tool for check_availability, book_callback, get_next_slots |
+| `elevenlabs-outbound-call` | 1954 | Queue processing, sync stuck calls, single outbound calls, after-hours callbacks |
+| `elevenlabs-conversation-webhook` | 647 | Real-time webhook from ElevenLabs when conversations end |
 
 ---
 
-## Part 2: Production Readiness Cleanup
+## Issues Found
 
-### 2A. Fix `console.log` Leaks
+### 1. CRITICAL — `elevenlabs-outbound-call` Has Unused Import
 
-| File | Issue | Fix |
-|------|-------|-----|
-| `supabase/functions/firecrawl-map/index.ts` | `console.log('Mapping URL:...')` | Replace with `logger.info()` |
-| `supabase/functions/syndication-push/index.ts` | 2× `console.log(...)` | Replace with `logger.info()` |
+Line 10 imports `createClient` from `https://esm.sh/@supabase/supabase-js@2.57.2` but it is **never called**. The function uses `getServiceClient()` (from `_shared/supabase-client.ts` which pins `@2.50.0`). This is dead code and a version mismatch risk — if `createClient` were ever used accidentally, it would pull in a different SDK version than the rest of the platform.
 
-The `_shared/logger.ts` using `console.log` internally is correct — that's the structured logging implementation.
+**Fix**: Remove the `createClient` import on line 10.
 
-### 2B. TODO Comment
+### 2. MODERATE — `elevenlabs-conversation-webhook` Uses Inline CORS
 
-| File | Issue | Action |
-|------|-------|--------|
-| `supabase/functions/tenstreet-extractcomplete/index.ts` | `// TODO: configure Tenstreet IP ranges` | Convert to a tracked comment with a ticket reference or remove if IP allowlisting is not planned |
+Lines 30-34 hardcode `corsHeaders` with `'Access-Control-Allow-Origin': '*'` instead of using the platform-standard `getCorsHeaders()` with origin validation. This is the same pattern that was just fixed in `ats-integration` and `ats-retry`.
 
-### 2C. `ats-integration/index.ts` — Inline CORS
+**Fix**: Import `getCorsHeaders` and `handleCorsPreflightIfNeeded` from `_shared/cors-config.ts` and replace inline headers.
 
-This function still uses hardcoded `corsHeaders` with `'*'` origin instead of `getCorsHeaders()`. Fix to match platform standard (same pattern as `ats-retry`).
+### 3. MODERATE — `elevenlabs-conversation-webhook` Type Annotation Uses Unavailable `createClient`
 
-### 2D. Production Build Verification
+Line 79 types the `supabase` parameter as `ReturnType<typeof createClient>` but `createClient` is **not imported** in this file. This works at runtime because TypeScript inference covers it, but it's semantically incorrect and could break if strict type checking is applied. The function actually uses `getServiceClient()`.
 
-Run `npm run build` to confirm zero TypeScript errors and clean output.
+**Fix**: Change the parameter type to `ReturnType<typeof getServiceClient>` or use `SupabaseClient` from the SDK.
+
+### 4. MODERATE — Duplicated SMS Verification Logic (3 Locations)
+
+The SMS verification/follow-up logic (enrichment check, voicemail SMS message construction, `sms_verification_sessions` insert) is duplicated nearly identically in:
+- `elevenlabs-outbound-call/index.ts` lines 534-661 (sync_initiated path)
+- `elevenlabs-conversation-webhook/index.ts` lines 282-377 (webhook voicemail path)
+
+Both locations build the same verification message template, perform identical enrichment checks, and insert into the same tables. Any future change to the SMS template or logic must be updated in both places.
+
+**Fix**: Extract into a shared utility function in `_shared/sms-verification.ts` (e.g., `sendVoicemailVerificationSms(supabase, outboundCallId, applicationId)`) and call from both locations.
+
+### 5. MODERATE — Duplicated Voicemail Detection Logic (2 Locations)
+
+Voicemail detection (tool call check + transcript keyword fallback with the same `vmPhrases` array) is duplicated between:
+- `elevenlabs-outbound-call/index.ts` lines 268-287 (sync path)
+- `elevenlabs-conversation-webhook/index.ts` lines 237-251 (webhook path)
+
+**Fix**: Extract `detectVoicemail(toolCalls, transcript)` into `_shared/voicemail-detection.ts`.
+
+### 6. LOW — `agent-scheduling` Hardcodes `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
+
+Lines 18-19 read env vars directly instead of using `getServiceClient()` for the Supabase client (which it does on line 117), but the raw URL/key are used for `fetchWithTimeout` calls to `calendar-integration`. This is fine functionally but breaks the encapsulation pattern — if `getServiceClient()` ever changes how it resolves these values, the scheduling function won't track.
+
+**Fix**: Low priority. Could use `Deno.env.get()` calls inline where needed (already done) but worth noting for consistency.
+
+### 7. LOW — `agent-scheduling` `handleGetNextSlots` is a Pass-Through
+
+Lines 574-583: `handleGetNextSlots` simply delegates to `handleCheckAvailability` with the same params. This is fine as a semantic alias for the ElevenLabs tool interface, but could confuse future maintainers.
+
+**Fix**: Add a comment explaining this is an intentional alias for the ElevenLabs tool configuration.
+
+### 8. LOW — `agent-scheduling` Daily Cap Check Uses UTC Boundaries
+
+Lines 478-481 in `handleBookCallback`: `dayStart.setHours(0,0,0,0)` and `dayEnd.setHours(23,59,59,999)` operate in UTC, not in the recruiter's timezone. A booking at 11 PM EST would count toward the UTC "next day" cap. The `handleCheckAvailability` function correctly handles timezone conversion (lines 354-357) but `handleBookCallback` doesn't.
+
+**Fix**: Apply the same `localToUtc` timezone conversion to the daily cap query in `handleBookCallback`.
+
+### 9. INFO — `elevenlabs-outbound-call` File Size
+
+At 1,954 lines, this function handles queue processing, sync reconciliation, single calls, after-hours scheduling, dynamic variable building, SMS follow-ups, and job inference. While functionally correct, it's the largest edge function in the platform. Long-term, consider extracting:
+- `buildDynamicVariables` + inference helpers → `_shared/dynamic-variables.ts`
+- SMS verification logic → `_shared/sms-verification.ts`
+- Voicemail detection → `_shared/voicemail-detection.ts`
+
+This would reduce the file to ~800 lines and improve testability.
 
 ---
 
-## Files Changed (Summary)
+## Recommended Changes (Priority Order)
 
-| File | Change |
-|------|--------|
-| **New migration** | `enforce_doublenickel_garrison_only` trigger on `ats_connections` |
-| `supabase/functions/_shared/ats-adapters/auto-post-engine.ts` | Add Double Nickel client guard in connection loop |
-| `supabase/functions/ats-retry/index.ts` | Add Double Nickel client guard after connection fetch |
-| `supabase/functions/ats-integration/index.ts` | Add Double Nickel client guard + fix inline CORS |
-| `supabase/functions/firecrawl-map/index.ts` | Replace `console.log` with logger |
-| `supabase/functions/syndication-push/index.ts` | Replace `console.log` with logger |
-| `supabase/functions/tenstreet-extractcomplete/index.ts` | Clean up TODO comment |
+| # | File | Change | Priority |
+|---|------|--------|----------|
+| 1 | `elevenlabs-outbound-call/index.ts` | Remove unused `createClient` import (line 10) | Critical |
+| 2 | `elevenlabs-conversation-webhook/index.ts` | Replace inline CORS with `getCorsHeaders()` | Moderate |
+| 3 | `elevenlabs-conversation-webhook/index.ts` | Fix `ReturnType<typeof createClient>` type annotation | Moderate |
+| 4 | New: `_shared/sms-verification.ts` | Extract shared SMS verification logic | Moderate |
+| 5 | New: `_shared/voicemail-detection.ts` | Extract shared voicemail detection logic | Moderate |
+| 6 | `agent-scheduling/index.ts` | Fix timezone in `handleBookCallback` daily cap query | Low |
+| 7 | `agent-scheduling/index.ts` | Add comment to `handleGetNextSlots` alias | Low |
+
+### Files Changed: 4 edited + 2 new shared utilities
+
+Items 1-3 are quick fixes. Items 4-5 are refactors that reduce duplication and risk of drift. Item 6 is a correctness fix for an edge case (bookings near midnight in non-UTC timezones).
 
