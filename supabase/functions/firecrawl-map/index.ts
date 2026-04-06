@@ -1,4 +1,7 @@
 import { verifyUser, isSafeUrl } from '../_shared/auth.ts';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('firecrawl-map');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
