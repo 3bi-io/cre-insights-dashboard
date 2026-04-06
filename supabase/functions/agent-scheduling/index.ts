@@ -474,11 +474,23 @@ async function handleBookCallback(
   const duration: number = (prefsData?.default_call_duration_minutes as number) || 15;
   const autoAccept: boolean = (prefsData?.auto_accept_bookings as boolean) ?? true;
   const maxDaily: number = (prefsData?.max_daily_callbacks as number) || 20;
+  const recruiterTz: string = (prefsData?.timezone as string) || 'America/Chicago';
 
-  const dayStart = new Date(slotDate);
-  dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(slotDate);
-  dayEnd.setHours(23, 59, 59, 999);
+  // Compute day boundaries in recruiter's local timezone (mirrors handleCheckAvailability)
+  function localToUtc(localDate: Date, tzName: string): Date {
+    const utcStr = localDate.toLocaleString('en-US', { timeZone: 'UTC' });
+    const tzStr = localDate.toLocaleString('en-US', { timeZone: tzName });
+    const diff = new Date(utcStr).getTime() - new Date(tzStr).getTime();
+    return new Date(localDate.getTime() + diff);
+  }
+
+  // Get the date string in recruiter's local timezone from the selected slot (which is UTC)
+  const slotInRecruiterTz = new Date(slotDate.toLocaleString('en-US', { timeZone: recruiterTz }));
+  const dateStr = slotInRecruiterTz.toLocaleDateString('en-CA'); // YYYY-MM-DD
+  const dayStartLocal = new Date(`${dateStr}T00:00:00`);
+  const dayEndLocal = new Date(`${dateStr}T23:59:59.999`);
+  const dayStart = localToUtc(dayStartLocal, recruiterTz);
+  const dayEnd = localToUtc(dayEndLocal, recruiterTz);
 
   const { count: existingCallbacks } = await supabase
     .from('scheduled_callbacks')
