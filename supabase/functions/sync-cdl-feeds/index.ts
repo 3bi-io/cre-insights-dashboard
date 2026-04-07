@@ -42,6 +42,11 @@ const CDL_FEEDS = [
     clientId: 'be8b645e-d480-4c22-8e75-b09a7fc1db7a',
     clientName: 'R.E. Garrison Trucking',
     feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=RE-Garrison-Trucking-1760000000&board=AIRecruiter'
+  },
+  {
+    clientId: '53d7dd20-d743-4d34-93e9-eb7175c39da1',
+    clientName: 'Admiral Merchants',
+    feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=admiral_merchants&board=AIRecruiter'
   }
 ];
 
