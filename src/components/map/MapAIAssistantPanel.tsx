@@ -130,7 +130,7 @@ export const MapAIAssistantPanel = memo(function MapAIAssistantPanel({
     }
     if ('prompt' in action && action.prompt) {
       sendMessage(action.prompt);
-      if (!isExpanded) setIsExpanded(true);
+      if (!isExpanded) toggleExpanded(true);
     }
   }, [filters, onFiltersChange, sendMessage, isExpanded]);
 
