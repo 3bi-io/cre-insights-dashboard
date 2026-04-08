@@ -563,7 +563,6 @@ export const US_CITIES: CityCoordinate[] = [
 // City name aliases to handle spelling variants in job data
 const CITY_ALIASES: Record<string, string> = {
   'saint louis': 'st. louis',
-  'saint louis': 'st. louis',
   'joilet': 'joliet',
   'mc kinney': 'mckinney',
   'saint charles': 'st. charles',
