@@ -200,19 +200,23 @@ function JobMapPageContent() {
           />
         )}
 
-        {/* Layer Controls */}
+        {/* Layer Controls + Theme Switcher */}
         {(!isMobile || mobileViewMode === 'map') && (
-          isLoading && locations.length === 0 ? (
-            <MapControlsSkeleton isMobile={isMobile} />
-          ) : (
-            <MapLayerControls
-              showHeatMap={showHeatMap}
-              onToggleHeatMap={handleToggleHeatMap}
-              showMarkers={showMarkers}
-              onToggleMarkers={handleToggleMarkers}
-              displayMode={displayMode}
-            />
-          )
+          <div className="absolute bottom-4 right-4 z-[1000] flex flex-col gap-2 items-end">
+            <MapThemeSwitcher />
+            {isLoading && locations.length === 0 ? (
+              <MapControlsSkeleton isMobile={isMobile} />
+            ) : (
+              <MapLayerControls
+                showHeatMap={showHeatMap}
+                onToggleHeatMap={handleToggleHeatMap}
+                showMarkers={showMarkers}
+                onToggleMarkers={handleToggleMarkers}
+                displayMode={displayMode}
+                className="!relative !bottom-auto !right-auto"
+              />
+            )}
+          </div>
         )}
 
         {/* Mobile View Switcher */}
