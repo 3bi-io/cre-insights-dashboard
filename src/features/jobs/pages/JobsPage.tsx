@@ -18,7 +18,8 @@ import {
   JobsViewToggle,
   JobsClientFilter
 } from '../components';
-import { useJobs, useElevenLabsVoice } from '../hooks';
+import { useJobs } from '../hooks';
+import { useElevenLabsVoice } from '@/features/elevenlabs/hooks/useElevenLabsVoice';
 import { ExportJobUrlsButton } from '@/components/admin/ExportJobUrlsButton';
 import { GeoExpandDialog } from '@/components/admin/GeoExpandDialog';
 
