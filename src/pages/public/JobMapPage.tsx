@@ -59,7 +59,8 @@ function MapErrorFallback({ error }: { error: Error }) {
 
 function JobMapPageContent() {
   const { isMobile } = useMapContext();
-  
+  const { isRefreshing } = useMapDailyRefresh();
+
   const [filters, setFilters] = useState<JobMapFilters>({});
   const [selectedLocation, setSelectedLocation] = useState<MapLocation | null>(null);
   const [showHeatMap, setShowHeatMap] = useState(false);
