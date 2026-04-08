@@ -1,16 +1,20 @@
 /**
  * Hero Section Component
- * Premium homepage hero with recorded map video backdrop — mobile-first, conversion-oriented
+ * Premium homepage hero with curated map backdrop — mobile-first, conversion-oriented
  */
 
-import React from 'react';
+import React, { lazy, Suspense, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Search } from 'lucide-react';
+import { ArrowRight, Search, Loader2 } from 'lucide-react';
 import { heroContent } from '../../content/hero.content';
 import { supabase } from '@/integrations/supabase/client';
+import { useJobMapData, type MapLocation } from '@/hooks/useJobMapData';
+import { MapProvider } from '@/components/map/MapContext';
+
+const JobMap = lazy(() => import('@/components/map/JobMap'));
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -28,6 +32,8 @@ const itemVariants = {
     transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] as const },
   },
 };
+
+const noop = () => {};
 
 const HeroSection = () => {
   const { data: companyCount = 0 } = useQuery({
@@ -56,20 +62,31 @@ const HeroSection = () => {
     staleTime: 1000 * 60 * 5,
   });
 
+  const { locations } = useJobMapData();
+  const handleLocationSelect = useCallback((_loc: MapLocation | null) => {}, []);
+
   return (
     <section className="relative w-full h-[100svh] min-h-[600px] max-h-[900px] sm:max-h-[1000px] lg:max-h-[1100px] overflow-hidden">
-      {/* Video backdrop — silent autoplay loop of the /map page */}
+      {/* Map backdrop — heroMode suppresses all labels/popups/controls */}
       <div className="absolute inset-0 z-0">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          poster="/videos/hero-map-poster.jpg"
-          className="w-full h-full object-cover"
-        >
-          <source src="/videos/hero-map.mp4" type="video/mp4" />
-        </video>
+        <MapProvider>
+          <Suspense
+            fallback={
+              <div className="w-full h-full bg-muted" />
+            }
+          >
+            <JobMap
+              locations={locations}
+              selectedLocation={null}
+              onLocationSelect={handleLocationSelect}
+              showMarkers={true}
+              showHeatMap={false}
+              autoFitBounds={false}
+              interactive={false}
+              heroMode={true}
+            />
+          </Suspense>
+        </MapProvider>
       </div>
 
       {/* Gradient overlays for readability — stronger at bottom for CTA area */}
@@ -113,7 +130,7 @@ const HeroSection = () => {
             </span>
           </motion.h1>
 
-          {/* Subheadline */}
+          {/* Subheadline — concise on mobile */}
           <motion.p
             variants={itemVariants}
             className="text-base sm:text-lg md:text-xl text-white/90 font-medium mb-8 sm:mb-9 max-w-xl leading-relaxed"
@@ -148,7 +165,7 @@ const HeroSection = () => {
             </Link>
           </motion.div>
 
-          {/* Trust signals */}
+          {/* Trust signals — compact row */}
           <motion.div
             variants={itemVariants}
             className="flex flex-wrap items-center gap-2 sm:gap-3"
