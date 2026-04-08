@@ -136,6 +136,17 @@ export function useJobMapData(filters: JobMapFilters = {}) {
         }
       }
 
+      // Sanitize city names: strip "(Hybrid)", "Híbrido (" prefixes
+      if (city) {
+        city = city.replace(/^\(Hybrid\)\s*/i, '').replace(/^Híbrido\s*\(/i, '').replace(/\)$/, '').trim();
+      }
+
+      // Skip non-US locations
+      if (isNonUSLocation(city, state)) {
+        jobsWithoutLocation++;
+        return;
+      }
+
       const coords = getLocationCoordinates(city, state);
       if (!coords) {
         jobsWithoutLocation++;
