@@ -30,6 +30,7 @@ export const MapStats = memo(function MapStats({
   exactCount = 0,
   stateCount = 0,
   countryCount = 0,
+  visibleJobs,
   isLoading,
 }: MapStatsProps) {
   const mapContext = useMapContextOptional();
@@ -37,8 +38,10 @@ export const MapStats = memo(function MapStats({
   const isMobile = mapContext?.isMobile ?? isMobileFallback;
   const [isExpanded, setIsExpanded] = useState(false);
   
+  // Use visible jobs if available, otherwise use jobsWithLocation
+  const displayedJobs = visibleJobs ?? jobsWithLocation;
   const mappedPercentage = totalJobs > 0 
-    ? Math.round((jobsWithLocation / totalJobs) * 100)
+    ? Math.round((displayedJobs / totalJobs) * 100)
     : 100;
 
   if (isLoading) {
