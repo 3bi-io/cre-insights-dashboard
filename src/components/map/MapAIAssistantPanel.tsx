@@ -190,7 +190,7 @@ export const MapAIAssistantPanel = memo(function MapAIAssistantPanel({
       <div
         className={cn(
           'absolute z-[1000]',
-          isMobile ? 'bottom-16 left-4 right-4' : 'bottom-4 left-4',
+          isMobile ? 'bottom-[4.5rem] left-3 right-3' : 'bottom-4 left-4',
         )}
         role="complementary"
         aria-label="AI Job Search Guide"
