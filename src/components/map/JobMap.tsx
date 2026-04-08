@@ -309,16 +309,20 @@ export const JobMap = memo(function JobMap({
           url={tileUrl}
         />
 
-        <MapController 
-          selectedLocation={selectedLocation} 
-          onMapClick={handleMapClick}
-        />
+        {interactive && (
+          <MapController 
+            selectedLocation={selectedLocation} 
+            onMapClick={handleMapClick}
+          />
+        )}
 
-        <KeyboardNavigationHandler
-          locations={locations}
-          selectedLocation={selectedLocation}
-          onLocationSelect={onLocationSelect}
-        />
+        {interactive && (
+          <KeyboardNavigationHandler
+            locations={locations}
+            selectedLocation={selectedLocation}
+            onLocationSelect={onLocationSelect}
+          />
+        )}
 
         <MapBoundsController
           locations={locations}
