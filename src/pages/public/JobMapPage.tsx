@@ -1,10 +1,9 @@
 /**
  * Job Map Page
- * Interactive map visualization of job locations with confidence system,
- * clustering, auto-fit bounds, mobile list/map switcher, and accessibility
+ * Interactive map visualization with display modes, confidence system, and mobile UX
  */
 
-import { useState, Suspense, lazy, useCallback, useMemo } from 'react';
+import { useState, Suspense, lazy, useCallback, useMemo, useEffect } from 'react';
 import { MapPin, Loader2 } from 'lucide-react';
 import { useJobMapData, JobMapFilters, MapLocation } from '@/hooks/useJobMapData';
 import { MapFilters, MapStats, JobListPanel, MapLayerControls } from '@/components/map';
@@ -15,6 +14,7 @@ import { MobileJobListView } from '@/components/map/MobileJobListView';
 import { SEO } from '@/components/SEO';
 import { StructuredData } from '@/components/StructuredData';
 import { buildBreadcrumbSchema } from '@/utils/breadcrumbSchema';
+import { type DisplayMode } from '@/components/map/constants';
 import { 
   MapFiltersSkeleton, 
   MapStatsSkeleton, 
@@ -64,6 +64,14 @@ function JobMapPageContent() {
   const [showHeatMap, setShowHeatMap] = useState(false);
   const [showMarkers, setShowMarkers] = useState(true);
   const [mobileViewMode, setMobileViewMode] = useState<MobileViewMode>('map');
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('standard');
+
+  // Density mode auto-enables heat map
+  useEffect(() => {
+    if (displayMode === 'density') {
+      setShowHeatMap(true);
+    }
+  }, [displayMode]);
 
   const {
     locations,
@@ -77,6 +85,7 @@ function JobMapPageContent() {
   const handleToggleHeatMap = useCallback(() => setShowHeatMap(prev => !prev), []);
   const handleToggleMarkers = useCallback(() => setShowMarkers(prev => !prev), []);
   const handleClosePanel = useCallback(() => setSelectedLocation(null), []);
+  const handleDisplayModeChange = useCallback((mode: DisplayMode) => setDisplayMode(mode), []);
 
   const activeFilterCount = useMemo(() => {
     return [
@@ -135,6 +144,7 @@ function JobMapPageContent() {
                 showHeatMap={showHeatMap}
                 showMarkers={showMarkers}
                 autoFitBounds={hasActiveFilters}
+                displayMode={displayMode}
               />
             </Suspense>
           )}
@@ -163,6 +173,8 @@ function JobMapPageContent() {
             onFiltersChange={setFilters}
             companies={uniqueCompanies}
             categories={uniqueCategories}
+            displayMode={displayMode}
+            onDisplayModeChange={handleDisplayModeChange}
           />
         )}
 
@@ -190,6 +202,7 @@ function JobMapPageContent() {
               onToggleHeatMap={handleToggleHeatMap}
               showMarkers={showMarkers}
               onToggleMarkers={handleToggleMarkers}
+              displayMode={displayMode}
             />
           )
         )}

@@ -25,4 +25,5 @@ export {
   JobCardSkeleton,
   MapLoadingOverlay,
 } from './MapSkeletons';
+export { DisplayModeSelector } from './DisplayModeSelector';
 export * from './constants';

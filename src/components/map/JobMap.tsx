@@ -3,7 +3,7 @@
  * Interactive map visualization of job locations with heat map, clustering, and accessibility
  */
 
-import { useEffect, useRef, memo, useCallback } from 'react';
+import { useEffect, useRef, memo, useCallback, useMemo } from 'react';
 import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from './MarkerClusterGroup';
 import L, { DivIcon } from 'leaflet';
@@ -21,10 +21,12 @@ import {
   MAX_ZOOM, 
   FLY_TO_ZOOM,
   FLY_TO_DURATION,
-  TILE_URLS,
   MAP_ATTRIBUTION,
   CLUSTER_SIZE,
   CLUSTER_THRESHOLDS,
+  CLUSTER_RADIUS,
+  getTileUrl,
+  type DisplayMode,
 } from './constants';
 import { useMapContextOptional } from './MapContext';
 
@@ -42,12 +44,11 @@ interface JobMapProps {
   onLocationSelect: (location: MapLocation | null) => void;
   showHeatMap?: boolean;
   showMarkers?: boolean;
-  /** Auto-fit bounds when filtered results change */
   autoFitBounds?: boolean;
+  displayMode?: DisplayMode;
   className?: string;
 }
 
-// Map controller component for external control
 function MapController({ 
   selectedLocation,
   onMapClick 
@@ -76,7 +77,6 @@ function MapController({
   return null;
 }
 
-// Keyboard navigation handler
 function KeyboardNavigationHandler({ 
   locations,
   selectedLocation,
@@ -127,19 +127,21 @@ function KeyboardNavigationHandler({
   return null;
 }
 
-// Create custom cluster icon
-function createClusterIcon(cluster: { getChildCount: () => number }): DivIcon {
+function createClusterIcon(cluster: { getChildCount: () => number }, displayMode: DisplayMode): DivIcon {
   const count = cluster.getChildCount();
-  let size: number = CLUSTER_SIZE.SMALL;
+  const scale = displayMode === 'density' ? 1.1 : displayMode === 'detail' ? 0.95 : 1;
+  let baseSize: number = CLUSTER_SIZE.SMALL;
   let className = 'job-cluster-small';
   
   if (count >= CLUSTER_THRESHOLDS.LARGE) {
-    size = CLUSTER_SIZE.LARGE;
+    baseSize = CLUSTER_SIZE.LARGE;
     className = 'job-cluster-large';
   } else if (count >= CLUSTER_THRESHOLDS.MEDIUM) {
-    size = CLUSTER_SIZE.MEDIUM;
+    baseSize = CLUSTER_SIZE.MEDIUM;
     className = 'job-cluster-medium';
   }
+
+  const size = Math.round(baseSize * scale);
 
   return L.divIcon({
     html: `<div class="job-cluster-inner" role="img" aria-label="${count} jobs in this area">${count}</div>`,
@@ -155,6 +157,7 @@ export const JobMap = memo(function JobMap({
   showHeatMap = false,
   showMarkers = true,
   autoFitBounds = true,
+  displayMode = 'standard',
   className = '',
 }: JobMapProps) {
   const { resolvedTheme } = useTheme();
@@ -162,11 +165,25 @@ export const JobMap = memo(function JobMap({
   const mapContext = useMapContextOptional();
   const isMobile = mapContext?.isMobile ?? false;
 
-  const tileUrl = isDark ? TILE_URLS.DARK : TILE_URLS.LIGHT;
+  const tileUrl = getTileUrl(displayMode, isDark);
+  const clusterRadius = CLUSTER_RADIUS[displayMode];
 
   const handleMapClick = useCallback(() => {}, []);
 
   const totalJobs = locations.reduce((sum, loc) => sum + loc.jobCount, 0);
+
+  const iconCreateFn = useMemo(() => {
+    return (cluster: { getChildCount: () => number }) => createClusterIcon(cluster, displayMode);
+  }, [displayMode]);
+
+  const clusterStyles = useMemo(() => {
+    const glowEffect = displayMode === 'detail'
+      ? `.job-cluster { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 0 2px rgba(255,255,255,0.15); }`
+      : displayMode === 'density'
+      ? `.job-cluster { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); opacity: 0.95; }`
+      : `.job-cluster { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }`;
+    return glowEffect;
+  }, [displayMode]);
 
   return (
     <div 
@@ -182,9 +199,9 @@ export const JobMap = memo(function JobMap({
           border-radius: 50%;
           font-weight: 600;
           color: white;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-          transition: transform 0.2s ease;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
+        ${clusterStyles}
         .job-cluster:hover,
         .job-cluster:focus {
           transform: scale(1.1);
@@ -197,7 +214,8 @@ export const JobMap = memo(function JobMap({
           justify-content: center;
           width: 100%;
           height: 100%;
-          font-size: 14px;
+          font-size: 13px;
+          letter-spacing: -0.01em;
         }
         .job-cluster-small {
           background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
@@ -218,7 +236,7 @@ export const JobMap = memo(function JobMap({
         }
         .leaflet-popup-content-wrapper {
           border-radius: 12px;
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
         }
         .leaflet-popup-content {
           margin: 0;
@@ -289,7 +307,6 @@ export const JobMap = memo(function JobMap({
           onLocationSelect={onLocationSelect}
         />
 
-        {/* Auto-fit bounds when filtered results change */}
         <MapBoundsController
           locations={locations}
           enabled={autoFitBounds}
@@ -298,7 +315,7 @@ export const JobMap = memo(function JobMap({
         <LazyHeatMapLayer 
           locations={locations} 
           visible={showHeatMap}
-          intensity={0.8}
+          intensity={displayMode === 'density' ? 1 : 0.8}
         />
 
         <MapZoomControls />
@@ -308,8 +325,8 @@ export const JobMap = memo(function JobMap({
             chunkedLoading
             spiderfyOnMaxZoom={true}
             showCoverageOnHover={false}
-            maxClusterRadius={60}
-            iconCreateFunction={createClusterIcon}
+            maxClusterRadius={clusterRadius}
+            iconCreateFunction={iconCreateFn}
             animate={true}
             spiderfyDistanceMultiplier={1.5}
             zoomToBoundsOnClick={true}
@@ -320,6 +337,7 @@ export const JobMap = memo(function JobMap({
                 location={location}
                 isSelected={selectedLocation?.id === location.id}
                 onClick={() => onLocationSelect(location)}
+                displayMode={displayMode}
               />
             ))}
           </MarkerClusterGroup>

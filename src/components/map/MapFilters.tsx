@@ -1,13 +1,12 @@
 /**
  * Enhanced Map Filters Component
- * Includes exact-only toggle, sticky positioning on mobile
+ * Includes exact-only toggle, display mode selector, sticky positioning on mobile
  */
 
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { Search, X, Filter, Building2, Tag, Navigation } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/design-system/Button';
-import { Badge } from '@/components/ui/badge';
 import { Toggle } from '@/components/ui/toggle';
 import {
   Select,
@@ -25,7 +24,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { JobMapFilters } from '@/hooks/useJobMapData';
 import { useDebouncedCallback } from '@/utils/performance';
 import { useMapContextOptional } from './MapContext';
-import { SEARCH_DEBOUNCE_MS } from './constants';
+import { SEARCH_DEBOUNCE_MS, type DisplayMode } from './constants';
+import { DisplayModeSelector } from './DisplayModeSelector';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -34,6 +34,8 @@ interface MapFiltersProps {
   onFiltersChange: (filters: JobMapFilters) => void;
   companies: { id: string; name: string }[];
   categories: { id: string; name: string }[];
+  displayMode?: DisplayMode;
+  onDisplayModeChange?: (mode: DisplayMode) => void;
 }
 
 export const MapFilters = memo(function MapFilters({
@@ -41,6 +43,8 @@ export const MapFilters = memo(function MapFilters({
   onFiltersChange,
   companies,
   categories,
+  displayMode = 'standard',
+  onDisplayModeChange,
 }: MapFiltersProps) {
   const mapContext = useMapContextOptional();
   const isMobileFallback = useIsMobile();
@@ -99,9 +103,10 @@ export const MapFilters = memo(function MapFilters({
             pressed={!!filters.exactOnly}
             onPressedChange={(pressed) => onFiltersChange({ ...filters, exactOnly: pressed })}
             className={cn(
-              "bg-background/95 backdrop-blur-sm shadow-lg",
+              "bg-background/90 backdrop-blur-md shadow-lg border border-border/50",
               isMobile ? "h-12 w-12" : "h-10 w-10",
-              "data-[state=on]:bg-emerald-500/20 data-[state=on]:text-emerald-700 dark:data-[state=on]:text-emerald-400"
+              "data-[state=on]:bg-emerald-500/20 data-[state=on]:text-emerald-700 dark:data-[state=on]:text-emerald-400",
+              "data-[state=on]:border-emerald-500/40"
             )}
             aria-label={filters.exactOnly ? 'Show all locations' : 'Only exact locations'}
           >
@@ -124,9 +129,8 @@ export const MapFilters = memo(function MapFilters({
       <div 
         className={cn(
           "absolute z-[1000] flex flex-wrap gap-2 items-start",
-          // Sticky on mobile via fixed positioning within the map container
           "top-20 left-4 right-4",
-          "lg:right-auto lg:max-w-2xl"
+          "lg:right-auto lg:max-w-3xl"
         )}
         role="search"
         aria-label="Filter jobs on map"
@@ -134,7 +138,7 @@ export const MapFilters = memo(function MapFilters({
         {/* Search Input */}
         <form 
           onSubmit={handleSearchSubmit} 
-          className={cn("flex-1 min-w-[200px]", isMobile ? "w-full" : "max-w-md")}
+          className={cn("flex-1 min-w-[200px]", isMobile ? "w-full" : "max-w-sm")}
         >
           <div className="relative">
             <Search 
@@ -148,7 +152,7 @@ export const MapFilters = memo(function MapFilters({
               value={searchValue}
               onChange={handleSearchChange}
               className={cn(
-                "pl-9 pr-9 bg-background/95 backdrop-blur-sm shadow-lg border-border/50",
+                "pl-9 pr-9 bg-background/90 backdrop-blur-md shadow-lg border-border/50",
                 isMobile ? "h-12" : "h-10"
               )}
               aria-label="Search jobs by title, company, or location"
@@ -187,7 +191,7 @@ export const MapFilters = memo(function MapFilters({
               <Button
                 variant="outline"
                 size="icon"
-                className={cn("bg-background/95 backdrop-blur-sm shadow-lg relative", "h-12 w-12")}
+                className={cn("bg-background/90 backdrop-blur-md shadow-lg border-border/50 relative", "h-12 w-12")}
                 aria-label={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
                 aria-expanded={isFilterOpen}
                 aria-haspopup="dialog"
@@ -268,7 +272,7 @@ export const MapFilters = memo(function MapFilters({
               >
                 <SelectTrigger 
                   id="desktop-company-filter"
-                  className={cn("bg-background/95 backdrop-blur-sm shadow-lg", isTablet ? "w-[150px] h-10" : "w-[180px] h-10")}
+                  className={cn("bg-background/90 backdrop-blur-md shadow-lg border-border/50", isTablet ? "w-[150px] h-10" : "w-[170px] h-10")}
                 >
                   <Building2 className="w-4 h-4 mr-2 text-muted-foreground" aria-hidden="true" />
                   <SelectValue placeholder="All companies" />
@@ -290,7 +294,7 @@ export const MapFilters = memo(function MapFilters({
               >
                 <SelectTrigger 
                   id="desktop-category-filter"
-                  className={cn("bg-background/95 backdrop-blur-sm shadow-lg", isTablet ? "w-[130px] h-10" : "w-[160px] h-10")}
+                  className={cn("bg-background/90 backdrop-blur-md shadow-lg border-border/50", isTablet ? "w-[130px] h-10" : "w-[160px] h-10")}
                 >
                   <Tag className="w-4 h-4 mr-2 text-muted-foreground" aria-hidden="true" />
                   <SelectValue placeholder="All categories" />
@@ -309,7 +313,7 @@ export const MapFilters = memo(function MapFilters({
                 variant="ghost"
                 size="sm"
                 onClick={clearFilters}
-                className="bg-background/95 backdrop-blur-sm shadow-lg h-10"
+                className="bg-background/90 backdrop-blur-md shadow-lg border border-border/50 h-10"
                 aria-label="Clear all filters"
               >
                 <X className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
@@ -317,6 +321,20 @@ export const MapFilters = memo(function MapFilters({
               </Button>
             )}
           </>
+        )}
+
+        {/* Display Mode — desktop inline, mobile below search */}
+        {onDisplayModeChange && (
+          <div className={cn(isMobile && "w-full")}>
+            <DisplayModeSelector
+              mode={displayMode}
+              onModeChange={onDisplayModeChange}
+              compact={isMobile || isTablet}
+              className={cn(
+                isMobile && "w-full justify-center"
+              )}
+            />
+          </div>
         )}
       </div>
     </>
