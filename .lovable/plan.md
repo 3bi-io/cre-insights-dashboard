@@ -1,63 +1,62 @@
 
 
-# Replace Landing Page Hero with Interactive Map
+# Replace Hero Map Component with Recorded Video Loop
 
 ## Summary
-Remove the current image-slideshow hero section and replace it with an embedded interactive job map as the homepage hero. This makes the landing page immediately functional — visitors see real job locations on first load instead of a static marketing banner.
+Replace the live `JobMap` component in the homepage hero with a screen-recorded MP4 video of the actual `/map` page, playing as a silent autoplay loop. This eliminates the heavy Leaflet/clustering overhead on the landing page, removes visual noise from cluster labels, and delivers a polished, cinematic product preview as the hero backdrop.
 
-## Design
+## Approach
 
-The map hero will be a contained section (roughly 70vh on desktop, 50vh on mobile) with an overlay containing the headline, CTAs, and trust signals. Below it, the existing landing page sections continue as normal.
+### Step 1: Record the /map page as video
+Use browser automation to capture a sequence of screenshots from the live `/map` page at different zoom levels and states (overview, zoom into clusters, pan across US). Then use ffmpeg to stitch these into a smooth looping MP4 with crossfade transitions (~15-20 seconds, 1920x1080).
 
-```text
-┌──────────────────────────────────────────┐
-│  Header (sticky)                         │
-├──────────────────────────────────────────┤
-│                                          │
-│   Interactive Map (background)           │
-│   ┌────────────────────────────┐         │
-│   │  Badge pill                │         │
-│   │  "Interview Everyone"     │         │
-│   │  Subheadline              │         │
-│   │  [Search Jobs] [Book Demo]│         │
-│   │  Trust pills              │         │
-│   └────────────────────────────┘         │
-│                                          │
-├──────────────────────────────────────────┤
-│  Client Logo Marquee                     │
-│  How It Works                            │
-│  ... rest of landing sections ...        │
-└──────────────────────────────────────────┘
+### Step 2: Optimize and deploy the video
+- Compress with h264/crf 28 for web delivery (~2-5MB target)
+- Generate a poster frame (first frame as JPEG) for instant visual while video loads
+- Place both in `public/videos/`
+
+### Step 3: Rewrite HeroSection
+Replace the `MapProvider` + `JobMap` + `Suspense` block with a simple `<video>` element:
+
+```tsx
+<video
+  autoPlay
+  loop
+  muted
+  playsInline
+  poster="/videos/hero-map-poster.jpg"
+  className="absolute inset-0 w-full h-full object-cover"
+>
+  <source src="/videos/hero-map.mp4" type="video/mp4" />
+</video>
 ```
 
-The map renders in a non-interactive (visual-only) mode behind the hero content — no filters, no controls, no AI panel. It serves as a dynamic, data-driven backdrop showing real job clusters across the US. A subtle dark gradient overlay ensures text readability.
+Remove imports: `JobMap`, `MapProvider`, `useJobMapData`, `MapLocation`, `Suspense`, `lazy`.
+
+Keep: Framer Motion animations, headline, CTAs, trust signals (company/job counts still fetched live), gradient overlays.
+
+### Step 4: Clean up unused hero dependencies
+- Remove `useCallback` import (no longer needed for `handleLocationSelect`)
+- Remove `Loader2` import (unused)
+- Simplify the component significantly
 
 ## Files to Modify
 
 | File | Changes |
 |---|---|
-| `src/features/landing/components/sections/HeroSection.tsx` | **Rewrite**: Replace `HeroBackground` + slideshow with an embedded `JobMap` component in visual-only mode. Keep the animated headline, CTAs, and trust signals as an absolute overlay. Map container set to `h-[70vh]` desktop / `h-[50vh]` mobile. Add dark gradient overlay for text contrast. |
-| `src/components/map/JobMap.tsx` | **Minor**: Add a `interactive` prop (default `true`). When `false`, disable scroll zoom, drag, click events, zoom controls, and clustering popups — map becomes a pure visual backdrop. |
-| `src/pages/public/LandingPage.tsx` | No structural changes — `HeroSection` import stays the same. |
-| `src/features/landing/content/hero.content.ts` | No changes needed. |
+| `public/videos/hero-map.mp4` | **New** — recorded video of /map page |
+| `public/videos/hero-map-poster.jpg` | **New** — poster frame for instant load |
+| `src/features/landing/components/sections/HeroSection.tsx` | Replace map backdrop with `<video>` element, remove map-related imports |
 
-## Implementation Details
+## Benefits
+- **Performance**: Removes Leaflet, marker clustering, Supabase location query, and MapProvider from the landing page critical path
+- **Visual quality**: Pre-recorded video can be curated to show the best angles and transitions without runtime rendering issues
+- **Reliability**: No more cluster label bleed-through, loading states, or map tile failures on the homepage
+- **Mobile**: Native `<video>` with `playsInline` works cleanly on iOS/Android with zero scroll conflict
 
-### HeroSection rewrite
-- Import `JobMap` (lazy) and `useJobMapData` with no filters to get all locations
-- Wrap in `MapProvider` since `JobMap` needs map context
-- Render `JobMap` with `interactive={false}` as background, absolutely positioned
-- Overlay: reuse existing Framer Motion animations, headline, CTAs, trust pills
-- Gradient overlay: `bg-gradient-to-b from-black/60 via-black/40 to-black/60`
-- Remove all slideshow image imports (`voiceHero`, `cyberHero`, etc.), `HeroBackground`, and `WeldingSparks`
-
-### JobMap `interactive` prop
-- When `interactive={false}`: set `dragging={false}`, `scrollWheelZoom={false}`, `zoomControl={false}`, `doubleClickZoom={false}`, `touchZoom={false}`, `attributionControl={false}`
-- Hide `MapZoomControls` when not interactive
-- Disable marker click handlers (markers still render for visual effect)
-- Keep clustering for visual density
-
-### Performance
-- The map data hook already has 5-minute stale time and daily refresh — no extra fetching needed
-- `JobMap` is already lazy-loaded, so the hero will show a loading state briefly then reveal the map
+## Mobile Behavior
+- `playsInline` + `muted` + `autoPlay` ensures autoplay works on iOS Safari
+- `object-cover` maintains full-bleed coverage at all aspect ratios
+- Video file is small enough (~3-5MB) for mobile networks
+- Poster image shows immediately while video loads
 
