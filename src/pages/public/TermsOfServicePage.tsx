@@ -98,7 +98,7 @@ const sections: LegalSection[] = [
   },
   {
     id: 'changes',
-    title: '10. Changes to Terms',
+    title: '11. Changes to Terms',
     content: <p>We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will try to provide at least 30 days notice prior to any new terms taking effect.</p>,
   },
   {
