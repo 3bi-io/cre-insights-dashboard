@@ -252,17 +252,16 @@ export const MapAIAssistantPanel = memo(function MapAIAssistantPanel({
             <span>·</span>
             <span>{mappedPercentage}%</span>
           </div>
-          {isMobile && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => setIsExpanded(false)}
-              aria-label="Collapse assistant"
-            >
-              <ChevronDown className="w-4 h-4" />
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => toggleExpanded(false)}
+            aria-label="Collapse assistant"
+            aria-expanded="true"
+          >
+            <ChevronDown className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 
