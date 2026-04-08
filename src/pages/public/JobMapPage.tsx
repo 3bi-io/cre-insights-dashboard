@@ -9,6 +9,7 @@ import { useJobMapData, JobMapFilters, MapLocation } from '@/hooks/useJobMapData
 import { useMapDailyRefresh } from '@/hooks/useMapDailyRefresh';
 import { MapFilters, JobListPanel, MapLayerControls, MapAIAssistantPanel } from '@/components/map';
 import { MapProvider, useMapContext } from '@/components/map/MapContext';
+import { MapThemeSwitcher } from '@/components/map/MapThemeSwitcher';
 import { MapAnnouncements } from '@/components/map/MapAnnouncements';
 import { MobileViewSwitcher, MobileViewMode } from '@/components/map/MobileMapListView';
 import { MobileJobListView } from '@/components/map/MobileJobListView';
