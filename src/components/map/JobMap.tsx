@@ -190,8 +190,8 @@ export const JobMap = memo(function JobMap({
   const totalJobs = locations.reduce((sum, loc) => sum + loc.jobCount, 0);
 
   const iconCreateFn = useMemo(() => {
-    return (cluster: { getChildCount: () => number }) => createClusterIcon(cluster, displayMode);
-  }, [displayMode]);
+    return (cluster: { getChildCount: () => number }) => createClusterIcon(cluster, displayMode, heroMode);
+  }, [displayMode, heroMode]);
 
   const clusterStyles = useMemo(() => {
     const glowEffect = displayMode === 'detail'
