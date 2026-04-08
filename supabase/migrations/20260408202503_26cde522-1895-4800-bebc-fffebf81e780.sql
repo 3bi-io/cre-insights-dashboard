@@ -1,0 +1,1 @@
+UPDATE public.clients SET logo_url = 'https://www.churchtransportation.net/wp-content/uploads/2020/02/Church-Transportation-Logo-white2.png' WHERE id = 'dffb0ef4-07a0-494f-9790-ef9868e143c7';
