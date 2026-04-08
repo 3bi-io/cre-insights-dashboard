@@ -322,18 +322,13 @@ export const MapFilters = memo(function MapFilters({
           </>
         )}
 
-        {/* Display Mode — desktop inline, mobile below search */}
-        {onDisplayModeChange && (
-          <div className={cn(isMobile && "w-full")}>
-            <DisplayModeSelector
-              mode={displayMode}
-              onModeChange={onDisplayModeChange}
-              compact={isMobile || isTablet}
-              className={cn(
-                isMobile && "w-full justify-center"
-              )}
-            />
-          </div>
+        {/* Display Mode — desktop/tablet inline only; on mobile it moves into the filter popover */}
+        {onDisplayModeChange && !isMobile && (
+          <DisplayModeSelector
+            mode={displayMode}
+            onModeChange={onDisplayModeChange}
+            compact={isTablet}
+          />
         )}
       </div>
     </>

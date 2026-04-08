@@ -225,7 +225,7 @@ export const MapAIAssistantPanel = memo(function MapAIAssistantPanel({
       className={cn(
         'absolute z-[1000] bg-background/95 backdrop-blur-md rounded-lg shadow-lg border border-border/50 flex flex-col transition-all duration-200',
         isMobile
-          ? 'bottom-16 left-2 right-2 max-h-[55vh]'
+          ? 'bottom-[4.5rem] left-2 right-2 max-h-[50vh]'
           : 'bottom-4 left-4 w-[360px] max-h-[45vh]'
       )}
       role="complementary"

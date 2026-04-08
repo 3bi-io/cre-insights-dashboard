@@ -105,6 +105,8 @@ function JobMapPageContent() {
     { name: 'Job Map', href: '/map' },
   ]), []);
 
+  const showMapView = !isMobile || mobileViewMode === 'map';
+
   return (
     <>
       <SEO
@@ -135,14 +137,14 @@ function JobMapPageContent() {
 
         {/* Background refresh indicator */}
         {isRefreshing && (
-          <div className="absolute top-[0.5rem] left-1/2 -translate-x-1/2 z-[1001] bg-primary/90 text-primary-foreground text-xs px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 animate-in fade-in">
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[1001] bg-primary/90 text-primary-foreground text-xs px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 animate-in fade-in">
             <Loader2 className="w-3 h-3 animate-spin" />
             Refreshing jobs…
           </div>
         )}
 
-        {/* Map Container */}
-        <div className={`absolute inset-0 top-16 ${isMobile && mobileViewMode === 'list' ? 'invisible' : ''}`}>
+        {/* Map Container — fills entire main area */}
+        <div className={`absolute inset-0 ${isMobile && mobileViewMode === 'list' ? 'invisible' : ''}`}>
           {error ? (
             <MapErrorFallback error={error} />
           ) : (
@@ -162,7 +164,7 @@ function JobMapPageContent() {
 
         {/* Mobile List View */}
         {isMobile && mobileViewMode === 'list' && (
-          <div className="absolute inset-0 top-16 overflow-y-auto bg-background" id="list-panel" role="tabpanel">
+          <div className="absolute inset-0 overflow-y-auto bg-background" id="list-panel" role="tabpanel">
             <MobileJobListView
               locations={locations}
               isLoading={isLoading}
@@ -174,7 +176,7 @@ function JobMapPageContent() {
           </div>
         )}
 
-        {/* Filters Overlay */}
+        {/* Filters Overlay — top of map area */}
         {isLoading && locations.length === 0 ? (
           <MapFiltersSkeleton isMobile={isMobile} />
         ) : (
@@ -188,8 +190,29 @@ function JobMapPageContent() {
           />
         )}
 
+        {/* Right-side control stack: zoom (inside map) + theme + layers */}
+        {showMapView && (
+          <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-2 items-end">
+            {/* Theme switcher */}
+            <MapThemeSwitcher />
+            {/* Layer controls */}
+            {isLoading && locations.length === 0 ? (
+              <MapControlsSkeleton isMobile={isMobile} />
+            ) : (
+              <MapLayerControls
+                showHeatMap={showHeatMap}
+                onToggleHeatMap={handleToggleHeatMap}
+                showMarkers={showMarkers}
+                onToggleMarkers={handleToggleMarkers}
+                displayMode={displayMode}
+                className="!relative !bottom-auto !right-auto"
+              />
+            )}
+          </div>
+        )}
+
         {/* AI Assistant Panel */}
-        {(!isMobile || mobileViewMode === 'map') && (
+        {showMapView && (
           <MapAIAssistantPanel
             totalJobs={stats.totalJobs}
             uniqueLocations={stats.uniqueLocations}
@@ -208,28 +231,9 @@ function JobMapPageContent() {
           />
         )}
 
-        {/* Layer Controls + Theme Switcher */}
-        {(!isMobile || mobileViewMode === 'map') && (
-          <div className="absolute bottom-4 right-4 z-[1000] flex flex-col gap-2 items-end">
-            <MapThemeSwitcher />
-            {isLoading && locations.length === 0 ? (
-              <MapControlsSkeleton isMobile={isMobile} />
-            ) : (
-              <MapLayerControls
-                showHeatMap={showHeatMap}
-                onToggleHeatMap={handleToggleHeatMap}
-                showMarkers={showMarkers}
-                onToggleMarkers={handleToggleMarkers}
-                displayMode={displayMode}
-                className="!relative !bottom-auto !right-auto"
-              />
-            )}
-          </div>
-        )}
-
-        {/* Mobile View Switcher */}
+        {/* Mobile View Switcher — bottom center */}
         {isMobile && !isLoading && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000]">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1001]">
             <MobileViewSwitcher
               mode={mobileViewMode}
               onModeChange={setMobileViewMode}
