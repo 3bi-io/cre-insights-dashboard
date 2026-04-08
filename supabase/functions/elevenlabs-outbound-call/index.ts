@@ -563,7 +563,7 @@ if (import.meta.main) {
       // ── Holiday gate: check if today is a holiday for any org before processing ──
       // We check globally first; per-org checks happen per-call below
       const nowUtc = new Date();
-      const todayDateStr = nowUtc.toISOString().split('T')[0]; // UTC date as fallback
+      const todayDateStr = getDateInTimezone(nowUtc, DEFAULT_TIMEZONE); // Use Central time, not UTC
       const { data: globalHoliday } = await supabase
         .from('organization_holidays')
         .select('id, name')
@@ -682,18 +682,27 @@ if (import.meta.main) {
             const orgId = callMeta.organization_id;
             const clientId = (callMeta.metadata as Record<string, unknown>)?.client_id as string | null;
             
-            // Check org-specific holidays
-            const orgTodayStr = todayDateStr; // already computed above
+            // Fetch org timezone for accurate date calculation
+            const { data: orgCallSettings } = await supabase
+              .from('organization_call_settings')
+              .select('business_hours_timezone')
+              .eq('organization_id', orgId)
+              .is('client_id', null)
+              .maybeSingle();
+            const orgTimezone = orgCallSettings?.business_hours_timezone || DEFAULT_TIMEZONE;
+            
+            // Use org-local date for holiday checks (fixes UTC boundary bug)
+            const orgTodayStr = getDateInTimezone(nowUtc, orgTimezone);
             const { data: orgHoliday } = await supabase
               .from('organization_holidays')
               .select('id, name')
-              .eq('organization_id', orgId)
+              .or(`organization_id.eq.${orgId},organization_id.is.null`)
               .eq('holiday_date', orgTodayStr)
               .limit(1)
               .maybeSingle();
             
             if (orgHoliday) {
-              logger.info(`Org holiday "${orgHoliday.name}" for org ${orgId} — skipping call ${call.id}`);
+              logger.info(`Holiday "${orgHoliday.name}" for org ${orgId} on ${orgTodayStr} — skipping call ${call.id}`);
               results.results.push({ call_id: call.id, status: 'skipped', error: `Holiday: ${orgHoliday.name}` });
               continue;
             }
@@ -705,6 +714,8 @@ if (import.meta.main) {
             const isFirstAttempt = retryCount === 0;
             
             if (!isFirstAttempt) {
+              // is_within_business_hours now also checks holidays (Bug 3 fix),
+              // but we already checked above for better logging
               const { data: withinHours } = await supabase.rpc('is_within_business_hours', {
                 p_org_id: orgId,
                 p_client_id: clientId || null,
