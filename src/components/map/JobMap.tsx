@@ -1,7 +1,6 @@
 /**
  * Job Map Component
  * Interactive map visualization of job locations with heat map, clustering, and accessibility
- * Optimized for all device types with proper gesture handling
  */
 
 import { useEffect, useRef, memo, useCallback } from 'react';
@@ -13,6 +12,7 @@ import { MapLocation } from '@/hooks/useJobMapData';
 import { JobMarker } from './JobMarker';
 import { LazyHeatMapLayer } from './LazyHeatMapLayer';
 import { MapZoomControls } from './MapControls';
+import { MapBoundsController } from './MapBoundsController';
 import { useTheme } from 'next-themes';
 import { 
   US_CENTER, 
@@ -42,6 +42,8 @@ interface JobMapProps {
   onLocationSelect: (location: MapLocation | null) => void;
   showHeatMap?: boolean;
   showMarkers?: boolean;
+  /** Auto-fit bounds when filtered results change */
+  autoFitBounds?: boolean;
   className?: string;
 }
 
@@ -65,7 +67,6 @@ function MapController({
     }
   }, [selectedLocation, map]);
 
-  // Handle map clicks to deselect
   useMapEvents({
     click: () => {
       onMapClick?.();
@@ -90,11 +91,9 @@ function KeyboardNavigationHandler({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!locations.length) return;
-
       const currentIndex = selectedLocation 
         ? locations.findIndex(l => l.id === selectedLocation.id)
         : -1;
-
       let newIndex = currentIndex;
 
       switch (e.key) {
@@ -111,13 +110,6 @@ function KeyboardNavigationHandler({
         case 'Escape':
           onLocationSelect(null);
           return;
-        case 'Enter':
-        case ' ':
-          if (selectedLocation) {
-            e.preventDefault();
-            // Trigger selection action (already selected, so this could open details)
-          }
-          return;
         default:
           return;
       }
@@ -129,10 +121,7 @@ function KeyboardNavigationHandler({
 
     const mapContainer = map.getContainer();
     mapContainer.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      mapContainer.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => mapContainer.removeEventListener('keydown', handleKeyDown);
   }, [map, locations, selectedLocation, onLocationSelect]);
 
   return null;
@@ -141,8 +130,6 @@ function KeyboardNavigationHandler({
 // Create custom cluster icon
 function createClusterIcon(cluster: { getChildCount: () => number }): DivIcon {
   const count = cluster.getChildCount();
-  
-  // Determine size based on count
   let size: number = CLUSTER_SIZE.SMALL;
   let className = 'job-cluster-small';
   
@@ -167,6 +154,7 @@ export const JobMap = memo(function JobMap({
   onLocationSelect,
   showHeatMap = false,
   showMarkers = true,
+  autoFitBounds = true,
   className = '',
 }: JobMapProps) {
   const { resolvedTheme } = useTheme();
@@ -174,15 +162,10 @@ export const JobMap = memo(function JobMap({
   const mapContext = useMapContextOptional();
   const isMobile = mapContext?.isMobile ?? false;
 
-  // Tile layer URL based on theme
   const tileUrl = isDark ? TILE_URLS.DARK : TILE_URLS.LIGHT;
 
-  const handleMapClick = useCallback(() => {
-    // Only deselect if clicking on the map (not on markers)
-    // Markers handle their own clicks
-  }, []);
+  const handleMapClick = useCallback(() => {}, []);
 
-  // Calculate total jobs for screen reader announcement
   const totalJobs = locations.reduce((sum, loc) => sum + loc.jobCount, 0);
 
   return (
@@ -191,7 +174,6 @@ export const JobMap = memo(function JobMap({
       role="application"
       aria-label={`Interactive job map showing ${totalJobs} jobs across ${locations.length} locations`}
     >
-      {/* Custom cluster and accessibility styles */}
       <style>{`
         .job-cluster {
           display: flex;
@@ -248,11 +230,9 @@ export const JobMap = memo(function JobMap({
           background: hsl(var(--popover));
           color: hsl(var(--popover-foreground));
         }
-        /* Hide default zoom controls - we provide custom ones */
         .leaflet-control-zoom {
           display: none !important;
         }
-        /* Improve touch targets on mobile */
         @media (pointer: coarse) {
           .job-cluster,
           .job-marker-icon > div {
@@ -260,13 +240,11 @@ export const JobMap = memo(function JobMap({
             min-height: 44px;
           }
         }
-        /* High contrast mode support */
         @media (prefers-contrast: high) {
           .job-cluster {
             border: 2px solid white;
           }
         }
-        /* Reduced motion support */
         @media (prefers-reduced-motion: reduce) {
           .job-cluster,
           .job-marker-icon > div {
@@ -283,7 +261,6 @@ export const JobMap = memo(function JobMap({
       <MapContainer
         center={US_CENTER}
         zoom={DEFAULT_ZOOM}
-        // Disable scroll wheel zoom on mobile to prevent accidental zooms
         scrollWheelZoom={!isMobile}
         className="w-full h-full rounded-lg"
         minZoom={MIN_ZOOM}
@@ -294,7 +271,6 @@ export const JobMap = memo(function JobMap({
         dragging={true}
         doubleClickZoom={true}
         zoomControl={false}
-        // Prevent jarring bounces at zoom limits
         bounceAtZoomLimits={false}
       >
         <TileLayer
@@ -313,17 +289,20 @@ export const JobMap = memo(function JobMap({
           onLocationSelect={onLocationSelect}
         />
 
-        {/* Heat map layer - lazy loaded for performance */}
+        {/* Auto-fit bounds when filtered results change */}
+        <MapBoundsController
+          locations={locations}
+          enabled={autoFitBounds}
+        />
+
         <LazyHeatMapLayer 
           locations={locations} 
           visible={showHeatMap}
           intensity={0.8}
         />
 
-        {/* Custom zoom controls */}
         <MapZoomControls />
 
-        {/* Marker clusters */}
         {showMarkers && (
           <MarkerClusterGroup
             chunkedLoading
@@ -347,7 +326,6 @@ export const JobMap = memo(function JobMap({
         )}
       </MapContainer>
 
-      {/* Screen reader live region for announcements */}
       <div 
         role="status" 
         aria-live="polite" 

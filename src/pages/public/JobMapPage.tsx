@@ -1,7 +1,7 @@
 /**
  * Job Map Page
- * Interactive map visualization of job locations with heat map and accessibility features
- * Optimized for all device types: mobile, tablet, and desktop
+ * Interactive map visualization of job locations with confidence system,
+ * clustering, auto-fit bounds, mobile list/map switcher, and accessibility
  */
 
 import { useState, Suspense, lazy, useCallback, useMemo } from 'react';
@@ -10,6 +10,8 @@ import { useJobMapData, JobMapFilters, MapLocation } from '@/hooks/useJobMapData
 import { MapFilters, MapStats, JobListPanel, MapLayerControls } from '@/components/map';
 import { MapProvider, useMapContext } from '@/components/map/MapContext';
 import { MapAnnouncements } from '@/components/map/MapAnnouncements';
+import { MobileViewSwitcher, MobileViewMode } from '@/components/map/MobileMapListView';
+import { MobileJobListView } from '@/components/map/MobileJobListView';
 import { SEO } from '@/components/SEO';
 import { StructuredData } from '@/components/StructuredData';
 import { buildBreadcrumbSchema } from '@/utils/breadcrumbSchema';
@@ -19,10 +21,8 @@ import {
   MapControlsSkeleton 
 } from '@/components/map/MapSkeletons';
 
-// Lazy load the map component to reduce initial bundle size
 const JobMap = lazy(() => import('@/components/map/JobMap').then(m => ({ default: m.JobMap })));
 
-// Loading fallback for map
 function MapLoadingFallback() {
   return (
     <div 
@@ -38,7 +38,6 @@ function MapLoadingFallback() {
   );
 }
 
-// Error fallback
 function MapErrorFallback({ error }: { error: Error }) {
   return (
     <div 
@@ -57,7 +56,6 @@ function MapErrorFallback({ error }: { error: Error }) {
   );
 }
 
-// Inner component that uses MapContext
 function JobMapPageContent() {
   const { isMobile } = useMapContext();
   
@@ -65,6 +63,7 @@ function JobMapPageContent() {
   const [selectedLocation, setSelectedLocation] = useState<MapLocation | null>(null);
   const [showHeatMap, setShowHeatMap] = useState(false);
   const [showMarkers, setShowMarkers] = useState(true);
+  const [mobileViewMode, setMobileViewMode] = useState<MobileViewMode>('map');
 
   const {
     locations,
@@ -75,24 +74,16 @@ function JobMapPageContent() {
     error,
   } = useJobMapData(filters);
 
-  const handleToggleHeatMap = useCallback(() => {
-    setShowHeatMap(prev => !prev);
-  }, []);
+  const handleToggleHeatMap = useCallback(() => setShowHeatMap(prev => !prev), []);
+  const handleToggleMarkers = useCallback(() => setShowMarkers(prev => !prev), []);
+  const handleClosePanel = useCallback(() => setSelectedLocation(null), []);
 
-  const handleToggleMarkers = useCallback(() => {
-    setShowMarkers(prev => !prev);
-  }, []);
-
-  const handleClosePanel = useCallback(() => {
-    setSelectedLocation(null);
-  }, []);
-
-  // Calculate active filter count for announcements
   const activeFilterCount = useMemo(() => {
     return [
       filters.searchTerm,
       filters.clientFilter,
       filters.categoryFilter,
+      filters.exactOnly ? 'exact' : undefined,
     ].filter(Boolean).length;
   }, [filters]);
 
@@ -114,7 +105,6 @@ function JobMapPageContent() {
       />
       <StructuredData data={mapBreadcrumbs} />
 
-      {/* Screen Reader Announcements */}
       <MapAnnouncements
         totalJobs={stats.totalJobs}
         totalLocations={stats.uniqueLocations}
@@ -126,20 +116,14 @@ function JobMapPageContent() {
         filterCount={activeFilterCount}
       />
 
-      {/* 
-        Use h-[100dvh] for dynamic viewport height on mobile (accounts for browser chrome)
-        pt-16 offsets the fixed header
-        pb-safe adds padding for iOS home indicator
-      */}
       <main 
         className="relative w-full h-[100dvh] pt-16 pb-safe bg-background overflow-hidden"
         id="main-content"
       >
-        {/* Skip link target for accessibility */}
         <h1 className="sr-only">Job Locations Map</h1>
         
-        {/* Map Container - fills remaining height */}
-        <div className="absolute inset-0 top-16">
+        {/* Map Container */}
+        <div className={`absolute inset-0 top-16 ${isMobile && mobileViewMode === 'list' ? 'invisible' : ''}`}>
           {error ? (
             <MapErrorFallback error={error} />
           ) : (
@@ -150,12 +134,27 @@ function JobMapPageContent() {
                 onLocationSelect={setSelectedLocation}
                 showHeatMap={showHeatMap}
                 showMarkers={showMarkers}
+                autoFitBounds={hasActiveFilters}
               />
             </Suspense>
           )}
         </div>
 
-        {/* Filters Overlay - with skeleton during initial load */}
+        {/* Mobile List View */}
+        {isMobile && mobileViewMode === 'list' && (
+          <div className="absolute inset-0 top-16 overflow-y-auto bg-background" id="list-panel" role="tabpanel">
+            <MobileJobListView
+              locations={locations}
+              isLoading={isLoading}
+              onLocationSelect={(loc) => {
+                setSelectedLocation(loc);
+                setMobileViewMode('map');
+              }}
+            />
+          </div>
+        )}
+
+        {/* Filters Overlay */}
         {isLoading && locations.length === 0 ? (
           <MapFiltersSkeleton isMobile={isMobile} />
         ) : (
@@ -167,24 +166,41 @@ function JobMapPageContent() {
           />
         )}
 
-        {/* Stats Overlay - has built-in loading state */}
-        <MapStats
-          totalJobs={stats.totalJobs}
-          uniqueLocations={stats.uniqueLocations}
-          jobsWithLocation={stats.jobsWithLocation}
-          isLoading={isLoading && locations.length === 0}
-        />
-
-        {/* Layer Controls - with skeleton during initial load */}
-        {isLoading && locations.length === 0 ? (
-          <MapControlsSkeleton isMobile={isMobile} />
-        ) : (
-          <MapLayerControls
-            showHeatMap={showHeatMap}
-            onToggleHeatMap={handleToggleHeatMap}
-            showMarkers={showMarkers}
-            onToggleMarkers={handleToggleMarkers}
+        {/* Stats Overlay */}
+        {(!isMobile || mobileViewMode === 'map') && (
+          <MapStats
+            totalJobs={stats.totalJobs}
+            uniqueLocations={stats.uniqueLocations}
+            jobsWithLocation={stats.jobsWithLocation}
+            exactCount={stats.exactCount}
+            stateCount={stats.stateCount}
+            countryCount={stats.countryCount}
+            isLoading={isLoading && locations.length === 0}
           />
+        )}
+
+        {/* Layer Controls */}
+        {(!isMobile || mobileViewMode === 'map') && (
+          isLoading && locations.length === 0 ? (
+            <MapControlsSkeleton isMobile={isMobile} />
+          ) : (
+            <MapLayerControls
+              showHeatMap={showHeatMap}
+              onToggleHeatMap={handleToggleHeatMap}
+              showMarkers={showMarkers}
+              onToggleMarkers={handleToggleMarkers}
+            />
+          )
+        )}
+
+        {/* Mobile View Switcher */}
+        {isMobile && !isLoading && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000]">
+            <MobileViewSwitcher
+              mode={mobileViewMode}
+              onModeChange={setMobileViewMode}
+            />
+          </div>
         )}
 
         {/* Job List Panel */}
@@ -197,7 +213,6 @@ function JobMapPageContent() {
   );
 }
 
-// Main export wrapped with MapProvider
 export default function JobMapPage() {
   return (
     <MapProvider>

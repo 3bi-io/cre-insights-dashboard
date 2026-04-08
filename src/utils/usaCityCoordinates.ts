@@ -542,6 +542,22 @@ export const US_CITIES: CityCoordinate[] = [
   { city: 'Sedalia', state: 'Missouri', stateCode: 'MO', lat: 38.7045, lng: -93.2283 },
   { city: 'Wentzville', state: 'Missouri', stateCode: 'MO', lat: 38.8114, lng: -90.8529 },
   { city: 'San Juan', state: 'Puerto Rico', stateCode: 'PR', lat: 18.4655, lng: -66.1057 },
+
+  // Additional cities from DB audit — raise mapped coverage
+  { city: 'Chillicothe', state: 'Ohio', stateCode: 'OH', lat: 39.3331, lng: -82.9824 },
+  { city: 'Wilmington', state: 'Ohio', stateCode: 'OH', lat: 39.4453, lng: -83.8285 },
+  { city: 'Marion', state: 'Ohio', stateCode: 'OH', lat: 40.5887, lng: -83.1285 },
+  { city: 'Springfield', state: 'Ohio', stateCode: 'OH', lat: 39.9242, lng: -83.8088 },
+  { city: 'Newark', state: 'Ohio', stateCode: 'OH', lat: 40.0581, lng: -82.4013 },
+  { city: 'Covington', state: 'Tennessee', stateCode: 'TN', lat: 35.5642, lng: -89.6464 },
+  { city: 'Jackson', state: 'Tennessee', stateCode: 'TN', lat: 35.6145, lng: -88.8139 },
+  { city: 'Jackson', state: 'Mississippi', stateCode: 'MS', lat: 32.2988, lng: -90.1848 },
+  { city: 'Bloomsburg', state: 'Pennsylvania', stateCode: 'PA', lat: 41.0037, lng: -76.4549 },
+  { city: 'Harrisburg', state: 'Pennsylvania', stateCode: 'PA', lat: 40.2732, lng: -76.8867 },
+  { city: 'Big Spring', state: 'Texas', stateCode: 'TX', lat: 32.2507, lng: -101.4785 },
+  { city: 'Greenville', state: 'South Carolina', stateCode: 'SC', lat: 34.8526, lng: -82.3940 },
+  { city: 'Greenville', state: 'North Carolina', stateCode: 'NC', lat: 35.6127, lng: -77.3664 },
+  { city: 'Charleston', state: 'South Carolina', stateCode: 'SC', lat: 32.7765, lng: -79.9311 },
 ];
 
 // City name aliases to handle spelling variants in job data
@@ -554,6 +570,17 @@ const CITY_ALIASES: Record<string, string> = {
   'o fallon': "o'fallon",
   'wilkes barre': 'wilkes-barre',
   'winston salem': 'winston-salem',
+  'rock hill': 'rock hill',
+  'fort wayne': 'fort wayne',
+  'fort smith': 'fort smith',
+  'bowling green': 'bowling green',
+  'big spring': 'big spring',
+  'goose creek': 'goose creek',
+  'mount pleasant': 'mount pleasant',
+  'high point': 'high point',
+  'sandy springs': 'sandy springs',
+  'oklahoma city': 'oklahoma city',
+  'green valley': 'green valley',
 };
 
 // International city coordinates for non-US job locations
