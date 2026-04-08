@@ -3,6 +3,9 @@
  * Shared configuration values for map components
  */
 
+// Display modes
+export type DisplayMode = 'standard' | 'density' | 'detail';
+
 // Geographic defaults
 export const US_CENTER: [number, number] = [39.8283, -98.5795];
 export const DEFAULT_ZOOM = 4;
@@ -43,6 +46,13 @@ export const CLUSTER_THRESHOLDS = {
   LARGE: 100,
 } as const;
 
+// Mode-specific cluster radius
+export const CLUSTER_RADIUS: Record<DisplayMode, number> = {
+  standard: 60,
+  density: 40,
+  detail: 80,
+};
+
 // Marker sizing
 export const MARKER_SIZE = {
   BASE: 24,
@@ -55,6 +65,13 @@ export const MARKER_SIZE = {
   LARGE_TOUCH: 56,
 } as const;
 
+// Mode-specific marker scale multipliers
+export const MARKER_SCALE: Record<DisplayMode, number> = {
+  standard: 1,
+  density: 0.85,
+  detail: 1.15,
+};
+
 export const MARKER_THRESHOLDS = {
   MEDIUM: 5,
   HIGH: 20,
@@ -65,11 +82,26 @@ export const MARKER_THRESHOLDS = {
 export const SEARCH_DEBOUNCE_MS = 300;
 export const MAP_EVENT_THROTTLE_MS = 100;
 
-// Tile URLs
+// Tile URLs — CARTO CDN (free, no API key)
 export const TILE_URLS = {
   LIGHT: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
   DARK: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  VOYAGER: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+  LIGHT_NOLABELS: 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
+  DARK_NOLABELS: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
 } as const;
+
+// Mode → tile mapping helpers
+export function getTileUrl(mode: DisplayMode, isDark: boolean): string {
+  switch (mode) {
+    case 'density':
+      return isDark ? TILE_URLS.DARK_NOLABELS : TILE_URLS.LIGHT_NOLABELS;
+    case 'detail':
+      return isDark ? TILE_URLS.DARK : TILE_URLS.LIGHT;
+    default:
+      return isDark ? TILE_URLS.DARK : TILE_URLS.VOYAGER;
+  }
+}
 
 // Attribution
 export const MAP_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
