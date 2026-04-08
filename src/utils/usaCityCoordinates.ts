@@ -64,6 +64,7 @@ export const STATE_CENTROIDS: Record<string, { lat: number; lng: number }> = {
   'WI': { lat: 44.268543, lng: -89.616508 },
   'WY': { lat: 42.755966, lng: -107.302490 },
   'DC': { lat: 38.897438, lng: -77.026817 },
+  'PR': { lat: 18.2208, lng: -66.5901 },
 };
 
 // State name to code mapping
