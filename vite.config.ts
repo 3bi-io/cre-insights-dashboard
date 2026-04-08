@@ -26,6 +26,9 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    exclude: ['react-leaflet', '@react-leaflet/core', 'leaflet.markercluster'],
+  },
   build: {
     rollupOptions: {
       output: {
