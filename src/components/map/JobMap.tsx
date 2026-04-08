@@ -13,7 +13,7 @@ import { JobMarker } from './JobMarker';
 import { LazyHeatMapLayer } from './LazyHeatMapLayer';
 import { MapZoomControls } from './MapControls';
 import { MapBoundsController } from './MapBoundsController';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/components/ThemeProvider';
 import { 
   US_CENTER, 
   DEFAULT_ZOOM, 
