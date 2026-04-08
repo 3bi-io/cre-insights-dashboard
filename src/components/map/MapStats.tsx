@@ -72,7 +72,7 @@ export const MapStats = memo(function MapStats({
           aria-controls="mobile-stats-panel"
         >
           <Briefcase className="w-4 h-4 text-primary" aria-hidden="true" />
-          <span className="font-semibold">{totalJobs}</span>
+          <span className="font-semibold">{displayedJobs}</span>
           <span className="text-muted-foreground text-xs">jobs</span>
           {isExpanded ? (
             <ChevronDown className="w-4 h-4 ml-1" aria-hidden="true" />
