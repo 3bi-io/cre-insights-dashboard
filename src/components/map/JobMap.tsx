@@ -47,6 +47,8 @@ interface JobMapProps {
   autoFitBounds?: boolean;
   displayMode?: DisplayMode;
   className?: string;
+  /** When false, map is a visual-only backdrop with no user interaction */
+  interactive?: boolean;
 }
 
 function MapController({ 
