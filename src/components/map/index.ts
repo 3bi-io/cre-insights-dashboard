@@ -26,4 +26,5 @@ export {
   MapLoadingOverlay,
 } from './MapSkeletons';
 export { DisplayModeSelector } from './DisplayModeSelector';
+export { MapAIAssistantPanel } from './MapAIAssistantPanel';
 export * from './constants';

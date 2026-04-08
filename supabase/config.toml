@@ -359,3 +359,6 @@ verify_jwt = false
 
 [functions.ats-retry]
 verify_jwt = true
+
+[functions.map-ai-chat]
+verify_jwt = false
