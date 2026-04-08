@@ -1,48 +1,49 @@
 
 
-# Fix Map Page Crashes — Two Bugs
+# Fix Map Page — Crash + Data Completeness
 
 ## Problem Summary
-The /map page crashes with two distinct errors:
-1. **Infinite render loop** in `MapAnnouncements` — "Maximum update depth exceeded"
-2. **react-leaflet Context.Consumer crash** — "render2 is not a function"
+The /map page is completely broken with two issues:
+1. **Page crashes on load** — `react-dom` ESM import error (`createPortal` not found) caused by the `optimizeDeps.exclude` added in the previous fix attempt
+2. **Only 50 of 1,237 jobs load** — The map reuses the paginated jobs hook (PAGE_SIZE=50) but never calls `loadMore`, so filters/categories/markers only reflect a fraction of the data
+
+## Data in the Database
+- 1,237 active jobs across 16 clients and 4 categories
+- 809 jobs have city data, 774 have state data
+- Top clients: Admiral Merchants (421), Danny Herman (161), TMC (111), Werner (101), R.E. Garrison (97), Hub Group (90)
 
 ---
 
-## Bug 1: MapAnnouncements Infinite Loop
+## Step 1: Fix the crash — Remove `optimizeDeps.exclude`
 
-**Root cause**: The `useEffect` on line 74 includes `prevState` in its dependency array (line 128), but calls `setPrevState()` inside the effect (line 117). Since `prevState` is an object, every `setPrevState` creates a new reference, which triggers the effect again — infinite loop.
+**File**: `vite.config.ts`
 
-**Fix**: Replace the `useState`/`useEffect` pattern with `useRef` for tracking previous values. Store previous values in a ref (which doesn't trigger re-renders), and compare against the ref inside the effect. Update the ref at the end of the effect without causing a re-render.
+The `optimizeDeps.exclude` for `react-leaflet` and `@react-leaflet/core` prevents Vite from transforming their CJS imports, causing `react-dom`'s `createPortal` to fail as a named ESM export. Remove the entire `optimizeDeps` block — the custom `MarkerClusterGroup` wrapper already avoids the `react-leaflet-cluster` compatibility issue, so prebundling is safe.
 
-```text
-Before:  const [prevState, setPrevState] = useState({...});
-After:   const prevStateRef = useRef({...});
-         // Inside effect: compare against prevStateRef.current
-         // At end: prevStateRef.current = { ... };
-```
+## Step 2: Load ALL jobs for the map
 
-Remove `prevState` from the dependency array entirely.
+**File**: `src/hooks/useJobMapData.ts`
+
+Replace the `usePaginatedPublicJobs` dependency with a dedicated query that fetches all active jobs in one call (1,237 rows is small). Use a direct Supabase query with `useQuery`:
+
+- Select: `id, title, job_title, city, state, location, salary_min, salary_max, salary_type, job_summary, created_at, client_id, category_id`
+- Join: `job_categories(name)` (note: no FK, so fetch categories separately)
+- Enrich with client info from `public_client_info` view
+- Filter: `status=active`, `is_hidden=false`
+- Apply search/client/category filters at query level
+- No pagination — fetch all rows (limit 5000 as safety)
+
+This ensures all 16 companies and 4 categories appear in the filter dropdowns, and all 1,237 jobs render on the map.
+
+## Step 3: Verify filter dropdowns populate correctly
+
+The existing `uniqueCompanies` and `uniqueCategories` derivations in `useJobMapData` already work correctly — they iterate over loaded jobs. Once all jobs load, all 16 companies and 4 categories will appear.
 
 ---
 
-## Bug 2: react-leaflet-cluster Context.Consumer Incompatibility
+## Technical Detail
 
-**Root cause**: `react-leaflet-cluster@4.0.0` internally renders a `<Context.Consumer>` (the legacy React context API). React 18.x deprecated direct `<Context>` rendering and requires `<Context.Consumer>` to receive a function child. The cluster library's internals don't comply, causing "render2 is not a function".
+**Why `optimizeDeps.exclude` broke things**: When Vite excludes a dependency from prebundling, it serves the raw ESM source. `react-leaflet` v4 imports `createPortal` as a named export from `react-dom`, but `react-dom` is a CJS package — Vite's prebundler normally converts CJS→ESM, but excluded deps bypass this, causing the import to fail.
 
-**Fix**: Downgrade `react-leaflet-cluster` from `^4.0.0` to a compatible version (`2.1.0` is the stable release for react-leaflet v4/v5 with React 18), OR replace it with `react-leaflet-markercluster` which is actively maintained. The simplest fix is to pin `react-leaflet-cluster` to version `2.1.0`.
-
-If downgrading doesn't resolve it (version 2.x may target react-leaflet v3), the alternative is to implement a thin custom `MarkerClusterGroup` wrapper using `leaflet.markercluster` directly with react-leaflet's `createPathComponent` API — bypassing the broken library entirely.
-
----
-
-## Implementation Steps
-
-1. **Fix MapAnnouncements** — Replace `useState` for `prevState` with `useRef`. Remove `prevState` from the `useEffect` dependency array. Single file: `src/components/map/MapAnnouncements.tsx`.
-
-2. **Fix react-leaflet-cluster** — First attempt: downgrade to `2.1.0`. If that fails due to API differences, create a custom `MarkerClusterGroup` wrapper (~30 lines) using `leaflet.markercluster` directly, and remove the `react-leaflet-cluster` dependency. File: `src/components/map/JobMap.tsx` + `package.json`.
-
-## Impact
-- Fixes the crash on the /map page
-- No feature changes — purely bug fixes
+**Why a dedicated query instead of pagination**: The map needs all locations to render correctly. Paginating 50 at a time would show incomplete clusters, wrong stats, and missing filter options. 1,237 rows with minimal columns is ~100KB — well within acceptable limits for a single fetch.
 
