@@ -327,7 +327,7 @@ export const JobMap = memo(function JobMap({
           intensity={displayMode === 'density' ? 1 : 0.8}
         />
 
-        {/* Zoom controls removed — rendered at page level */}
+        <MapZoomControls />
 
         {showMarkers && (
           <MarkerClusterGroup

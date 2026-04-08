@@ -101,7 +101,7 @@ function ZoomControls() {
 
 export function MapZoomControls() {
   return (
-    <div className="absolute top-3 right-3 z-[1000]">
+    <div className="absolute top-[7.5rem] right-3 z-[1000]">
       <ZoomControls />
     </div>
   );
