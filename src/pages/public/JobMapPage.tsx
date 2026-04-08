@@ -128,7 +128,7 @@ function JobMapPageContent() {
       />
 
       <main 
-        className="relative w-full h-[100dvh] pt-16 pb-safe bg-background overflow-hidden py-0"
+        className="relative w-full h-[100dvh] pt-16 pb-safe bg-background overflow-hidden"
         id="main-content"
       >
         <h1 className="sr-only">Job Locations Map</h1>
