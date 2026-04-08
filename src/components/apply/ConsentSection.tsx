@@ -113,7 +113,7 @@ export const ConsentSection = React.memo(({
       {/* SMS Consent */}
       <ConsentCard
         title={`Receive SMS from ${companyName}`}
-        description="Get updates about your application status and new opportunities via text message."
+        description="Get updates about your application status and new opportunities via text message. You may also receive automated follow-up texts based on call outcomes."
         icon={<MessageSquare className="h-5 w-5" />}
         value={formData.consent}
         onToggle={(value) => onInputChange('consent', value)}
