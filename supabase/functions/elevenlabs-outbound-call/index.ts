@@ -563,7 +563,7 @@ if (import.meta.main) {
       // ── Holiday gate: check if today is a holiday for any org before processing ──
       // We check globally first; per-org checks happen per-call below
       const nowUtc = new Date();
-      const todayDateStr = nowUtc.toISOString().split('T')[0]; // UTC date as fallback
+      const todayDateStr = getDateInTimezone(nowUtc, DEFAULT_TIMEZONE); // Use Central time, not UTC
       const { data: globalHoliday } = await supabase
         .from('organization_holidays')
         .select('id, name')
