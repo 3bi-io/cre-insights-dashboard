@@ -6,6 +6,7 @@
 import { useState, Suspense, lazy, useCallback, useMemo, useEffect } from 'react';
 import { MapPin, Loader2 } from 'lucide-react';
 import { useJobMapData, JobMapFilters, MapLocation } from '@/hooks/useJobMapData';
+import { useMapDailyRefresh } from '@/hooks/useMapDailyRefresh';
 import { MapFilters, JobListPanel, MapLayerControls, MapAIAssistantPanel } from '@/components/map';
 import { MapProvider, useMapContext } from '@/components/map/MapContext';
 import { MapAnnouncements } from '@/components/map/MapAnnouncements';
