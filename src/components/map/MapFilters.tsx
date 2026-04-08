@@ -219,7 +219,7 @@ export const MapFilters = memo(function MapFilters({
                     <SelectTrigger id="mobile-company-filter" className="h-11">
                       <SelectValue placeholder="All companies" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[1001]">
                       <SelectItem value="all">All companies</SelectItem>
                       {companies.map((company) => (
                         <SelectItem key={company.id} value={company.id}>
