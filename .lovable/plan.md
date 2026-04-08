@@ -1,55 +1,48 @@
 
 
-# Scheduling & Business Hours — Audit Findings
+# Fix Map Page Crashes — Two Bugs
 
-## Summary
-Three bugs allow outbound calls to fire outside scheduled operating hours. Two are timezone-related, one is a logic gap in queue processing.
-
----
-
-## Bug 1: Per-call holiday check uses UTC date instead of org timezone
-
-**Location**: `elevenlabs-outbound-call/index.ts`, lines 686-693
-
-The queue processor computes `todayDateStr` from `nowUtc.toISOString().split('T')[0]` (line 566) and reuses it for per-org holiday checks (line 686: `const orgTodayStr = todayDateStr`). This means at 11 PM Central (which is the next UTC day), or before midnight UTC (still previous day in Central), the holiday lookup uses the wrong date.
-
-**Fix**: For each call in the queue loop, compute the date string in the org's configured timezone using `getDateInTimezone()` (which already exists at line 103) with the org's call settings timezone. This matches the pattern already used in single-call processing at line 1094.
+## Problem Summary
+The /map page crashes with two distinct errors:
+1. **Infinite render loop** in `MapAnnouncements` — "Maximum update depth exceeded"
+2. **react-leaflet Context.Consumer crash** — "render2 is not a function"
 
 ---
 
-## Bug 2: First-attempt calls bypass business hours AND holiday gates
+## Bug 1: MapAnnouncements Infinite Loop
 
-**Location**: `elevenlabs-outbound-call/index.ts`, lines 701-720
+**Root cause**: The `useEffect` on line 74 includes `prevState` in its dependency array (line 128), but calls `setPrevState()` inside the effect (line 117). Since `prevState` is an object, every `setPrevState` creates a new reference, which triggers the effect again — infinite loop.
 
-The queue processor intentionally bypasses business hours for first-attempt calls (`isFirstAttempt` / `retryCount === 0`) — this is correct for the "Screen Immediately" strategy. However, the holiday check (lines 695-699) runs BEFORE the first-attempt bypass logic, so holidays correctly block first attempts. The problem is the **business hours bypass has no holiday awareness**. A first-attempt call on a holiday that falls on a weekday will:
-1. Pass the org-specific holiday check (line 695) **only if an org-specific holiday record exists** — but if only a global holiday is present and the global gate (line 575) used the wrong UTC date (Bug 1), the call goes through.
+**Fix**: Replace the `useState`/`useEffect` pattern with `useRef` for tracking previous values. Store previous values in a ref (which doesn't trigger re-renders), and compare against the ref inside the effect. Update the ref at the end of the effect without causing a re-render.
 
-This is an edge case but compounds with Bug 1.
+```text
+Before:  const [prevState, setPrevState] = useState({...});
+After:   const prevStateRef = useRef({...});
+         // Inside effect: compare against prevStateRef.current
+         // At end: prevStateRef.current = { ... };
+```
 
-**Fix**: After the first-attempt bypass, still check if the org has a holiday (using the timezone-correct date). The existing single-call path at lines 1094-1118 does this correctly — the queue path should mirror it.
+Remove `prevState` from the dependency array entirely.
 
 ---
 
-## Bug 3: `is_within_business_hours` SQL function ignores holidays
+## Bug 2: react-leaflet-cluster Context.Consumer Incompatibility
 
-**Location**: Database function `is_within_business_hours(p_org_id, p_client_id)`
+**Root cause**: `react-leaflet-cluster@4.0.0` internally renders a `<Context.Consumer>` (the legacy React context API). React 18.x deprecated direct `<Context>` rendering and requires `<Context.Consumer>` to receive a function child. The cluster library's internals don't comply, causing "render2 is not a function".
 
-This function checks day-of-week and time range only. It does NOT check the `organization_holidays` table. So even when the queue processor calls `is_within_business_hours` for retry calls (line 708), a holiday that falls on a weekday within business hours will return `true`, and the call will proceed.
+**Fix**: Downgrade `react-leaflet-cluster` from `^4.0.0` to a compatible version (`2.1.0` is the stable release for react-leaflet v4/v5 with React 18), OR replace it with `react-leaflet-markercluster` which is actively maintained. The simplest fix is to pin `react-leaflet-cluster` to version `2.1.0`.
 
-**Fix**: Add a holiday check to the SQL function body — call the existing `is_holiday(p_org_id, v_now_local::DATE)` function and return `false` when it's a holiday. This also fixes any other callers of this function platform-wide.
+If downgrading doesn't resolve it (version 2.x may target react-leaflet v3), the alternative is to implement a thin custom `MarkerClusterGroup` wrapper using `leaflet.markercluster` directly with react-leaflet's `createPathComponent` API — bypassing the broken library entirely.
 
 ---
 
 ## Implementation Steps
 
-1. **Fix `is_within_business_hours` SQL function** — Add `AND NOT is_holiday(p_org_id, v_now_local::DATE)` to the return condition in both overloads. This is a single migration file.
+1. **Fix MapAnnouncements** — Replace `useState` for `prevState` with `useRef`. Remove `prevState` from the `useEffect` dependency array. Single file: `src/components/map/MapAnnouncements.tsx`.
 
-2. **Fix queue holiday date to use org timezone** — In the per-call loop (line 686), replace `const orgTodayStr = todayDateStr` with a call to `getDateInTimezone(nowUtc, orgTimezone)` after fetching the org's call settings. Requires fetching `business_hours_timezone` in the same query that already fetches `organization_id` and `metadata`.
-
-3. **Fix global holiday gate date** — Line 566 should also use Central time (the platform default) rather than UTC: `getDateInTimezone(nowUtc, DEFAULT_TIMEZONE)`.
+2. **Fix react-leaflet-cluster** — First attempt: downgrade to `2.1.0`. If that fails due to API differences, create a custom `MarkerClusterGroup` wrapper (~30 lines) using `leaflet.markercluster` directly, and remove the `react-leaflet-cluster` dependency. File: `src/components/map/JobMap.tsx` + `package.json`.
 
 ## Impact
-- Prevents retry/follow-up calls from firing on holidays during business hours
-- Prevents timezone boundary errors (e.g., 11 PM CDT on July 3 being treated as July 4 in UTC)
-- All changes are backward-compatible — no schema changes, only function body updates
+- Fixes the crash on the /map page
+- No feature changes — purely bug fixes
 
