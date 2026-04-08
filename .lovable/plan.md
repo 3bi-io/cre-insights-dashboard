@@ -1,127 +1,138 @@
 
 
-# Visual UX Upgrade + Display Mode System for /map
+# Inline AI Job Search Assistant for /map
 
-## Overview
+## What Changes
 
-Enhance the map page from functional to premium product quality by adding a user-facing Display Mode system (Standard / Density / Detail), upgrading the visual shell (header, stats, filters, controls), improving CARTO tile selection, and refining marker/cluster/popup styling — all without regressing existing features.
+Replace the `MapStats` overlay (the bottom-left metric pills showing "571 jobs · 261 locations · 57%") with a premium inline AI assistant panel that acts as a context-aware job search copilot. Map metrics are preserved as a compact context strip inside the assistant, but the primary surface becomes an intelligent guide.
 
-## What Already Works (preserved as-is)
-- Confidence badges (exact/state/country), clustering, auto-fit bounds, exact-only toggle
-- Filtered coverage stats, mobile map/list switcher, international marker distinction
-- Search, company/category filters, heat map toggle, marker toggle, reset view
-
----
-
-## Step 1: Display Mode System
-
-**New file**: `src/components/map/DisplayModeSelector.tsx`
-
-Create a segmented control with three modes:
-
-| Mode | Behavior |
-|------|----------|
-| **Standard** | Current balanced default. No changes to clustering, markers, or popups. |
-| **Density** | Tighter cluster radius (40→30), auto-enables heat map, quieter/smaller popups, reduces stat/filter chrome opacity. Optimized for "where are the jobs concentrated?" |
-| **Detail** | Larger individual markers, richer popup content (salary, category, confidence badge inline), wider cluster spread radius, disables clustering at zoom ≥10. Optimized for "which specific jobs are here?" |
-
-The mode is stored as state in `JobMapPage.tsx` and passed down. Existing heat-map and marker toggles remain but become subordinate — Density mode auto-enables heat map (user can still toggle it off manually).
-
-**New type** added to `constants.ts`:
-```typescript
-export type DisplayMode = 'standard' | 'density' | 'detail';
-```
-
-## Step 2: CARTO Tile Upgrade
-
-**File**: `src/components/map/constants.ts`
-
-Add two additional tile variants for a cleaner look:
+## Architecture
 
 ```text
-LIGHT_NOLABELS: 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png'
-DARK_NOLABELS:  'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
-VOYAGER:        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+┌──────────────────────────────────────────────────────┐
+│  Map Canvas (unchanged)                              │
+│                                                      │
+│  ┌─── Filters (top, unchanged) ─────────────────┐   │
+│  └──────────────────────────────────────────────-┘   │
+│                                                      │
+│                                                      │
+│  ┌─── AI Assistant Panel (bottom-left) ──────────┐   │
+│  │ ✦ AI Job Search Guide                         │   │
+│  │ Context: 571 jobs · 261 loc · 57% mapped      │   │
+│  │                                                │   │
+│  │ "I see 571 CDL positions across 261 cities..." │   │
+│  │                                                │   │
+│  │ [Strongest markets] [Exact only] [Compare co.] │   │
+│  │                                                │   │
+│  │ ┌─ Conversation thread (expandable) ────────┐ │   │
+│  │ │  User: Where should I look near Dallas?   │ │   │
+│  │ │  AI: The DFW metro has 23 positions...    │ │   │
+│  │ └──────────────────────────────────────────-─┘ │   │
+│  │ [Ask a question...]                    [Send]  │   │
+│  └────────────────────────────────────────────────┘   │
+│                                        Controls (R)   │
+└──────────────────────────────────────────────────────┘
 ```
 
-- **Standard mode**: Use `voyager` (warm, readable, premium feel with subtle labels)
-- **Density mode**: Use `light_nolabels` / `dark_nolabels` (minimal background, heat map pops)
-- **Detail mode**: Use `light_all` / `dark_all` (full labels for street-level browsing)
+## New Components
 
-All free CARTO CDN tiles — no API key required. Theme-aware (light/dark auto-switches).
+### 1. `MapAIAssistantPanel.tsx` (new file)
 
-## Step 3: Visual Shell Redesign
+Main inline component replacing `MapStats`. Receives all map context as props:
 
-### Header Bar (new component in `JobMapPage.tsx`)
-- Add a compact floating header strip at the top of the map (below navbar) showing:
-  - "Job Locations Map" title with subtle text, not a heavy heading
-  - Active filter pills (e.g., "Company: Admiral Merchants" as dismissible chips)
-  - Result count: "847 jobs · 234 locations · 72% mapped"
-- Glassmorphism card style: `bg-background/90 backdrop-blur-md border-border/50 shadow-sm`
+**Props**: `totalJobs`, `uniqueLocations`, `exactCount`, `stateCount`, `countryCount`, `visibleJobs`, `mappedPercentage`, `filters`, `displayMode`, `companies`, `categories`, `isLoading`, plus callback handlers for `onFiltersChange`, `onToggleExactOnly`, `onFitBounds`, `onDisplayModeChange`.
 
-### Stats Redesign (`MapStats.tsx`)
-- Convert from a single row to compact **metric pills** integrated into the header strip
-- Each pill: icon + number + label (e.g., `🟢 612 exact · 🟡 189 state · 🔵 46 country`)
-- On mobile: collapse into a single summary pill that expands on tap (keep current pattern but style better)
+**Sections**:
+- **Header**: "AI Job Search Guide" with sparkle icon, collapsible on mobile
+- **Context strip**: Compact single line — `571 jobs · 261 locations · 57% mapped (342 exact · 189 state · 40 intl)` — styled as subtle secondary text, not the primary surface
+- **Proactive insight**: On first load (and when filters change), generates a contextual insight from current map state using the `ai-chat` edge function with a map-specific system prompt. Example: *"I see 571 CDL positions across 261 US cities. The strongest hiring markets are Dallas (47 jobs), Atlanta (38), and Jacksonville (31). 57% of positions have exact city coordinates — toggle 'Exact only' to focus on verified locations."*
+- **Quick action chips**: Context-aware suggestions that either trigger AI queries or directly manipulate map state:
+  - "Strongest hiring markets" → AI query
+  - "Show only exact locations" → calls `onToggleExactOnly(true)`
+  - "Compare companies in view" → AI query
+  - "Summarize this area" → AI query with current filter context
+  - "Help me refine this search" → AI query
+  - Chips update based on active filters (e.g., if company filter is active, show "Other companies hiring here" instead)
+- **Conversation area**: Expandable thread showing user messages and AI responses. Responses render with `react-markdown`. Each AI response can include action buttons that call back into map state (e.g., "Apply this filter" button).
+- **Input**: Compact inline text input with send button, placeholder "Ask about jobs in this area..."
 
-### Filter Bar (`MapFilters.tsx`)
-- Group search + filters into a single cohesive toolbar card
-- Add the Display Mode selector inline on desktop (right-aligned in the filter bar)
-- On mobile: display mode becomes a compact 3-segment pill below the search
-- Clearer active states: filled background on active filters, not just border changes
+**Desktop layout**: Fixed panel, bottom-left, `max-w-sm`, glassmorphism card (`bg-background/95 backdrop-blur-md`), max-height ~40% viewport with scroll.
 
-### Layer Controls (`MapControls.tsx`)
-- Merge heat map + marker toggles with display mode awareness
-- In Density mode, heat map toggle shows as "on" with a subtle indicator
-- Add a small label under each toggle icon on desktop for clarity
+**Mobile layout**: Collapsed by default to a single-line trigger showing the insight summary. Tapping expands to a bottom sheet or full-width panel. Quick action chips scroll horizontally.
 
-## Step 4: Marker & Cluster Visual Refinement
+### 2. `useMapAIChat.ts` (new hook)
 
-### Markers (`JobMarker.tsx`)
-- **Standard**: Current sizing (unchanged)
-- **Density**: Slightly smaller markers (0.85x scale), reduced box-shadow, more transparent
-- **Detail**: Slightly larger markers (1.1x scale), add a subtle count label below the circle for single-digit counts, bolder confidence ring
+Manages the AI conversation state for the map assistant:
 
-### Clusters (`JobMap.tsx` cluster styles)
-- Upgrade cluster gradient colors to be softer and more branded
-- Add a subtle ring/glow effect on clusters in Detail mode
-- In Density mode, clusters are more prominent (1.1x scale) to emphasize concentration
+- Maintains message history (local state, not persisted)
+- Builds context-enriched prompts by prepending current map state as a structured system context block
+- Calls the existing `ai-chat` edge function via `supabase.functions.invoke` with streaming
+- Parses SSE stream for token-by-token rendering
+- Generates the initial proactive insight on mount and when filters change (debounced)
+- Returns: `messages`, `isStreaming`, `sendMessage(text)`, `initialInsight`, `isInsightLoading`
 
-### Popups (`JobMarker.tsx` popup section)
-- **Standard**: Current popup (unchanged)
-- **Density**: Compact popup — just location name, job count, and "View Jobs" button
-- **Detail**: Enhanced popup — add salary range if available, full confidence badge, top 2 categories as pills, posted date
+**System prompt** (sent server-side via a new dedicated edge function or by extending `ai-chat`):
 
-## Step 5: Transitions & Polish
+```
+You are the AI Job Search Guide on Apply AI's interactive job map.
+You have access to the user's current map context:
+- Total jobs: {totalJobs}
+- Visible locations: {uniqueLocations}  
+- Confidence: {exactCount} exact, {stateCount} state-level, {countryCount} country-level
+- Mapped coverage: {mappedPercentage}%
+- Active filters: {filterSummary}
+- Top companies: {topCompanies}
+- Top categories: {topCategories}
 
-- Add CSS `transition: all 0.2s ease` on mode-dependent style changes (marker size, cluster size, tile opacity)
-- Tile layer transitions use Leaflet's built-in fade
-- Filter bar and stats animate height/opacity changes with `transition-all duration-200`
+Help users discover jobs by location. Be specific, actionable, and concise.
+When suggesting map actions, format them as: [ACTION: filter_exact_only] or [ACTION: search_term "Dallas"]
+so the UI can parse and offer clickable action buttons.
+```
 
-## Step 6: Mobile Adjustments
+### 3. `map-ai-chat` edge function (new)
 
-- Display mode selector: compact 3-button pill at the bottom, next to the map/list switcher
-- Or: integrate as a secondary row in the mobile filter popover
-- Stats remain collapsible but styled as a single-line summary
-- All touch targets remain ≥44px
+A lightweight wrapper around the existing `ai-chat` pattern but:
+- **No auth required** (public /map page) — uses anon key rate limiting instead
+- Stricter rate limit (10 req/min per IP)
+- Map-specific system prompt injected server-side
+- Accepts `mapContext` object in the request body alongside `messages`
+- Streams response back via SSE
+
+## Changes to Existing Files
+
+### `JobMapPage.tsx`
+- Remove `MapStats` import and usage
+- Add `MapAIAssistantPanel` in its place
+- Pass map state + callback handlers as props
+- Add callbacks for AI-triggered actions: `handleSetExactOnly`, `handleSearchFromAI`, `handleFocusRegion`
+
+### `MapStats.tsx`
+- Keep the file but it's no longer rendered directly in JobMapPage
+- The context strip inside the AI panel reuses the same data, styled as a compact inline summary
+
+### `index.ts`
+- Export new `MapAIAssistantPanel`
+
+## Key Design Decisions
+
+- **No auth wall**: The map is a public page. The AI assistant uses the `map-ai-chat` edge function with IP-based rate limiting (10 req/min) instead of requiring login.
+- **Proactive first content**: The initial insight is generated on load so users see immediate value, not an empty chat box.
+- **Action-aware responses**: AI responses can contain structured action markers that the UI parses into clickable buttons (e.g., "Toggle exact only", "Search for Dallas").
+- **Metrics preserved, not removed**: All confidence counts and mapped percentage remain visible as a compact context strip, just visually subordinate to the assistant experience.
+- **Performance**: Initial insight is debounced and cached. Conversation messages stream token-by-token. No heavy re-renders on the map layer.
 
 ## Files Changed
 
-1. `src/components/map/constants.ts` — Add `DisplayMode` type, new tile URLs
-2. `src/components/map/DisplayModeSelector.tsx` — **New** — segmented control component
-3. `src/components/map/JobMap.tsx` — Accept `displayMode` prop, switch tile URL and cluster config
-4. `src/components/map/JobMarker.tsx` — Accept `displayMode`, adjust marker size and popup content
-5. `src/components/map/MapFilters.tsx` — Integrate display mode selector, restyle filter bar
-6. `src/components/map/MapStats.tsx` — Restyle as metric pills, integrate into header
-7. `src/components/map/MapControls.tsx` — Display mode awareness for layer toggles
-8. `src/pages/public/JobMapPage.tsx` — Add `displayMode` state, new header strip, pass mode to children
-9. `src/components/map/index.ts` — Export new component
+1. `supabase/functions/map-ai-chat/index.ts` — **New** — public edge function for map AI
+2. `src/components/map/MapAIAssistantPanel.tsx` — **New** — inline AI assistant component
+3. `src/hooks/useMapAIChat.ts` — **New** — streaming chat hook with map context
+4. `src/pages/public/JobMapPage.tsx` — Replace `MapStats` with `MapAIAssistantPanel`, wire callbacks
+5. `src/components/map/index.ts` — Export new component
 
-## Technical Notes
+## Mobile Behavior
 
-- No new dependencies needed
-- CARTO tiles are free public CDN — no API key, no secret needed
-- Display mode is client-side state only (no persistence needed)
-- All existing accessibility patterns preserved (aria-labels, keyboard nav, focus states)
-- Cluster config changes per mode are applied via `useMemo` on the `maxClusterRadius` and `iconCreateFunction` props
+- Collapsed state: Single-line context bar ("571 jobs · 57% mapped · AI Guide ▸")
+- Tapping expands to a panel covering bottom ~60% with quick chips + conversation
+- Input has 44px touch target, chips are scrollable horizontally
+- Collapsing preserves conversation state
 
