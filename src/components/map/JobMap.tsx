@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, memo, useCallback } from 'react';
 import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
-import MarkerClusterGroup from 'react-leaflet-cluster';
+import MarkerClusterGroup from './MarkerClusterGroup';
 import L, { DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MapLocation } from '@/hooks/useJobMapData';
