@@ -291,17 +291,18 @@ export const JobMap = memo(function JobMap({
       <MapContainer
         center={US_CENTER}
         zoom={DEFAULT_ZOOM}
-        scrollWheelZoom={!isMobile}
+        scrollWheelZoom={interactive ? !isMobile : false}
         className="w-full h-full rounded-lg"
         minZoom={MIN_ZOOM}
         maxZoom={MAX_ZOOM}
-        keyboard={true}
+        keyboard={interactive}
         keyboardPanDelta={80}
-        touchZoom={true}
-        dragging={true}
-        doubleClickZoom={true}
+        touchZoom={interactive}
+        dragging={interactive}
+        doubleClickZoom={interactive}
         zoomControl={false}
         bounceAtZoomLimits={false}
+        attributionControl={interactive}
       >
         <TileLayer
           attribution={MAP_ATTRIBUTION}
