@@ -20,6 +20,10 @@ const sections: LegalSection[] = [
           <h4 className="font-semibold text-foreground mb-2">Device Information</h4>
           <p>We collect information about the devices you use to access our platform, including hardware model, operating system, browser type, and IP address.</p>
         </div>
+        <div>
+          <h4 className="font-semibold text-foreground mb-2">Voice Interaction Data</h4>
+          <p>When you interact with our AI voice assistant or receive automated calls, we collect audio recordings, transcripts, call metadata (duration, timestamps, call status), and voicemail detection results. These recordings are processed by third-party AI services on our behalf.</p>
+        </div>
       </div>
     ),
   },
@@ -33,6 +37,8 @@ const sections: LegalSection[] = [
         <li>Send you service-related communications and updates</li>
         <li>Analyze usage patterns to enhance user experience and platform performance</li>
         <li>Ensure security and prevent fraud or abuse</li>
+        <li>Conduct AI-assisted voice outreach, including automated calls, voicemail detection, and follow-up communications</li>
+        <li>Generate and store call transcripts for recruitment quality and compliance purposes</li>
       </ul>
     ),
   },
@@ -45,6 +51,7 @@ const sections: LegalSection[] = [
         <ul className="space-y-2 list-disc pl-5">
           <li>With your consent or at your direction</li>
           <li>With service providers who assist us in operating our platform</li>
+          <li>With AI and telephony service providers who process voice interactions on our behalf, subject to contractual data protection obligations</li>
           <li>To comply with legal obligations or protect our rights</li>
         </ul>
       </div>
@@ -88,7 +95,7 @@ const sections: LegalSection[] = [
 const PrivacyPolicyPage = () => (
   <LegalPageLayout
     title="Privacy Policy"
-    lastUpdated="January 2026"
+    lastUpdated="April 2026"
     icon={<Shield className="h-14 w-14 text-primary mx-auto" />}
     seoTitle="Privacy Policy | Data Protection & GDPR Compliance"
     seoDescription="Apply AI's privacy policy covering data collection, usage, security, and your rights. GDPR compliant recruitment platform."

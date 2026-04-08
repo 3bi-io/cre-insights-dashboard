@@ -20,6 +20,7 @@ const sections: LegalSection[] = [
           <li>Job posting and management capabilities</li>
           <li>Application tracking and candidate management</li>
           <li>AI-powered analytics and insights</li>
+          <li>AI-powered voice communication and outbound calling</li>
           <li>Integration with third-party platforms</li>
         </ul>
       </div>
@@ -61,33 +62,48 @@ const sections: LegalSection[] = [
     ),
   },
   {
+    id: 'ai-voice',
+    title: '6. AI Voice Communications',
+    content: (
+      <div className="space-y-3">
+        <p>The Service may initiate automated outbound voice calls using AI-powered voice agents to communicate with candidates regarding job applications.</p>
+        <ul className="space-y-2 list-disc pl-5">
+          <li>Voice interactions may be recorded and transcribed for quality assurance, compliance, and recruitment purposes.</li>
+          <li>By providing a phone number, you acknowledge that you may receive calls from an AI voice agent and that these interactions may be recorded.</li>
+          <li>You may opt out of voice communications at any time by informing us during a call or contacting support.</li>
+          <li>Voicemail messages may be detected automatically, and follow-up communications (including SMS) may be sent based on call outcomes.</li>
+        </ul>
+      </div>
+    ),
+  },
+  {
     id: 'ip',
-    title: '6. Intellectual Property Rights',
+    title: '7. Intellectual Property Rights',
     content: <p>The Service and its original content, features, and functionality are and will remain the exclusive property of Apply AI and its licensors. The Service is protected by copyright, trademark, and other laws.</p>,
   },
   {
     id: 'privacy',
-    title: '7. Privacy Policy',
+    title: '8. Privacy Policy',
     content: <p>Your privacy is important to us. Please review our Privacy Policy, which also governs your use of the Service, to understand our practices.</p>,
   },
   {
     id: 'termination',
-    title: '8. Termination',
+    title: '9. Termination',
     content: <p>We may terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms. Upon termination, your right to use the Service will cease immediately.</p>,
   },
   {
     id: 'liability',
-    title: '9. Limitation of Liability',
+    title: '10. Limitation of Liability',
     content: <p>In no event shall Apply AI, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses.</p>,
   },
   {
     id: 'changes',
-    title: '10. Changes to Terms',
+    title: '11. Changes to Terms',
     content: <p>We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will try to provide at least 30 days notice prior to any new terms taking effect.</p>,
   },
   {
     id: 'contact',
-    title: '11. Contact Information',
+    title: '12. Contact Information',
     content: (
       <div className="space-y-2">
         <p>If you have any questions about these Terms of Service, please contact us at:</p>
@@ -101,7 +117,7 @@ const sections: LegalSection[] = [
 const TermsOfServicePage = () => (
   <LegalPageLayout
     title="Terms of Service"
-    lastUpdated="January 2026"
+    lastUpdated="April 2026"
     icon={<FileText className="h-14 w-14 text-primary mx-auto" />}
     seoTitle="Terms of Service | User Agreement"
     seoDescription="Terms and conditions for using Apply AI's recruitment platform. Service agreement, usage rights, and responsibilities."
