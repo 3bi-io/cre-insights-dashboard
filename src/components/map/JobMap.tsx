@@ -164,8 +164,20 @@ function createClusterIcon(cluster: { getChildCount: () => number }, displayMode
     iconSize: L.point(size, size, true),
   });
 }
+/** Lightweight marker for hero mode — soft dot, no text, no interaction */
+function HeroMarker({ location }: { location: MapLocation }) {
+  const size = Math.min(12, 6 + location.jobCount * 0.3);
+  const icon = useMemo(() => L.divIcon({
+    html: `<div class="hero-marker-dot" style="width:${size}px;height:${size}px;"></div>`,
+    className: '',
+    iconSize: L.point(size, size),
+    iconAnchor: L.point(size / 2, size / 2),
+  }), [size]);
 
-export const JobMap = memo(function JobMap({
+  return <Marker position={[location.lat, location.lng]} icon={icon} interactive={false} />;
+}
+
+
   locations,
   selectedLocation,
   onLocationSelect,
