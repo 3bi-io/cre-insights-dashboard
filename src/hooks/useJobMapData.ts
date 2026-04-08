@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { getLocationCoordinates, isNonUSLocation } from '@/utils/usaCityCoordinates';
+import { getLocationCoordinates, isNonUSLocation, getInternationalCoordinates } from '@/utils/usaCityCoordinates';
 
 export interface MapJob {
   id: string;
@@ -141,27 +141,36 @@ export function useJobMapData(filters: JobMapFilters = {}) {
         city = city.replace(/^\(Hybrid\)\s*/i, '').replace(/^Híbrido\s*\(/i, '').replace(/\)$/, '').trim();
       }
 
-      // Skip non-US locations
-      if (isNonUSLocation(city, state)) {
+      // Try US coordinates first
+      let coords = getLocationCoordinates(city, state);
+      let locationKey: string;
+      let displayName: string;
+
+      if (coords) {
+        // US location found
+        jobsWithLocation++;
+        locationKey = coords.isExact
+          ? `${city?.toLowerCase()}-${state?.toLowerCase()}`
+          : `state-${state?.toLowerCase()}`;
+        displayName = coords.isExact && city
+          ? `${city}, ${state}`
+          : state || 'Unknown';
+      } else if (isNonUSLocation(city, state)) {
+        // Try international coordinates
+        const intlCoords = getInternationalCoordinates(city, state);
+        if (!intlCoords) {
+          jobsWithoutLocation++;
+          return;
+        }
+        coords = { lat: intlCoords.lat, lng: intlCoords.lng, isExact: intlCoords.isExact };
+        jobsWithLocation++;
+        locationKey = `intl-${intlCoords.displayName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+        displayName = intlCoords.displayName;
+      } else {
+        // No coordinates found at all
         jobsWithoutLocation++;
         return;
       }
-
-      const coords = getLocationCoordinates(city, state);
-      if (!coords) {
-        jobsWithoutLocation++;
-        return;
-      }
-
-      jobsWithLocation++;
-
-      const locationKey = coords.isExact
-        ? `${city?.toLowerCase()}-${state?.toLowerCase()}`
-        : `state-${state?.toLowerCase()}`;
-
-      const displayName = coords.isExact && city
-        ? `${city}, ${state}`
-        : state || 'Unknown';
 
       if (!locationMap.has(locationKey)) {
         locationMap.set(locationKey, {

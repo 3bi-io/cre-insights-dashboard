@@ -6,7 +6,7 @@
 // Geographic defaults
 export const US_CENTER: [number, number] = [39.8283, -98.5795];
 export const DEFAULT_ZOOM = 4;
-export const MIN_ZOOM = 3;
+export const MIN_ZOOM = 2;
 export const MAX_ZOOM = 18;
 export const FLY_TO_ZOOM = 10;
 export const FLY_TO_DURATION = 0.8;

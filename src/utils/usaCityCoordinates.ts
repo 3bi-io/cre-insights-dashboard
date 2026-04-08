@@ -556,11 +556,97 @@ const CITY_ALIASES: Record<string, string> = {
   'winston salem': 'winston-salem',
 };
 
-// Non-US state/country values to exclude from the map
-const NON_US_LOCATIONS = new Set([
-  'argentina', 'colombia', 'mexico', 'brazil', 'buenos aires',
-  'puerto rico', // handled via PR state code instead
+// International city coordinates for non-US job locations
+export interface InternationalCoordinate {
+  lat: number;
+  lng: number;
+  city: string;
+  country: string;
+  isExact: boolean;
+}
+
+const INTERNATIONAL_CITIES: Record<string, InternationalCoordinate> = {
+  'buenos aires, argentina': { lat: -34.6037, lng: -58.3816, city: 'Buenos Aires', country: 'Argentina', isExact: true },
+  'bogotá, colombia': { lat: 4.7110, lng: -74.0721, city: 'Bogotá', country: 'Colombia', isExact: true },
+  'bogota, colombia': { lat: 4.7110, lng: -74.0721, city: 'Bogotá', country: 'Colombia', isExact: true },
+  'medellín, colombia': { lat: 6.2442, lng: -75.5812, city: 'Medellín', country: 'Colombia', isExact: true },
+  'medellin, colombia': { lat: 6.2442, lng: -75.5812, city: 'Medellín', country: 'Colombia', isExact: true },
+  'mexico city, mexico': { lat: 19.4326, lng: -99.1332, city: 'Mexico City', country: 'Mexico', isExact: true },
+  'são paulo, brazil': { lat: -23.5505, lng: -46.6333, city: 'São Paulo', country: 'Brazil', isExact: true },
+  'sao paulo, brazil': { lat: -23.5505, lng: -46.6333, city: 'São Paulo', country: 'Brazil', isExact: true },
+  'san juan, puerto rico': { lat: 18.4655, lng: -66.1057, city: 'San Juan', country: 'Puerto Rico', isExact: true },
+};
+
+// Country-level centroids for jobs where city = country name
+const COUNTRY_CENTROIDS: Record<string, InternationalCoordinate> = {
+  'argentina': { lat: -38.4161, lng: -63.6167, city: '', country: 'Argentina', isExact: false },
+  'colombia': { lat: 4.5709, lng: -74.2973, city: '', country: 'Colombia', isExact: false },
+  'mexico': { lat: 23.6345, lng: -102.5528, city: '', country: 'Mexico', isExact: false },
+  'brazil': { lat: -14.2350, lng: -51.9253, city: '', country: 'Brazil', isExact: false },
+  'puerto rico': { lat: 18.2208, lng: -66.5901, city: '', country: 'Puerto Rico', isExact: false },
+};
+
+// Known non-US country names (used to identify international locations, NOT to exclude them)
+const INTERNATIONAL_COUNTRY_NAMES = new Set([
+  'argentina', 'colombia', 'mexico', 'brazil', 'buenos aires', 'puerto rico',
 ]);
+
+/**
+ * Check if a location appears to be international (non-US)
+ */
+export function isNonUSLocation(city?: string | null, state?: string | null): boolean {
+  if (state && INTERNATIONAL_COUNTRY_NAMES.has(state.trim().toLowerCase())) return true;
+  if (city && INTERNATIONAL_COUNTRY_NAMES.has(city.trim().toLowerCase())) return true;
+  if (state?.trim().toUpperCase() === 'US') return true;
+  return false;
+}
+
+/**
+ * Get coordinates for an international (non-US) location
+ * Tries city+country match first, then country centroid
+ */
+export function getInternationalCoordinates(
+  city: string | null | undefined,
+  state: string | null | undefined
+): { lat: number; lng: number; isExact: boolean; displayName: string } | null {
+  const cityLower = city?.trim().toLowerCase() || '';
+  const stateLower = state?.trim().toLowerCase() || '';
+
+  // Special case: "Dallas, US" → treat as Dallas, TX (US location)
+  if (stateLower === 'us') return null;
+
+  // Try city + country (state field holds country for international)
+  if (cityLower && stateLower) {
+    const key = `${cityLower}, ${stateLower}`;
+    const match = INTERNATIONAL_CITIES[key];
+    if (match) {
+      return { lat: match.lat, lng: match.lng, isExact: true, displayName: `${match.city}, ${match.country}` };
+    }
+  }
+
+  // Try city name as country (e.g., city="Colombia", no state)
+  if (cityLower && COUNTRY_CENTROIDS[cityLower]) {
+    const match = COUNTRY_CENTROIDS[cityLower];
+    return { lat: match.lat, lng: match.lng, isExact: false, displayName: match.country };
+  }
+
+  // Try state field as country
+  if (stateLower && COUNTRY_CENTROIDS[stateLower]) {
+    const match = COUNTRY_CENTROIDS[stateLower];
+    const displayName = cityLower && cityLower !== stateLower
+      ? `${city}, ${match.country}`
+      : match.country;
+    return { lat: match.lat, lng: match.lng, isExact: false, displayName };
+  }
+
+  // Try city field as a known international city (e.g. "Buenos Aires" without country in state)
+  if (cityLower === 'buenos aires') {
+    const match = INTERNATIONAL_CITIES['buenos aires, argentina'];
+    return { lat: match.lat, lng: match.lng, isExact: true, displayName: 'Buenos Aires, Argentina' };
+  }
+
+  return null;
+}
 
 function normalizeCityName(city: string): string {
   const lower = city.trim().toLowerCase();
@@ -639,15 +725,7 @@ export function getCityCoordinates(city: string, state: string): CityCoordinate 
   return null;
 }
 
-/**
- * Check if a state value represents a non-US location
- */
-export function isNonUSLocation(city?: string | null, state?: string | null): boolean {
-  if (state && NON_US_LOCATIONS.has(state.trim().toLowerCase())) return true;
-  if (city && NON_US_LOCATIONS.has(city.trim().toLowerCase())) return true;
-  if (state?.trim().toUpperCase() === 'US') return true; // "Dallas, US" — ambiguous
-  return false;
-}
+// isNonUSLocation and getInternationalCoordinates are now defined above with the international data
 
 /**
  * Get state centroid as fallback
