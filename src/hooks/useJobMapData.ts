@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { getLocationCoordinates, isNonUSLocation } from '@/utils/usaCityCoordinates';
+import { getLocationCoordinates, isNonUSLocation, getInternationalCoordinates } from '@/utils/usaCityCoordinates';
 
 export interface MapJob {
   id: string;
