@@ -49,6 +49,8 @@ interface JobMapProps {
   className?: string;
   /** When false, map is a visual-only backdrop with no user interaction */
   interactive?: boolean;
+  /** When true, renders a curated visual-only map for homepage hero — no labels, no popups, soft glow markers */
+  heroMode?: boolean;
 }
 
 function MapController({ 
