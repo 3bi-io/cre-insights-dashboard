@@ -19,6 +19,7 @@ interface MapStatsProps {
   exactCount?: number;
   stateCount?: number;
   countryCount?: number;
+  visibleJobs?: number;
   isLoading?: boolean;
 }
 
