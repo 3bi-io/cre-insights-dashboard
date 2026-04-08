@@ -103,7 +103,7 @@ const sections: LegalSection[] = [
   },
   {
     id: 'contact',
-    title: '11. Contact Information',
+    title: '12. Contact Information',
     content: (
       <div className="space-y-2">
         <p>If you have any questions about these Terms of Service, please contact us at:</p>
