@@ -175,6 +175,7 @@ export const JobMap = memo(function JobMap({
   displayMode = 'standard',
   className = '',
   interactive = true,
+  heroMode = false,
 }: JobMapProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
