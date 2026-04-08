@@ -65,10 +65,14 @@ export const JobMarker = memo(function JobMarker({
 
   const icon = useMemo(() => {
     const size = getMarkerSize(location.jobCount, isTouchDevice);
-    const color = getMarkerColor(location.jobCount);
+    const color = location.isInternational 
+      ? 'hsl(200, 80%, 50%)' // Distinct teal for international
+      : getMarkerColor(location.jobCount);
     const selectedScale = isSelected ? 1.15 : 1;
     const finalSize = Math.round(size * selectedScale);
     const boxShadow = `0 4px 12px rgba(0, 0, 0, 0.3), ${getConfidenceBorder(location.confidence)}`;
+    // Add a dashed border ring for international markers
+    const intlBorder = location.isInternational ? 'border: 2px dashed rgba(255,255,255,0.7);' : '';
 
     const html = `
       <div 
@@ -86,11 +90,12 @@ export const JobMarker = memo(function JobMarker({
           box-shadow: ${boxShadow};
           transition: transform 0.2s ease;
           cursor: pointer;
+          ${intlBorder}
           ${isSelected ? 'outline: 3px solid hsl(var(--ring)); outline-offset: 2px;' : ''}
         "
         role="button"
         tabindex="0"
-        aria-label="${location.jobCount} jobs in ${location.displayName} (${location.confidence} location)"
+        aria-label="${location.jobCount} jobs in ${location.displayName} (${location.confidence} location${location.isInternational ? ', international' : ''})"
         aria-pressed="${isSelected}"
       >
         ${location.jobCount}
@@ -103,7 +108,7 @@ export const JobMarker = memo(function JobMarker({
       iconSize: L.point(finalSize, finalSize),
       iconAnchor: L.point(finalSize / 2, finalSize / 2),
     });
-  }, [location.jobCount, location.displayName, location.confidence, isSelected, isTouchDevice]);
+  }, [location.jobCount, location.displayName, location.confidence, location.isInternational, isSelected, isTouchDevice]);
 
   useEffect(() => {
     if (directToPanel && markerRef.current) {

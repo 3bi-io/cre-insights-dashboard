@@ -175,6 +175,7 @@ function JobMapPageContent() {
             exactCount={stats.exactCount}
             stateCount={stats.stateCount}
             countryCount={stats.countryCount}
+            visibleJobs={stats.visibleJobs}
             isLoading={isLoading && locations.length === 0}
           />
         )}

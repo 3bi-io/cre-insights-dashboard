@@ -19,6 +19,7 @@ interface MapStatsProps {
   exactCount?: number;
   stateCount?: number;
   countryCount?: number;
+  visibleJobs?: number;
   isLoading?: boolean;
 }
 
@@ -29,6 +30,7 @@ export const MapStats = memo(function MapStats({
   exactCount = 0,
   stateCount = 0,
   countryCount = 0,
+  visibleJobs,
   isLoading,
 }: MapStatsProps) {
   const mapContext = useMapContextOptional();
@@ -36,8 +38,10 @@ export const MapStats = memo(function MapStats({
   const isMobile = mapContext?.isMobile ?? isMobileFallback;
   const [isExpanded, setIsExpanded] = useState(false);
   
+  // Use visible jobs if available, otherwise use jobsWithLocation
+  const displayedJobs = visibleJobs ?? jobsWithLocation;
   const mappedPercentage = totalJobs > 0 
-    ? Math.round((jobsWithLocation / totalJobs) * 100)
+    ? Math.round((displayedJobs / totalJobs) * 100)
     : 100;
 
   if (isLoading) {
@@ -68,7 +72,7 @@ export const MapStats = memo(function MapStats({
           aria-controls="mobile-stats-panel"
         >
           <Briefcase className="w-4 h-4 text-primary" aria-hidden="true" />
-          <span className="font-semibold">{totalJobs}</span>
+          <span className="font-semibold">{displayedJobs}</span>
           <span className="text-muted-foreground text-xs">jobs</span>
           {isExpanded ? (
             <ChevronDown className="w-4 h-4 ml-1" aria-hidden="true" />
@@ -139,7 +143,7 @@ export const MapStats = memo(function MapStats({
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1.5">
             <Briefcase className="w-4 h-4 text-primary" aria-hidden="true" />
-            <span className="font-semibold">{totalJobs}</span>
+            <span className="font-semibold">{displayedJobs}</span>
             <span className="text-muted-foreground">jobs</span>
           </div>
           

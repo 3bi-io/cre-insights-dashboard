@@ -44,6 +44,8 @@ export interface MapLocation {
   isExact: boolean;
   /** Granularity of the plotted position */
   confidence: LocationConfidence;
+  /** Whether this is an international (non-US) location */
+  isInternational: boolean;
   jobCount: number;
   jobs: MapJob[];
   companies: string[];
@@ -124,6 +126,8 @@ export function useJobMapData(filters: JobMapFilters = {}) {
     let exactCount = 0;
     let stateCount = 0;
     let countryCount = 0;
+    // Track visible (post-filter) counts separately
+    let visibleJobs = 0;
 
     allJobs.forEach((job: MapJob) => {
       let city = job.city;
@@ -149,6 +153,7 @@ export function useJobMapData(filters: JobMapFilters = {}) {
       let locationKey: string;
       let displayName: string;
       let confidence: LocationConfidence;
+      let isInternational = false;
 
       if (coords) {
         jobsWithLocation++;
@@ -176,6 +181,7 @@ export function useJobMapData(filters: JobMapFilters = {}) {
         else countryCount++;
         locationKey = `intl-${intlCoords.displayName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
         displayName = intlCoords.displayName;
+        isInternational = true;
       } else {
         jobsWithoutLocation++;
         return;
@@ -183,6 +189,8 @@ export function useJobMapData(filters: JobMapFilters = {}) {
 
       // Apply exactOnly filter
       if (exactOnly && confidence !== 'exact') return;
+
+      visibleJobs++;
 
       if (!locationMap.has(locationKey)) {
         locationMap.set(locationKey, {
@@ -194,6 +202,7 @@ export function useJobMapData(filters: JobMapFilters = {}) {
           lng: coords.lng,
           isExact: coords.isExact,
           confidence,
+          isInternational,
           jobCount: 0,
           jobs: [],
           companies: [],
@@ -235,6 +244,7 @@ export function useJobMapData(filters: JobMapFilters = {}) {
         exactCount,
         stateCount,
         countryCount,
+        visibleJobs,
       }
     };
   }, [allJobs, exactOnly]);
