@@ -3,7 +3,6 @@
  * Central export for all map-related components
  */
 
-export { JobMap } from './JobMap';
 export { JobMarker } from './JobMarker';
 export { JobListPanel } from './JobListPanel';
 export { VirtualJobList } from './VirtualJobList';
