@@ -128,14 +128,14 @@ function JobMapPageContent() {
       />
 
       <main 
-        className="relative w-full h-[100dvh] pt-16 pb-safe bg-background overflow-hidden"
+        className="relative w-full h-[calc(100dvh-4rem)] pb-safe bg-background overflow-hidden"
         id="main-content"
       >
         <h1 className="sr-only">Job Locations Map</h1>
 
         {/* Background refresh indicator */}
         {isRefreshing && (
-          <div className="absolute top-[4.5rem] left-1/2 -translate-x-1/2 z-[1001] bg-primary/90 text-primary-foreground text-xs px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 animate-in fade-in">
+          <div className="absolute top-[0.5rem] left-1/2 -translate-x-1/2 z-[1001] bg-primary/90 text-primary-foreground text-xs px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 animate-in fade-in">
             <Loader2 className="w-3 h-3 animate-spin" />
             Refreshing jobs…
           </div>
