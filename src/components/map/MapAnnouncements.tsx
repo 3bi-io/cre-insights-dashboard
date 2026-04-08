@@ -60,8 +60,8 @@ export const MapAnnouncements = memo(function MapAnnouncements({
 }: MapAnnouncementsProps) {
   const { announcement, announce } = useDebounceAnnouncement(300);
   
-  // Track previous values to detect changes
-  const [prevState, setPrevState] = useState({
+  // Track previous values with ref to avoid infinite loops
+  const prevStateRef = useRef({
     isLoading,
     selectedLocation: selectedLocation?.id,
     showHeatMap,
@@ -72,13 +72,15 @@ export const MapAnnouncements = memo(function MapAnnouncements({
   });
 
   useEffect(() => {
+    const prev = prevStateRef.current;
+
     // Loading state changed
-    if (prevState.isLoading && !isLoading) {
+    if (prev.isLoading && !isLoading) {
       announce(`Map loaded. ${totalJobs} jobs across ${totalLocations} locations.`);
     }
     
     // Location selected
-    if (selectedLocation && selectedLocation.id !== prevState.selectedLocation) {
+    if (selectedLocation && selectedLocation.id !== prev.selectedLocation) {
       announce(
         `Selected ${selectedLocation.displayName}. ${selectedLocation.jobCount} ${
           selectedLocation.jobCount === 1 ? 'job' : 'jobs'
@@ -87,24 +89,24 @@ export const MapAnnouncements = memo(function MapAnnouncements({
     }
     
     // Location deselected
-    if (!selectedLocation && prevState.selectedLocation) {
+    if (!selectedLocation && prev.selectedLocation) {
       announce('Location deselected.');
     }
     
     // Heat map toggled
-    if (showHeatMap !== prevState.showHeatMap) {
+    if (showHeatMap !== prev.showHeatMap) {
       announce(showHeatMap ? 'Heat map enabled.' : 'Heat map disabled.');
     }
     
     // Markers toggled
-    if (showMarkers !== prevState.showMarkers) {
+    if (showMarkers !== prev.showMarkers) {
       announce(showMarkers ? 'Markers shown.' : 'Markers hidden.');
     }
     
     // Data changed (likely due to filtering)
     if (
-      totalJobs !== prevState.totalJobs || 
-      totalLocations !== prevState.totalLocations
+      totalJobs !== prev.totalJobs || 
+      totalLocations !== prev.totalLocations
     ) {
       if (hasActiveFilters) {
         announce(
@@ -113,8 +115,8 @@ export const MapAnnouncements = memo(function MapAnnouncements({
       }
     }
 
-    // Update previous state
-    setPrevState({
+    // Update ref (no re-render triggered)
+    prevStateRef.current = {
       isLoading,
       selectedLocation: selectedLocation?.id,
       showHeatMap,
@@ -122,7 +124,7 @@ export const MapAnnouncements = memo(function MapAnnouncements({
       totalJobs,
       totalLocations,
       hasActiveFilters,
-    });
+    };
   }, [
     isLoading,
     selectedLocation,
@@ -131,7 +133,6 @@ export const MapAnnouncements = memo(function MapAnnouncements({
     totalJobs,
     totalLocations,
     hasActiveFilters,
-    prevState,
     announce,
   ]);
 
