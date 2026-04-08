@@ -20,6 +20,7 @@ const sections: LegalSection[] = [
           <li>Job posting and management capabilities</li>
           <li>Application tracking and candidate management</li>
           <li>AI-powered analytics and insights</li>
+          <li>AI-powered voice communication and outbound calling</li>
           <li>Integration with third-party platforms</li>
         </ul>
       </div>
