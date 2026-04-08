@@ -237,6 +237,8 @@ export const JobMap = memo(function JobMap({
         .leaflet-popup-content-wrapper {
           border-radius: 12px;
           box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+          background: hsl(var(--popover));
+          color: hsl(var(--popover-foreground));
         }
         .leaflet-popup-content {
           margin: 0;
@@ -244,12 +246,19 @@ export const JobMap = memo(function JobMap({
         .leaflet-popup-tip {
           background: hsl(var(--popover));
         }
-        .leaflet-popup-content-wrapper {
-          background: hsl(var(--popover));
-          color: hsl(var(--popover-foreground));
-        }
         .leaflet-control-zoom {
           display: none !important;
+        }
+        .leaflet-control-attribution {
+          font-size: 8px !important;
+          background: transparent !important;
+          color: hsl(var(--muted-foreground) / 0.4) !important;
+          opacity: 0.5;
+          pointer-events: none;
+        }
+        .leaflet-control-attribution a {
+          color: inherit !important;
+          text-decoration: none !important;
         }
         @media (pointer: coarse) {
           .job-cluster,
