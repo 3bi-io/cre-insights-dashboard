@@ -62,6 +62,21 @@ const sections: LegalSection[] = [
     ),
   },
   {
+    id: 'ai-voice',
+    title: '6. AI Voice Communications',
+    content: (
+      <div className="space-y-3">
+        <p>The Service may initiate automated outbound voice calls using AI-powered voice agents to communicate with candidates regarding job applications.</p>
+        <ul className="space-y-2 list-disc pl-5">
+          <li>Voice interactions may be recorded and transcribed for quality assurance, compliance, and recruitment purposes.</li>
+          <li>By providing a phone number, you acknowledge that you may receive calls from an AI voice agent and that these interactions may be recorded.</li>
+          <li>You may opt out of voice communications at any time by informing us during a call or contacting support.</li>
+          <li>Voicemail messages may be detected automatically, and follow-up communications (including SMS) may be sent based on call outcomes.</li>
+        </ul>
+      </div>
+    ),
+  },
+  {
     id: 'ip',
     title: '6. Intellectual Property Rights',
     content: <p>The Service and its original content, features, and functionality are and will remain the exclusive property of Apply AI and its licensors. The Service is protected by copyright, trademark, and other laws.</p>,
