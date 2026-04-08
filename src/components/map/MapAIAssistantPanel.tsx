@@ -60,8 +60,21 @@ export const MapAIAssistantPanel = memo(function MapAIAssistantPanel({
   const isMobileFallback = useIsMobile();
   const isMobile = mapContext?.isMobile ?? isMobileFallback;
 
-  const [isExpanded, setIsExpanded] = useState(!isMobile);
+  const STORAGE_KEY = 'map-assistant-expanded';
+
+  const [isExpanded, setIsExpanded] = useState(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored !== null) return stored === 'true';
+    } catch { /* ignore */ }
+    return false; // minimized by default
+  });
   const [inputValue, setInputValue] = useState('');
+
+  const toggleExpanded = useCallback((next: boolean) => {
+    setIsExpanded(next);
+    try { localStorage.setItem(STORAGE_KEY, String(next)); } catch { /* ignore */ }
+  }, []);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
