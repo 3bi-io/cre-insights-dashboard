@@ -177,9 +177,9 @@ function JobMapPageContent() {
           />
         )}
 
-        {/* Stats Overlay */}
+        {/* AI Assistant Panel */}
         {(!isMobile || mobileViewMode === 'map') && (
-          <MapStats
+          <MapAIAssistantPanel
             totalJobs={stats.totalJobs}
             uniqueLocations={stats.uniqueLocations}
             jobsWithLocation={stats.jobsWithLocation}
@@ -187,7 +187,13 @@ function JobMapPageContent() {
             stateCount={stats.stateCount}
             countryCount={stats.countryCount}
             visibleJobs={stats.visibleJobs}
+            filters={filters}
+            displayMode={displayMode}
+            companies={uniqueCompanies}
+            categories={uniqueCategories}
             isLoading={isLoading && locations.length === 0}
+            onFiltersChange={setFilters}
+            onDisplayModeChange={handleDisplayModeChange}
           />
         )}
 
