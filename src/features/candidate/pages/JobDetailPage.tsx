@@ -41,6 +41,15 @@ const JobDetailPage = () => {
 
   const handleApply = () => {
     if (!job) return;
+    if (job.apply_url) {
+      if (job.apply_url.includes('applyai.jobs')) {
+        const u = new URL(job.apply_url);
+        navigate(u.pathname + u.search, { state: { internal: true } });
+      } else {
+        window.open(job.apply_url, '_blank', 'noopener,noreferrer');
+      }
+      return;
+    }
     const params = new URLSearchParams();
     params.set('job_id', job.id);
     if (job.organizations?.slug) params.set('org_slug', job.organizations.slug);

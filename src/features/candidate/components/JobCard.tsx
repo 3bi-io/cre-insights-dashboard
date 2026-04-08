@@ -34,7 +34,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onApply, showSaveButton =
     e.preventDefault();
     e.stopPropagation();
     if (onApply) {
-      onApply(job.id, job.organizations?.slug);
+      onApply(job.id, job.organizations?.slug, job.apply_url);
     }
   };
 

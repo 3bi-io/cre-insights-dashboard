@@ -67,7 +67,16 @@ const JobSearchPage = () => {
     hasMore 
   } = useJobSearch();
 
-  const handleApply = (jobId: string, orgSlug?: string) => {
+  const handleApply = (jobId: string, orgSlug?: string, applyUrl?: string) => {
+    if (applyUrl) {
+      if (applyUrl.includes('applyai.jobs')) {
+        const u = new URL(applyUrl);
+        navigate(u.pathname + u.search, { state: { internal: true } });
+      } else {
+        window.open(applyUrl, '_blank', 'noopener,noreferrer');
+      }
+      return;
+    }
     const params = new URLSearchParams();
     params.set('job_id', jobId);
     if (orgSlug) params.set('org_slug', orgSlug);
