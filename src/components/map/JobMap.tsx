@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef, memo, useCallback, useMemo } from 'react';
-import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from './MarkerClusterGroup';
 import L, { DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -49,6 +49,8 @@ interface JobMapProps {
   className?: string;
   /** When false, map is a visual-only backdrop with no user interaction */
   interactive?: boolean;
+  /** When true, renders a curated visual-only map for homepage hero — no labels, no popups, soft glow markers */
+  heroMode?: boolean;
 }
 
 function MapController({ 
@@ -129,8 +131,19 @@ function KeyboardNavigationHandler({
   return null;
 }
 
-function createClusterIcon(cluster: { getChildCount: () => number }, displayMode: DisplayMode): DivIcon {
+function createClusterIcon(cluster: { getChildCount: () => number }, displayMode: DisplayMode, heroMode = false): DivIcon {
   const count = cluster.getChildCount();
+
+  if (heroMode) {
+    // Hero mode: soft glowing dots with no text labels
+    const size = count >= CLUSTER_THRESHOLDS.LARGE ? 28 : count >= CLUSTER_THRESHOLDS.MEDIUM ? 22 : 16;
+    return L.divIcon({
+      html: `<div class="hero-cluster-dot"></div>`,
+      className: `hero-cluster hero-cluster-${count >= CLUSTER_THRESHOLDS.LARGE ? 'large' : count >= CLUSTER_THRESHOLDS.MEDIUM ? 'medium' : 'small'}`,
+      iconSize: L.point(size, size, true),
+    });
+  }
+
   const scale = displayMode === 'density' ? 1.1 : displayMode === 'detail' ? 0.95 : 1;
   let baseSize: number = CLUSTER_SIZE.SMALL;
   let className = 'job-cluster-small';
@@ -151,6 +164,18 @@ function createClusterIcon(cluster: { getChildCount: () => number }, displayMode
     iconSize: L.point(size, size, true),
   });
 }
+/** Lightweight marker for hero mode — soft dot, no text, no interaction */
+function HeroMarker({ location }: { location: MapLocation }) {
+  const size = Math.min(12, 6 + location.jobCount * 0.3);
+  const icon = useMemo(() => L.divIcon({
+    html: `<div class="hero-marker-dot" style="width:${size}px;height:${size}px;"></div>`,
+    className: '',
+    iconSize: L.point(size, size),
+    iconAnchor: L.point(size / 2, size / 2),
+  }), [size]);
+
+  return <Marker position={[location.lat, location.lng]} icon={icon} interactive={false} />;
+}
 
 export const JobMap = memo(function JobMap({
   locations,
@@ -162,6 +187,7 @@ export const JobMap = memo(function JobMap({
   displayMode = 'standard',
   className = '',
   interactive = true,
+  heroMode = false,
 }: JobMapProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
@@ -176,8 +202,8 @@ export const JobMap = memo(function JobMap({
   const totalJobs = locations.reduce((sum, loc) => sum + loc.jobCount, 0);
 
   const iconCreateFn = useMemo(() => {
-    return (cluster: { getChildCount: () => number }) => createClusterIcon(cluster, displayMode);
-  }, [displayMode]);
+    return (cluster: { getChildCount: () => number }) => createClusterIcon(cluster, displayMode, heroMode);
+  }, [displayMode, heroMode]);
 
   const clusterStyles = useMemo(() => {
     const glowEffect = displayMode === 'detail'
@@ -188,11 +214,15 @@ export const JobMap = memo(function JobMap({
     return glowEffect;
   }, [displayMode]);
 
+  // Hero mode tile: always use light no-labels for clean backdrop
+  const finalTileUrl = heroMode ? 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png' : tileUrl;
+  const finalClusterRadius = heroMode ? 80 : clusterRadius;
+
   return (
     <div 
       className={`relative w-full h-full ${className}`}
-      role="application"
-      aria-label={`Interactive job map showing ${totalJobs} jobs across ${locations.length} locations`}
+      role={heroMode ? 'img' : 'application'}
+      aria-label={heroMode ? 'Map showing job locations across the United States' : `Interactive job map showing ${totalJobs} jobs across ${locations.length} locations`}
     >
       <style>{`
         .job-cluster {
@@ -229,6 +259,46 @@ export const JobMap = memo(function JobMap({
         .job-cluster-large {
           background: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(262 83% 48%) 100%);
         }
+
+        /* Hero mode styles — soft glowing dots, no text */
+        .hero-cluster {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          pointer-events: none;
+        }
+        .hero-cluster-dot {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          animation: hero-pulse 3s ease-in-out infinite;
+        }
+        .hero-cluster-small .hero-cluster-dot {
+          background: radial-gradient(circle, hsl(var(--primary) / 0.6) 0%, hsl(var(--primary) / 0.15) 70%, transparent 100%);
+          box-shadow: 0 0 12px hsl(var(--primary) / 0.3);
+        }
+        .hero-cluster-medium .hero-cluster-dot {
+          background: radial-gradient(circle, hsl(217 91% 60% / 0.6) 0%, hsl(217 91% 60% / 0.15) 70%, transparent 100%);
+          box-shadow: 0 0 20px hsl(217 91% 60% / 0.3);
+        }
+        .hero-cluster-large .hero-cluster-dot {
+          background: radial-gradient(circle, hsl(262 83% 58% / 0.55) 0%, hsl(262 83% 58% / 0.12) 70%, transparent 100%);
+          box-shadow: 0 0 28px hsl(262 83% 58% / 0.3);
+        }
+        @keyframes hero-pulse {
+          0%, 100% { opacity: 0.7; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.15); }
+        }
+
+        /* Hero mode marker overrides */
+        .hero-marker-dot {
+          border-radius: 50%;
+          pointer-events: none;
+          background: radial-gradient(circle, hsl(var(--primary) / 0.5) 0%, hsl(var(--primary) / 0.1) 70%, transparent 100%);
+          box-shadow: 0 0 8px hsl(var(--primary) / 0.25);
+        }
+
         .leaflet-container {
           font-family: inherit;
           border-radius: var(--radius);
@@ -290,33 +360,33 @@ export const JobMap = memo(function JobMap({
 
       <MapContainer
         center={US_CENTER}
-        zoom={DEFAULT_ZOOM}
-        scrollWheelZoom={interactive ? !isMobile : false}
-        className="w-full h-full rounded-lg"
-        minZoom={MIN_ZOOM}
-        maxZoom={MAX_ZOOM}
-        keyboard={interactive}
+        zoom={heroMode ? 4 : DEFAULT_ZOOM}
+        scrollWheelZoom={interactive && !heroMode ? !isMobile : false}
+        className={`w-full h-full ${heroMode ? '' : 'rounded-lg'}`}
+        minZoom={heroMode ? 3 : MIN_ZOOM}
+        maxZoom={heroMode ? 6 : MAX_ZOOM}
+        keyboard={interactive && !heroMode}
         keyboardPanDelta={80}
-        touchZoom={interactive}
-        dragging={interactive}
-        doubleClickZoom={interactive}
+        touchZoom={interactive && !heroMode}
+        dragging={interactive && !heroMode}
+        doubleClickZoom={interactive && !heroMode}
         zoomControl={false}
         bounceAtZoomLimits={false}
-        attributionControl={interactive}
+        attributionControl={!heroMode && interactive}
       >
         <TileLayer
           attribution={MAP_ATTRIBUTION}
-          url={tileUrl}
+          url={finalTileUrl}
         />
 
-        {interactive && (
+        {interactive && !heroMode && (
           <MapController 
             selectedLocation={selectedLocation} 
             onMapClick={handleMapClick}
           />
         )}
 
-        {interactive && (
+        {interactive && !heroMode && (
           <KeyboardNavigationHandler
             locations={locations}
             selectedLocation={selectedLocation}
@@ -324,39 +394,49 @@ export const JobMap = memo(function JobMap({
           />
         )}
 
-        <MapBoundsController
-          locations={locations}
-          enabled={autoFitBounds}
-        />
+        {!heroMode && (
+          <MapBoundsController
+            locations={locations}
+            enabled={autoFitBounds}
+          />
+        )}
 
-        <LazyHeatMapLayer 
-          locations={locations} 
-          visible={showHeatMap}
-          intensity={displayMode === 'density' ? 1 : 0.8}
-        />
+        {!heroMode && (
+          <LazyHeatMapLayer 
+            locations={locations} 
+            visible={showHeatMap}
+            intensity={displayMode === 'density' ? 1 : 0.8}
+          />
+        )}
 
-        {interactive && <MapZoomControls />}
+        {interactive && !heroMode && <MapZoomControls />}
 
         {showMarkers && (
           <MarkerClusterGroup
             chunkedLoading
-            spiderfyOnMaxZoom={interactive}
+            spiderfyOnMaxZoom={!heroMode && interactive}
             showCoverageOnHover={false}
-            maxClusterRadius={clusterRadius}
+            maxClusterRadius={finalClusterRadius}
             iconCreateFunction={iconCreateFn}
-            animate={true}
+            animate={!heroMode}
             spiderfyDistanceMultiplier={1.5}
-            zoomToBoundsOnClick={interactive}
+            zoomToBoundsOnClick={!heroMode && interactive}
+            disableClusteringAtZoom={heroMode ? 99 : undefined}
           >
-            {locations.map((location) => (
-              <JobMarker
-                key={location.id}
-                location={location}
-                isSelected={interactive ? selectedLocation?.id === location.id : false}
-                onClick={interactive ? () => onLocationSelect(location) : () => {}}
-                displayMode={displayMode}
-              />
-            ))}
+            {heroMode
+              ? locations.map((location) => (
+                  <HeroMarker key={location.id} location={location} />
+                ))
+              : locations.map((location) => (
+                  <JobMarker
+                    key={location.id}
+                    location={location}
+                    isSelected={interactive ? selectedLocation?.id === location.id : false}
+                    onClick={interactive ? () => onLocationSelect(location) : () => {}}
+                    displayMode={displayMode}
+                  />
+                ))
+            }
           </MarkerClusterGroup>
         )}
       </MapContainer>

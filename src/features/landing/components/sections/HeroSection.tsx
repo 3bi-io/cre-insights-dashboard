@@ -1,6 +1,6 @@
 /**
  * Hero Section Component
- * Interactive job map as a visual backdrop with overlay headline, CTAs, and trust signals
+ * Premium homepage hero with curated map backdrop — mobile-first, conversion-oriented
  */
 
 import React, { lazy, Suspense, useCallback } from 'react';
@@ -16,43 +16,23 @@ import { MapProvider } from '@/components/map/MapContext';
 
 const JobMap = lazy(() => import('@/components/map/JobMap'));
 
-// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+    transition: { staggerChildren: 0.12, delayChildren: 0.3 },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 24 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] as const },
+    transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] as const },
   },
 };
 
-const tagContainerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
-  },
-};
-
-const tagVariants = {
-  hidden: { opacity: 0, scale: 0.8, y: 10 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: { duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] as const },
-  },
-};
-
-/** Noop handler for non-interactive map */
 const noop = () => {};
 
 const HeroSection = () => {
@@ -83,19 +63,16 @@ const HeroSection = () => {
   });
 
   const { locations } = useJobMapData();
-
   const handleLocationSelect = useCallback((_loc: MapLocation | null) => {}, []);
 
   return (
-    <section className="relative w-full h-[50vh] sm:h-[60vh] lg:h-[70vh] overflow-hidden">
-      {/* Map backdrop */}
+    <section className="relative w-full h-[100svh] min-h-[600px] max-h-[900px] sm:max-h-[1000px] lg:max-h-[1100px] overflow-hidden">
+      {/* Map backdrop — heroMode suppresses all labels/popups/controls */}
       <div className="absolute inset-0 z-0">
         <MapProvider>
           <Suspense
             fallback={
-              <div className="w-full h-full flex items-center justify-center bg-muted">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
+              <div className="w-full h-full bg-muted" />
             }
           >
             <JobMap
@@ -104,28 +81,32 @@ const HeroSection = () => {
               onLocationSelect={handleLocationSelect}
               showMarkers={true}
               showHeatMap={false}
-              autoFitBounds={true}
+              autoFitBounds={false}
               interactive={false}
+              heroMode={true}
             />
           </Suspense>
         </MapProvider>
       </div>
 
-      {/* Gradient overlay for text readability */}
-      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/60 via-black/40 to-black/60 pointer-events-none" />
+      {/* Gradient overlays for readability — stronger at bottom for CTA area */}
+      <div className="absolute inset-0 z-[1] pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/70" />
+        <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent" />
+      </div>
 
-      {/* Hero content overlay */}
+      {/* Hero content — anchored to bottom-center on mobile, center on desktop */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 w-full h-full flex items-center justify-center"
+        className="relative z-10 w-full h-full flex flex-col justify-end sm:justify-center pb-12 sm:pb-0"
       >
-        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="w-full max-w-3xl mx-auto px-5 sm:px-8 lg:px-10">
           {/* Badge */}
           <motion.span
             variants={itemVariants}
-            className="inline-block text-xs sm:text-sm font-semibold text-black bg-white rounded-full px-4 py-1.5 mb-6 shadow-lg"
+            className="inline-flex items-center text-xs font-semibold tracking-wide uppercase text-primary-foreground bg-primary/90 backdrop-blur-sm rounded-full px-3.5 py-1.5 mb-5 sm:mb-6 shadow-md"
           >
             {heroContent.badge}
           </motion.span>
@@ -133,42 +114,42 @@ const HeroSection = () => {
           {/* Headline */}
           <motion.h1
             variants={itemVariants}
-            className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-playfair font-bold mb-6 leading-[1.05] tracking-tight"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-playfair font-bold leading-[1.08] tracking-tight mb-4 sm:mb-5"
           >
             <span
               className="text-white"
-              style={{ textShadow: '0 2px 16px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.4)' }}
+              style={{ textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}
             >
               {heroContent.headline}
             </span>
             <span
-              className="text-cyan-300 drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
-              style={{ textShadow: '0 0 20px rgba(103,232,249,0.5), 0 2px 8px rgba(0,0,0,0.5)' }}
+              className="text-cyan-300"
+              style={{ textShadow: '0 0 24px rgba(103,232,249,0.4), 0 2px 12px rgba(0,0,0,0.4)' }}
             >
               {heroContent.headlineAccent}
             </span>
           </motion.h1>
 
-          {/* Subheadline */}
+          {/* Subheadline — concise on mobile */}
           <motion.p
             variants={itemVariants}
-            className="text-lg sm:text-xl md:text-2xl text-white font-medium mb-10 max-w-2xl mx-auto leading-relaxed whitespace-pre-line"
-            style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 3px rgba(0,0,0,0.5)' }}
+            className="text-base sm:text-lg md:text-xl text-white/90 font-medium mb-8 sm:mb-9 max-w-xl leading-relaxed"
+            style={{ textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}
           >
             {heroContent.subheadline}
           </motion.p>
 
-          {/* CTA Buttons */}
+          {/* CTAs */}
           <motion.div
             variants={itemVariants}
-            className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-10"
+            className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8 sm:mb-10"
           >
             <Link to="/jobs" className="w-full sm:w-auto">
               <Button
                 size="lg"
-                className="w-full sm:w-auto min-h-[56px] bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-primary-foreground px-10 py-5 text-lg font-bold shadow-[0_0_30px_hsl(var(--primary)/0.4)] hover:shadow-[0_0_50px_hsl(var(--primary)/0.6)] hover:scale-105 transition-all duration-300"
+                className="w-full sm:w-auto min-h-[52px] bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 text-base font-bold shadow-[0_0_24px_hsl(var(--primary)/0.35)] hover:shadow-[0_0_40px_hsl(var(--primary)/0.5)] hover:scale-[1.02] transition-all duration-200"
               >
-                <Search className="mr-2 h-5 w-5" />
+                <Search className="mr-2 h-4.5 w-4.5" />
                 {heroContent.cta.primary}
               </Button>
             </Link>
@@ -176,44 +157,35 @@ const HeroSection = () => {
               <Button
                 variant="outline"
                 size="lg"
-                className="w-full sm:w-auto min-h-[56px] px-10 py-5 text-lg font-bold border-2 border-white/30 bg-white/10 hover:bg-white/20 backdrop-blur-sm hover:scale-105 transition-all duration-300 shadow-lg text-white"
+                className="w-full sm:w-auto min-h-[52px] px-8 py-4 text-base font-bold border-white/25 bg-white/10 hover:bg-white/20 backdrop-blur-sm hover:scale-[1.02] transition-all duration-200 shadow-lg text-white"
               >
                 Book a Demo
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-4.5 w-4.5" />
               </Button>
             </Link>
           </motion.div>
 
-          {/* Trust signals */}
-          <motion.div variants={itemVariants} className="flex flex-col items-center gap-3">
-            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
-              <span className="inline-flex items-center text-sm lg:text-base text-black font-semibold bg-white rounded-full px-5 py-2 shadow-lg">
-                <span className="w-2 h-2 bg-success rounded-full mr-2 animate-pulse" />
-                {companyCount.toLocaleString()} Companies Hiring
+          {/* Trust signals — compact row */}
+          <motion.div
+            variants={itemVariants}
+            className="flex flex-wrap items-center gap-2 sm:gap-3"
+          >
+            <span className="inline-flex items-center text-xs sm:text-sm text-white font-medium bg-white/15 backdrop-blur-sm rounded-full px-3.5 py-1.5 border border-white/20">
+              <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full mr-2 animate-pulse" />
+              {companyCount.toLocaleString()} Companies
+            </span>
+            <span className="inline-flex items-center text-xs sm:text-sm text-white font-medium bg-white/15 backdrop-blur-sm rounded-full px-3.5 py-1.5 border border-white/20">
+              <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full mr-2 animate-pulse" />
+              {jobCount.toLocaleString()} Jobs
+            </span>
+            {heroContent.industryTags?.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="hidden sm:inline-flex items-center text-xs text-white/70 bg-white/8 backdrop-blur-sm rounded-full px-3 py-1 border border-white/10"
+              >
+                {tag}
               </span>
-              <span className="inline-flex items-center text-sm lg:text-base text-black font-semibold bg-white rounded-full px-5 py-2 shadow-lg">
-                <span className="w-2 h-2 bg-primary rounded-full mr-2 animate-pulse" />
-                {jobCount.toLocaleString()} Jobs Available
-              </span>
-            </div>
-
-            <motion.div
-              variants={tagContainerVariants}
-              initial="hidden"
-              animate="visible"
-              className="flex flex-nowrap sm:flex-wrap items-center justify-center gap-2 overflow-x-auto scrollbar-hide pb-1"
-            >
-              {heroContent.industryTags?.map((tag, index) => (
-                <motion.span
-                  key={tag}
-                  variants={tagVariants}
-                  custom={index}
-                  className="px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-white/15 backdrop-blur-sm rounded-full border border-white/30 hover:bg-white/25 transition-colors"
-                >
-                  {tag}
-                </motion.span>
-              ))}
-            </motion.div>
+            ))}
           </motion.div>
         </div>
       </motion.div>
