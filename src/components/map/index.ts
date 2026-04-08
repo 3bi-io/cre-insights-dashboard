@@ -13,6 +13,10 @@ export { HeatMapLayer } from './HeatMapLayer';
 export { LazyHeatMapLayer } from './LazyHeatMapLayer';
 export { MapProvider, useMapContext, useMapContextOptional } from './MapContext';
 export { MapAnnouncements, useMapAnnouncement } from './MapAnnouncements';
+export { LocationConfidenceBadge } from './LocationConfidenceBadge';
+export { MobileViewSwitcher } from './MobileMapListView';
+export { MobileJobListView } from './MobileJobListView';
+export { MapBoundsController } from './MapBoundsController';
 export { 
   MapFiltersSkeleton, 
   MapStatsSkeleton, 
