@@ -17,7 +17,6 @@ import { buildBreadcrumbSchema } from '@/utils/breadcrumbSchema';
 import { type DisplayMode } from '@/components/map/constants';
 import { 
   MapFiltersSkeleton, 
-  MapStatsSkeleton, 
   MapControlsSkeleton 
 } from '@/components/map/MapSkeletons';
 
