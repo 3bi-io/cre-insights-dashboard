@@ -143,7 +143,7 @@ export const MapStats = memo(function MapStats({
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1.5">
             <Briefcase className="w-4 h-4 text-primary" aria-hidden="true" />
-            <span className="font-semibold">{totalJobs}</span>
+            <span className="font-semibold">{displayedJobs}</span>
             <span className="text-muted-foreground">jobs</span>
           </div>
           
