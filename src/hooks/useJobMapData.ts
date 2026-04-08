@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { getLocationCoordinates } from '@/utils/usaCityCoordinates';
+import { getLocationCoordinates, isNonUSLocation } from '@/utils/usaCityCoordinates';
 
 export interface MapJob {
   id: string;
@@ -134,6 +134,17 @@ export function useJobMapData(filters: JobMapFilters = {}) {
         } else if (parts.length === 1) {
           state = parts[0];
         }
+      }
+
+      // Sanitize city names: strip "(Hybrid)", "Híbrido (" prefixes
+      if (city) {
+        city = city.replace(/^\(Hybrid\)\s*/i, '').replace(/^Híbrido\s*\(/i, '').replace(/\)$/, '').trim();
+      }
+
+      // Skip non-US locations
+      if (isNonUSLocation(city, state)) {
+        jobsWithoutLocation++;
+        return;
       }
 
       const coords = getLocationCoordinates(city, state);
