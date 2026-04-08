@@ -252,6 +252,19 @@ export const MapFilters = memo(function MapFilters({
                   </Select>
                 </div>
 
+                {/* Display mode inside mobile popover */}
+                {onDisplayModeChange && (
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Display Mode</label>
+                    <DisplayModeSelector
+                      mode={displayMode}
+                      onModeChange={onDisplayModeChange}
+                      compact
+                      className="w-full justify-center"
+                    />
+                  </div>
+                )}
+
                 {hasAnyFilter && (
                   <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full h-11">
                     <X className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
