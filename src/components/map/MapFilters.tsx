@@ -129,8 +129,7 @@ export const MapFilters = memo(function MapFilters({
       <div 
         className={cn(
           "absolute z-[1000] flex flex-wrap gap-2 items-start",
-          "top-20 left-4 right-4",
-          "lg:right-auto lg:max-w-3xl"
+          isMobile ? "top-3 left-3 right-14" : "top-3 left-3 right-auto max-w-3xl",
         )}
         role="search"
         aria-label="Filter jobs on map"
