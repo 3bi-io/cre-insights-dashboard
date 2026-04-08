@@ -216,13 +216,13 @@ export function useJobMapData(filters: JobMapFilters = {}) {
 
   // Get unique categories for filtering
   const uniqueCategories = useMemo(() => {
-    const categories = new Set<string>();
+    const categories = new Map<string, { id: string; name: string }>();
     allJobs.forEach((job: MapJob) => {
-      if (job.job_categories?.name) {
-        categories.add(job.job_categories.name);
+      if (job.category_id && job.job_categories?.name) {
+        categories.set(job.category_id, { id: job.category_id, name: job.job_categories.name });
       }
     });
-    return Array.from(categories).sort();
+    return Array.from(categories.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [allJobs]);
 
   return {

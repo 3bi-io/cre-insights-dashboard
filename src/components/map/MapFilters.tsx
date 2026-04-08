@@ -31,7 +31,7 @@ interface MapFiltersProps {
   filters: JobMapFilters;
   onFiltersChange: (filters: JobMapFilters) => void;
   companies: { id: string; name: string }[];
-  categories: string[];
+  categories: { id: string; name: string }[];
 }
 
 export const MapFilters = memo(function MapFilters({
