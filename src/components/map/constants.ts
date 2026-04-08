@@ -104,7 +104,7 @@ export function getTileUrl(mode: DisplayMode, isDark: boolean): string {
 }
 
 // Attribution
-export const MAP_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+export const MAP_ATTRIBUTION = '© OSM · CARTO';
 
 // Check if device has touch capability
 export const IS_TOUCH_DEVICE = typeof window !== 'undefined' && 

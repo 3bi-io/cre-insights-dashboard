@@ -6,8 +6,10 @@
 import { useState, Suspense, lazy, useCallback, useMemo, useEffect } from 'react';
 import { MapPin, Loader2 } from 'lucide-react';
 import { useJobMapData, JobMapFilters, MapLocation } from '@/hooks/useJobMapData';
+import { useMapDailyRefresh } from '@/hooks/useMapDailyRefresh';
 import { MapFilters, JobListPanel, MapLayerControls, MapAIAssistantPanel } from '@/components/map';
 import { MapProvider, useMapContext } from '@/components/map/MapContext';
+import { MapThemeSwitcher } from '@/components/map/MapThemeSwitcher';
 import { MapAnnouncements } from '@/components/map/MapAnnouncements';
 import { MobileViewSwitcher, MobileViewMode } from '@/components/map/MobileMapListView';
 import { MobileJobListView } from '@/components/map/MobileJobListView';
@@ -57,7 +59,8 @@ function MapErrorFallback({ error }: { error: Error }) {
 
 function JobMapPageContent() {
   const { isMobile } = useMapContext();
-  
+  const { isRefreshing } = useMapDailyRefresh();
+
   const [filters, setFilters] = useState<JobMapFilters>({});
   const [selectedLocation, setSelectedLocation] = useState<MapLocation | null>(null);
   const [showHeatMap, setShowHeatMap] = useState(false);
@@ -129,7 +132,15 @@ function JobMapPageContent() {
         id="main-content"
       >
         <h1 className="sr-only">Job Locations Map</h1>
-        
+
+        {/* Background refresh indicator */}
+        {isRefreshing && (
+          <div className="absolute top-[4.5rem] left-1/2 -translate-x-1/2 z-[1001] bg-primary/90 text-primary-foreground text-xs px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 animate-in fade-in">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Refreshing jobs…
+          </div>
+        )}
+
         {/* Map Container */}
         <div className={`absolute inset-0 top-16 ${isMobile && mobileViewMode === 'list' ? 'invisible' : ''}`}>
           {error ? (
@@ -197,19 +208,23 @@ function JobMapPageContent() {
           />
         )}
 
-        {/* Layer Controls */}
+        {/* Layer Controls + Theme Switcher */}
         {(!isMobile || mobileViewMode === 'map') && (
-          isLoading && locations.length === 0 ? (
-            <MapControlsSkeleton isMobile={isMobile} />
-          ) : (
-            <MapLayerControls
-              showHeatMap={showHeatMap}
-              onToggleHeatMap={handleToggleHeatMap}
-              showMarkers={showMarkers}
-              onToggleMarkers={handleToggleMarkers}
-              displayMode={displayMode}
-            />
-          )
+          <div className="absolute bottom-4 right-4 z-[1000] flex flex-col gap-2 items-end">
+            <MapThemeSwitcher />
+            {isLoading && locations.length === 0 ? (
+              <MapControlsSkeleton isMobile={isMobile} />
+            ) : (
+              <MapLayerControls
+                showHeatMap={showHeatMap}
+                onToggleHeatMap={handleToggleHeatMap}
+                showMarkers={showMarkers}
+                onToggleMarkers={handleToggleMarkers}
+                displayMode={displayMode}
+                className="!relative !bottom-auto !right-auto"
+              />
+            )}
+          </div>
         )}
 
         {/* Mobile View Switcher */}
