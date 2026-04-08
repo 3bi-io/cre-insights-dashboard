@@ -88,7 +88,7 @@ const sections: LegalSection[] = [
   },
   {
     id: 'termination',
-    title: '8. Termination',
+    title: '9. Termination',
     content: <p>We may terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms. Upon termination, your right to use the Service will cease immediately.</p>,
   },
   {
