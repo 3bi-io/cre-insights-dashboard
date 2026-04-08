@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef, memo, useCallback, useMemo } from 'react';
-import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from './MarkerClusterGroup';
 import L, { DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
