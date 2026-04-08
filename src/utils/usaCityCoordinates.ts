@@ -544,6 +544,29 @@ export const US_CITIES: CityCoordinate[] = [
   { city: 'San Juan', state: 'Puerto Rico', stateCode: 'PR', lat: 18.4655, lng: -66.1057 },
 ];
 
+// City name aliases to handle spelling variants in job data
+const CITY_ALIASES: Record<string, string> = {
+  'saint louis': 'st. louis',
+  'joilet': 'joliet',
+  'mc kinney': 'mckinney',
+  'saint charles': 'st. charles',
+  'saint peters': 'st. peters',
+  'o fallon': "o'fallon",
+  'wilkes barre': 'wilkes-barre',
+  'winston salem': 'winston-salem',
+};
+
+// Non-US state/country values to exclude from the map
+const NON_US_LOCATIONS = new Set([
+  'argentina', 'colombia', 'mexico', 'brazil', 'buenos aires',
+  'puerto rico', // handled via PR state code instead
+]);
+
+function normalizeCityName(city: string): string {
+  const lower = city.trim().toLowerCase();
+  return CITY_ALIASES[lower] || lower;
+}
+
 // Create lookup maps for fast access
 const cityLookupMap = new Map<string, CityCoordinate>();
 const stateLookupMap = new Map<string, CityCoordinate[]>();
