@@ -177,7 +177,7 @@ function HeroMarker({ location }: { location: MapLocation }) {
   return <Marker position={[location.lat, location.lng]} icon={icon} interactive={false} />;
 }
 
-
+export const JobMap = memo(function JobMap({
   locations,
   selectedLocation,
   onLocationSelect,
