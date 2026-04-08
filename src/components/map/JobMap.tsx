@@ -47,8 +47,6 @@ interface JobMapProps {
   autoFitBounds?: boolean;
   displayMode?: DisplayMode;
   className?: string;
-  /** When false, map is a visual-only backdrop with no user interaction */
-  interactive?: boolean;
 }
 
 function MapController({ 
@@ -161,7 +159,6 @@ export const JobMap = memo(function JobMap({
   autoFitBounds = true,
   displayMode = 'standard',
   className = '',
-  interactive = true,
 }: JobMapProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
@@ -291,38 +288,33 @@ export const JobMap = memo(function JobMap({
       <MapContainer
         center={US_CENTER}
         zoom={DEFAULT_ZOOM}
-        scrollWheelZoom={interactive ? !isMobile : false}
+        scrollWheelZoom={!isMobile}
         className="w-full h-full rounded-lg"
         minZoom={MIN_ZOOM}
         maxZoom={MAX_ZOOM}
-        keyboard={interactive}
+        keyboard={true}
         keyboardPanDelta={80}
-        touchZoom={interactive}
-        dragging={interactive}
-        doubleClickZoom={interactive}
+        touchZoom={true}
+        dragging={true}
+        doubleClickZoom={true}
         zoomControl={false}
         bounceAtZoomLimits={false}
-        attributionControl={interactive}
       >
         <TileLayer
           attribution={MAP_ATTRIBUTION}
           url={tileUrl}
         />
 
-        {interactive && (
-          <MapController 
-            selectedLocation={selectedLocation} 
-            onMapClick={handleMapClick}
-          />
-        )}
+        <MapController 
+          selectedLocation={selectedLocation} 
+          onMapClick={handleMapClick}
+        />
 
-        {interactive && (
-          <KeyboardNavigationHandler
-            locations={locations}
-            selectedLocation={selectedLocation}
-            onLocationSelect={onLocationSelect}
-          />
-        )}
+        <KeyboardNavigationHandler
+          locations={locations}
+          selectedLocation={selectedLocation}
+          onLocationSelect={onLocationSelect}
+        />
 
         <MapBoundsController
           locations={locations}
@@ -335,25 +327,25 @@ export const JobMap = memo(function JobMap({
           intensity={displayMode === 'density' ? 1 : 0.8}
         />
 
-        {interactive && <MapZoomControls />}
+        <MapZoomControls />
 
         {showMarkers && (
           <MarkerClusterGroup
             chunkedLoading
-            spiderfyOnMaxZoom={interactive}
+            spiderfyOnMaxZoom={true}
             showCoverageOnHover={false}
             maxClusterRadius={clusterRadius}
             iconCreateFunction={iconCreateFn}
             animate={true}
             spiderfyDistanceMultiplier={1.5}
-            zoomToBoundsOnClick={interactive}
+            zoomToBoundsOnClick={true}
           >
             {locations.map((location) => (
               <JobMarker
                 key={location.id}
                 location={location}
-                isSelected={interactive ? selectedLocation?.id === location.id : false}
-                onClick={interactive ? () => onLocationSelect(location) : () => {}}
+                isSelected={selectedLocation?.id === location.id}
+                onClick={() => onLocationSelect(location)}
                 displayMode={displayMode}
               />
             ))}
