@@ -83,7 +83,7 @@ const sections: LegalSection[] = [
   },
   {
     id: 'privacy',
-    title: '7. Privacy Policy',
+    title: '8. Privacy Policy',
     content: <p>Your privacy is important to us. Please review our Privacy Policy, which also governs your use of the Service, to understand our practices.</p>,
   },
   {
