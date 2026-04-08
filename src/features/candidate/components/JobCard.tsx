@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 
 interface JobCardProps {
   job: any;
-  onApply?: (jobId: string, orgSlug?: string) => void;
+  onApply?: (jobId: string, orgSlug?: string, applyUrl?: string) => void;
   showSaveButton?: boolean;
 }
 
