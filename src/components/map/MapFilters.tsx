@@ -297,7 +297,7 @@ export const MapFilters = memo(function MapFilters({
                   <Building2 className="w-4 h-4 mr-2 text-muted-foreground" aria-hidden="true" />
                   <SelectValue placeholder="All companies" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[1001]">
                   <SelectItem value="all">All companies</SelectItem>
                   {companies.map((company) => (
                     <SelectItem key={company.id} value={company.id}>
