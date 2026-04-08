@@ -47,7 +47,7 @@ export const MobileJobListView = memo(function MobileJobListView({
   const sorted = [...locations].sort((a, b) => b.jobCount - a.jobCount);
 
   return (
-    <div className="pt-[88px] pb-20 px-4 space-y-2" role="list" aria-label="Job locations">
+    <div className="pt-16 pb-20 px-4 space-y-2" role="list" aria-label="Job locations">
       <p className="text-xs text-muted-foreground mb-3">
         {locations.length} locations • {locations.reduce((s, l) => s + l.jobCount, 0)} jobs
       </p>

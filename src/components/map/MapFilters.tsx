@@ -129,8 +129,7 @@ export const MapFilters = memo(function MapFilters({
       <div 
         className={cn(
           "absolute z-[1000] flex flex-wrap gap-2 items-start",
-          "top-20 left-4 right-4",
-          "lg:right-auto lg:max-w-3xl"
+          isMobile ? "top-3 left-3 right-14" : "top-3 left-3 right-auto max-w-3xl",
         )}
         role="search"
         aria-label="Filter jobs on map"
@@ -253,6 +252,19 @@ export const MapFilters = memo(function MapFilters({
                   </Select>
                 </div>
 
+                {/* Display mode inside mobile popover */}
+                {onDisplayModeChange && (
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Display Mode</label>
+                    <DisplayModeSelector
+                      mode={displayMode}
+                      onModeChange={onDisplayModeChange}
+                      compact
+                      className="w-full justify-center"
+                    />
+                  </div>
+                )}
+
                 {hasAnyFilter && (
                   <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full h-11">
                     <X className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
@@ -323,18 +335,13 @@ export const MapFilters = memo(function MapFilters({
           </>
         )}
 
-        {/* Display Mode — desktop inline, mobile below search */}
-        {onDisplayModeChange && (
-          <div className={cn(isMobile && "w-full")}>
-            <DisplayModeSelector
-              mode={displayMode}
-              onModeChange={onDisplayModeChange}
-              compact={isMobile || isTablet}
-              className={cn(
-                isMobile && "w-full justify-center"
-              )}
-            />
-          </div>
+        {/* Display Mode — desktop/tablet inline only; on mobile it moves into the filter popover */}
+        {onDisplayModeChange && !isMobile && (
+          <DisplayModeSelector
+            mode={displayMode}
+            onModeChange={onDisplayModeChange}
+            compact={isTablet}
+          />
         )}
       </div>
     </>
