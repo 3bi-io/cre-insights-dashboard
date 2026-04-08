@@ -131,8 +131,19 @@ function KeyboardNavigationHandler({
   return null;
 }
 
-function createClusterIcon(cluster: { getChildCount: () => number }, displayMode: DisplayMode): DivIcon {
+function createClusterIcon(cluster: { getChildCount: () => number }, displayMode: DisplayMode, heroMode = false): DivIcon {
   const count = cluster.getChildCount();
+
+  if (heroMode) {
+    // Hero mode: soft glowing dots with no text labels
+    const size = count >= CLUSTER_THRESHOLDS.LARGE ? 28 : count >= CLUSTER_THRESHOLDS.MEDIUM ? 22 : 16;
+    return L.divIcon({
+      html: `<div class="hero-cluster-dot"></div>`,
+      className: `hero-cluster hero-cluster-${count >= CLUSTER_THRESHOLDS.LARGE ? 'large' : count >= CLUSTER_THRESHOLDS.MEDIUM ? 'medium' : 'small'}`,
+      iconSize: L.point(size, size, true),
+    });
+  }
+
   const scale = displayMode === 'density' ? 1.1 : displayMode === 'detail' ? 0.95 : 1;
   let baseSize: number = CLUSTER_SIZE.SMALL;
   let className = 'job-cluster-small';
