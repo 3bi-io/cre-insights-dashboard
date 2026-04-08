@@ -3,7 +3,7 @@
  * Centralized live region announcements for accessibility
  */
 
-import { memo, useEffect, useState, useCallback } from 'react';
+import { memo, useEffect, useState, useCallback, useRef } from 'react';
 import { MapLocation } from '@/hooks/useJobMapData';
 
 interface MapAnnouncementsProps {
