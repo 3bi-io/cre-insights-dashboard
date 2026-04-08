@@ -31,7 +31,7 @@ interface MapFiltersProps {
   filters: JobMapFilters;
   onFiltersChange: (filters: JobMapFilters) => void;
   companies: { id: string; name: string }[];
-  categories: string[];
+  categories: { id: string; name: string }[];
 }
 
 export const MapFilters = memo(function MapFilters({
@@ -219,7 +219,7 @@ export const MapFilters = memo(function MapFilters({
                     <SelectTrigger id="mobile-company-filter" className="h-11">
                       <SelectValue placeholder="All companies" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[1001]">
                       <SelectItem value="all">All companies</SelectItem>
                       {companies.map((company) => (
                         <SelectItem key={company.id} value={company.id}>
@@ -248,11 +248,11 @@ export const MapFilters = memo(function MapFilters({
                     <SelectTrigger id="mobile-category-filter" className="h-11">
                       <SelectValue placeholder="All categories" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[1001]">
                       <SelectItem value="all">All categories</SelectItem>
                       {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -297,7 +297,7 @@ export const MapFilters = memo(function MapFilters({
                   <Building2 className="w-4 h-4 mr-2 text-muted-foreground" aria-hidden="true" />
                   <SelectValue placeholder="All companies" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[1001]">
                   <SelectItem value="all">All companies</SelectItem>
                   {companies.map((company) => (
                     <SelectItem key={company.id} value={company.id}>
@@ -329,11 +329,11 @@ export const MapFilters = memo(function MapFilters({
                   <Tag className="w-4 h-4 mr-2 text-muted-foreground" aria-hidden="true" />
                   <SelectValue placeholder="All categories" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[1001]">
                   <SelectItem value="all">All categories</SelectItem>
                   {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
