@@ -3,7 +3,7 @@
  * Replaces the broken react-leaflet-cluster package.
  */
 
-import { createPathComponent } from 'react-leaflet';
+import { createPathComponent, createElementObject, extendContext } from '@react-leaflet/core';
 import L from 'leaflet';
 import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -14,12 +14,12 @@ interface MarkerClusterGroupProps extends L.MarkerClusterGroupOptions {
 }
 
 const MarkerClusterGroup = createPathComponent<L.MarkerClusterGroup, MarkerClusterGroupProps>(
-  ({ ...props }, ctx) => {
+  function createMarkerClusterGroup(props, ctx) {
     const clusterGroup = new L.MarkerClusterGroup(props);
-    return {
-      instance: clusterGroup,
-      context: { ...ctx, layerContainer: clusterGroup },
-    };
+    return createElementObject(
+      clusterGroup,
+      extendContext(ctx, { layerContainer: clusterGroup }),
+    );
   }
 );
 
