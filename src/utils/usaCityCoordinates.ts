@@ -725,15 +725,7 @@ export function getCityCoordinates(city: string, state: string): CityCoordinate 
   return null;
 }
 
-/**
- * Check if a state value represents a non-US location
- */
-export function isNonUSLocation(city?: string | null, state?: string | null): boolean {
-  if (state && NON_US_LOCATIONS.has(state.trim().toLowerCase())) return true;
-  if (city && NON_US_LOCATIONS.has(city.trim().toLowerCase())) return true;
-  if (state?.trim().toUpperCase() === 'US') return true; // "Dallas, US" — ambiguous
-  return false;
-}
+// isNonUSLocation and getInternationalCoordinates are now defined above with the international data
 
 /**
  * Get state centroid as fallback
