@@ -95,7 +95,7 @@ const sections: LegalSection[] = [
 const PrivacyPolicyPage = () => (
   <LegalPageLayout
     title="Privacy Policy"
-    lastUpdated="January 2026"
+    lastUpdated="April 2026"
     icon={<Shield className="h-14 w-14 text-primary mx-auto" />}
     seoTitle="Privacy Policy | Data Protection & GDPR Compliance"
     seoDescription="Apply AI's privacy policy covering data collection, usage, security, and your rights. GDPR compliant recruitment platform."

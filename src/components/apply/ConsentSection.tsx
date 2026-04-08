@@ -137,10 +137,12 @@ export const ConsentSection = React.memo(({
           By submitting, you confirm that the information provided is accurate and complete.
         </p>
         <p className="text-xs text-muted-foreground/80">
-          By submitting this form, you agree we can contact you for follow-ups—via 
-          outbound calls, texts, emails, or other digital means—using AI tools or 
-          automated systems at the info you shared. Standard rates might apply, 
-          and you can opt out anytime.
+          By submitting this form, you agree we may contact you using AI-powered 
+          voice agents, automated outbound calls, texts, emails, or other digital 
+          means at the contact information you provided. Voice interactions may be 
+          recorded and transcribed. Voicemail detection may trigger automated SMS 
+          follow-ups. Standard message and data rates may apply. You can opt out 
+          at any time.
         </p>
       </div>
     </div>

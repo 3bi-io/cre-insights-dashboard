@@ -117,7 +117,7 @@ const sections: LegalSection[] = [
 const TermsOfServicePage = () => (
   <LegalPageLayout
     title="Terms of Service"
-    lastUpdated="January 2026"
+    lastUpdated="April 2026"
     icon={<FileText className="h-14 w-14 text-primary mx-auto" />}
     seoTitle="Terms of Service | User Agreement"
     seoDescription="Terms and conditions for using Apply AI's recruitment platform. Service agreement, usage rights, and responsibilities."
