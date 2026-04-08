@@ -78,7 +78,7 @@ const sections: LegalSection[] = [
   },
   {
     id: 'ip',
-    title: '6. Intellectual Property Rights',
+    title: '7. Intellectual Property Rights',
     content: <p>The Service and its original content, features, and functionality are and will remain the exclusive property of Apply AI and its licensors. The Service is protected by copyright, trademark, and other laws.</p>,
   },
   {
