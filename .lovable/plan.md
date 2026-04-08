@@ -1,49 +1,49 @@
 
 
-# Fix Map Page — Crash + Data Completeness
+# Fix Category Filter Bug + Dropdown Z-Index
 
-## Problem Summary
-The /map page is completely broken with two issues:
-1. **Page crashes on load** — `react-dom` ESM import error (`createPortal` not found) caused by the `optimizeDeps.exclude` added in the previous fix attempt
-2. **Only 50 of 1,237 jobs load** — The map reuses the paginated jobs hook (PAGE_SIZE=50) but never calls `loadMore`, so filters/categories/markers only reflect a fraction of the data
+## Problem
+Two issues found during verification:
 
-## Data in the Database
-- 1,237 active jobs across 16 clients and 4 categories
-- 809 jobs have city data, 774 have state data
-- Top clients: Admiral Merchants (421), Danny Herman (161), TMC (111), Werner (101), R.E. Garrison (97), Hub Group (90)
+1. **Category filter is broken** — The dropdown passes category names (e.g., "Driver Recruitment") but the Supabase query filters by `category_id` expecting a UUID. Selecting any category returns zero results.
 
----
+2. **Dropdown may not open on some devices** — The Radix Select portal needs to render above the Leaflet map's z-index layers. The filters container has `z-[1000]` but the SelectContent portal renders at body level without explicit z-index.
 
-## Step 1: Fix the crash — Remove `optimizeDeps.exclude`
+## Data Verification (Confirmed Complete)
+- **16 companies** loaded correctly from `public_client_info`
+- **4 categories** loaded correctly from `job_categories`: Driver Recruitment, Administrative, Customer Service, Cybersecurity
+- **Search** queries correctly against `title`, `job_title`, `job_summary`
+- **Company filter** works correctly (passes UUID `company.id` to `client_id` filter)
 
-**File**: `vite.config.ts`
+## Fix 1: Category Filter — Pass ID Instead of Name
 
-The `optimizeDeps.exclude` for `react-leaflet` and `@react-leaflet/core` prevents Vite from transforming their CJS imports, causing `react-dom`'s `createPortal` to fail as a named ESM export. Remove the entire `optimizeDeps` block — the custom `MarkerClusterGroup` wrapper already avoids the `react-leaflet-cluster` compatibility issue, so prebundling is safe.
+**Files**: `src/hooks/useJobMapData.ts`, `src/components/map/MapFilters.tsx`
 
-## Step 2: Load ALL jobs for the map
+Change `uniqueCategories` to return `{ id, name }` objects (like companies) instead of plain strings:
 
-**File**: `src/hooks/useJobMapData.ts`
+```typescript
+// useJobMapData.ts — uniqueCategories
+const uniqueCategories = useMemo(() => {
+  const categories = new Map<string, { id: string; name: string }>();
+  allJobs.forEach((job: MapJob) => {
+    if (job.category_id && job.job_categories?.name) {
+      categories.set(job.category_id, { id: job.category_id, name: job.job_categories.name });
+    }
+  });
+  return Array.from(categories.values()).sort((a, b) => a.name.localeCompare(b.name));
+}, [allJobs]);
+```
 
-Replace the `usePaginatedPublicJobs` dependency with a dedicated query that fetches all active jobs in one call (1,237 rows is small). Use a direct Supabase query with `useQuery`:
+Update `MapFilters.tsx` to use `category.id` as the Select value and `category.name` as the display label — same pattern as the company filter.
 
-- Select: `id, title, job_title, city, state, location, salary_min, salary_max, salary_type, job_summary, created_at, client_id, category_id`
-- Join: `job_categories(name)` (note: no FK, so fetch categories separately)
-- Enrich with client info from `public_client_info` view
-- Filter: `status=active`, `is_hidden=false`
-- Apply search/client/category filters at query level
-- No pagination — fetch all rows (limit 5000 as safety)
+Update `MapFiltersProps` interface: change `categories: string[]` to `categories: { id: string; name: string }[]`.
 
-This ensures all 16 companies and 4 categories appear in the filter dropdowns, and all 1,237 jobs render on the map.
+## Fix 2: Dropdown Z-Index
 
-## Step 3: Verify filter dropdowns populate correctly
+Add `className="z-[1001]"` to all `SelectContent` elements in `MapFilters.tsx` to ensure the dropdown renders above the map overlay layer.
 
-The existing `uniqueCompanies` and `uniqueCategories` derivations in `useJobMapData` already work correctly — they iterate over loaded jobs. Once all jobs load, all 16 companies and 4 categories will appear.
-
----
-
-## Technical Detail
-
-**Why `optimizeDeps.exclude` broke things**: When Vite excludes a dependency from prebundling, it serves the raw ESM source. `react-leaflet` v4 imports `createPortal` as a named export from `react-dom`, but `react-dom` is a CJS package — Vite's prebundler normally converts CJS→ESM, but excluded deps bypass this, causing the import to fail.
-
-**Why a dedicated query instead of pagination**: The map needs all locations to render correctly. Paginating 50 at a time would show incomplete clusters, wrong stats, and missing filter options. 1,237 rows with minimal columns is ~100KB — well within acceptable limits for a single fetch.
+## Impact
+- Category filtering will actually work (currently silently broken)
+- No schema changes needed
+- Company filter and search are already correct
 
