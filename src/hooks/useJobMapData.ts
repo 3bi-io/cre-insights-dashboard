@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getLocationCoordinates, isNonUSLocation, getInternationalCoordinates } from '@/utils/usaCityCoordinates';
+import type { LocationConfidence } from '@/components/map/LocationConfidenceBadge';
 
 export interface MapJob {
   id: string;
@@ -41,6 +42,8 @@ export interface MapLocation {
   lat: number;
   lng: number;
   isExact: boolean;
+  /** Granularity of the plotted position */
+  confidence: LocationConfidence;
   jobCount: number;
   jobs: MapJob[];
   companies: string[];
@@ -51,16 +54,16 @@ export interface JobMapFilters {
   searchTerm?: string;
   clientFilter?: string;
   categoryFilter?: string;
+  exactOnly?: boolean;
 }
 
 export function useJobMapData(filters: JobMapFilters = {}) {
-  const { searchTerm = '', clientFilter = '', categoryFilter = '' } = filters;
+  const { searchTerm = '', clientFilter = '', categoryFilter = '', exactOnly = false } = filters;
 
   // Fetch ALL active jobs in a single query (no pagination)
   const { data: allJobs = [], isLoading, error } = useQuery({
     queryKey: ['map-jobs', searchTerm, clientFilter, categoryFilter],
     queryFn: async () => {
-      // 1. Fetch jobs
       let query = supabase
         .from('job_listings')
         .select('id, title, job_title, city, state, location, salary_min, salary_max, salary_type, job_summary, created_at, client_id, category_id')
@@ -82,10 +85,9 @@ export function useJobMapData(filters: JobMapFilters = {}) {
       if (jobsError) throw jobsError;
       if (!jobs || jobs.length === 0) return [];
 
-      // 2. Fetch client info for all unique client_ids
+      // Fetch client info
       const clientIds = [...new Set(jobs.map(j => j.client_id).filter(Boolean))] as string[];
       const clientMap = new Map<string, { id: string; name: string; logo_url?: string }>();
-
       if (clientIds.length > 0) {
         const { data: clients } = await supabase
           .from('public_client_info')
@@ -94,10 +96,9 @@ export function useJobMapData(filters: JobMapFilters = {}) {
         clients?.forEach(c => clientMap.set(c.id, c));
       }
 
-      // 3. Fetch category names for all unique category_ids
+      // Fetch category names
       const categoryIds = [...new Set(jobs.map(j => j.category_id).filter(Boolean))] as string[];
       const categoryMap = new Map<string, string>();
-
       if (categoryIds.length > 0) {
         const { data: categories } = await supabase
           .from('job_categories')
@@ -106,7 +107,6 @@ export function useJobMapData(filters: JobMapFilters = {}) {
         categories?.forEach(c => categoryMap.set(c.id, c.name));
       }
 
-      // 4. Enrich jobs
       return jobs.map(job => ({
         ...job,
         clients: job.client_id ? clientMap.get(job.client_id) || null : null,
@@ -121,6 +121,9 @@ export function useJobMapData(filters: JobMapFilters = {}) {
     const locationMap = new Map<string, MapLocation>();
     let jobsWithLocation = 0;
     let jobsWithoutLocation = 0;
+    let exactCount = 0;
+    let stateCount = 0;
+    let countryCount = 0;
 
     allJobs.forEach((job: MapJob) => {
       let city = job.city;
@@ -136,7 +139,7 @@ export function useJobMapData(filters: JobMapFilters = {}) {
         }
       }
 
-      // Sanitize city names: strip "(Hybrid)", "Híbrido (" prefixes
+      // Sanitize city names
       if (city) {
         city = city.replace(/^\(Hybrid\)\s*/i, '').replace(/^Híbrido\s*\(/i, '').replace(/\)$/, '').trim();
       }
@@ -145,18 +148,22 @@ export function useJobMapData(filters: JobMapFilters = {}) {
       let coords = getLocationCoordinates(city, state);
       let locationKey: string;
       let displayName: string;
+      let confidence: LocationConfidence;
 
       if (coords) {
-        // US location found
         jobsWithLocation++;
-        locationKey = coords.isExact
-          ? `${city?.toLowerCase()}-${state?.toLowerCase()}`
-          : `state-${state?.toLowerCase()}`;
-        displayName = coords.isExact && city
-          ? `${city}, ${state}`
-          : state || 'Unknown';
+        if (coords.isExact) {
+          confidence = 'exact';
+          exactCount++;
+          locationKey = `${city?.toLowerCase()}-${state?.toLowerCase()}`;
+          displayName = city ? `${city}, ${state}` : state || 'Unknown';
+        } else {
+          confidence = 'state';
+          stateCount++;
+          locationKey = `state-${state?.toLowerCase()}`;
+          displayName = state || 'Unknown';
+        }
       } else if (isNonUSLocation(city, state)) {
-        // Try international coordinates
         const intlCoords = getInternationalCoordinates(city, state);
         if (!intlCoords) {
           jobsWithoutLocation++;
@@ -164,13 +171,18 @@ export function useJobMapData(filters: JobMapFilters = {}) {
         }
         coords = { lat: intlCoords.lat, lng: intlCoords.lng, isExact: intlCoords.isExact };
         jobsWithLocation++;
+        confidence = intlCoords.isExact ? 'exact' : 'country';
+        if (intlCoords.isExact) exactCount++;
+        else countryCount++;
         locationKey = `intl-${intlCoords.displayName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
         displayName = intlCoords.displayName;
       } else {
-        // No coordinates found at all
         jobsWithoutLocation++;
         return;
       }
+
+      // Apply exactOnly filter
+      if (exactOnly && confidence !== 'exact') return;
 
       if (!locationMap.has(locationKey)) {
         locationMap.set(locationKey, {
@@ -181,6 +193,7 @@ export function useJobMapData(filters: JobMapFilters = {}) {
           lat: coords.lat,
           lng: coords.lng,
           isExact: coords.isExact,
+          confidence,
           jobCount: 0,
           jobs: [],
           companies: [],
@@ -219,9 +232,12 @@ export function useJobMapData(filters: JobMapFilters = {}) {
         jobsWithLocation,
         jobsWithoutLocation,
         uniqueLocations: locationMap.size,
+        exactCount,
+        stateCount,
+        countryCount,
       }
     };
-  }, [allJobs]);
+  }, [allJobs, exactOnly]);
 
   // Get unique companies for filtering
   const uniqueCompanies = useMemo(() => {
