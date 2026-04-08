@@ -1,6 +1,6 @@
 /**
- * Enhanced Map Stats Component
- * Shows confidence breakdown and responsive layout
+ * Map Stats Component — Metric Pills
+ * Compact, elegant confidence breakdown
  */
 
 import { memo, useState } from 'react';
@@ -38,7 +38,6 @@ export const MapStats = memo(function MapStats({
   const isMobile = mapContext?.isMobile ?? isMobileFallback;
   const [isExpanded, setIsExpanded] = useState(false);
   
-  // Use visible jobs if available, otherwise use jobsWithLocation
   const displayedJobs = visibleJobs ?? jobsWithLocation;
   const mappedPercentage = totalJobs > 0 
     ? Math.round((displayedJobs / totalJobs) * 100)
@@ -50,12 +49,12 @@ export const MapStats = memo(function MapStats({
         className={cn(
           "absolute z-[1000] bg-background/95 backdrop-blur-sm rounded-lg shadow-lg border border-border",
           "animate-pulse",
-          isMobile ? "bottom-4 left-4 p-2" : "bottom-4 left-4 p-3"
+          isMobile ? "bottom-4 left-4 p-2" : "bottom-4 left-4 p-2"
         )}
         aria-busy="true"
         aria-label="Loading job statistics"
       >
-        <div className={cn("bg-muted rounded", isMobile ? "h-6 w-20" : "h-16 w-40")} />
+        <div className={cn("bg-muted rounded", isMobile ? "h-6 w-20" : "h-8 w-48")} />
       </div>
     );
   }
@@ -74,6 +73,7 @@ export const MapStats = memo(function MapStats({
           <Briefcase className="w-4 h-4 text-primary" aria-hidden="true" />
           <span className="font-semibold">{displayedJobs}</span>
           <span className="text-muted-foreground text-xs">jobs</span>
+          <span className="text-muted-foreground text-xs">· {mappedPercentage}%</span>
           {isExpanded ? (
             <ChevronDown className="w-4 h-4 ml-1" aria-hidden="true" />
           ) : (
@@ -84,7 +84,7 @@ export const MapStats = memo(function MapStats({
         {isExpanded && (
           <div 
             id="mobile-stats-panel"
-            className="absolute bottom-12 left-0 bg-background/95 backdrop-blur-sm rounded-lg shadow-lg border border-border p-3 min-w-[180px]"
+            className="absolute bottom-12 left-0 bg-background/95 backdrop-blur-sm rounded-lg shadow-lg border border-border p-3 min-w-[200px] transition-all duration-200"
           >
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between gap-4">
@@ -114,18 +114,26 @@ export const MapStats = memo(function MapStats({
                   <span className="font-medium">{stateCount}</span>
                 </div>
               )}
-              
-              {jobsWithLocation < totalJobs && (
+
+              {countryCount > 0 && (
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-muted-foreground">Mapped</span>
-                  <Badge 
-                    variant={mappedPercentage >= 80 ? 'default' : 'secondary'}
-                    className="text-xs"
-                  >
-                    {mappedPercentage}%
-                  </Badge>
+                  <span className="text-muted-foreground flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-blue-500" aria-hidden="true" />
+                    International
+                  </span>
+                  <span className="font-medium">{countryCount}</span>
                 </div>
               )}
+              
+              <div className="flex items-center justify-between gap-4 pt-1 border-t border-border">
+                <span className="text-muted-foreground">Mapped</span>
+                <Badge 
+                  variant={mappedPercentage >= 80 ? 'default' : 'secondary'}
+                  className="text-xs"
+                >
+                  {mappedPercentage}%
+                </Badge>
+              </div>
             </div>
           </div>
         )}
@@ -136,75 +144,69 @@ export const MapStats = memo(function MapStats({
   return (
     <TooltipProvider delayDuration={200}>
       <div 
-        className="absolute bottom-4 left-4 z-[1000] bg-background/95 backdrop-blur-sm rounded-lg shadow-lg border border-border p-3"
+        className="absolute bottom-4 left-4 z-[1000] bg-background/90 backdrop-blur-md rounded-lg shadow-lg border border-border/50 px-3 py-2 transition-all duration-200"
         role="status"
         aria-label="Job statistics"
       >
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1.5">
-            <Briefcase className="w-4 h-4 text-primary" aria-hidden="true" />
-            <span className="font-semibold">{displayedJobs}</span>
-            <span className="text-muted-foreground">jobs</span>
+        <div className="flex items-center gap-2 text-sm">
+          {/* Jobs pill */}
+          <div className="flex items-center gap-1.5 bg-primary/10 rounded-full px-2.5 py-1">
+            <Briefcase className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+            <span className="font-semibold text-xs">{displayedJobs}</span>
+            <span className="text-muted-foreground text-xs">jobs</span>
           </div>
           
-          <div className="w-px h-4 bg-border" aria-hidden="true" />
-          
-          <div className="flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <span className="font-semibold">{uniqueLocations}</span>
-            <span className="text-muted-foreground">locations</span>
+          {/* Locations pill */}
+          <div className="flex items-center gap-1.5 bg-muted/50 rounded-full px-2.5 py-1">
+            <MapPin className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
+            <span className="font-semibold text-xs">{uniqueLocations}</span>
+            <span className="text-muted-foreground text-xs">loc</span>
           </div>
 
-          {/* Confidence breakdown */}
           <div className="w-px h-4 bg-border" aria-hidden="true" />
-          
-          <div className="flex items-center gap-2">
-            {exactCount > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 cursor-default">
-                    <Navigation className="w-3.5 h-3.5 text-emerald-500" aria-hidden="true" />
-                    <span className="font-medium text-xs">{exactCount}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent><p>Exact city locations</p></TooltipContent>
-              </Tooltip>
-            )}
-            {stateCount > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 cursor-default">
-                    <MapPin className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" />
-                    <span className="font-medium text-xs">{stateCount}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent><p>State-level approximations</p></TooltipContent>
-              </Tooltip>
-            )}
-            {countryCount > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 cursor-default">
-                    <Globe className="w-3.5 h-3.5 text-blue-500" aria-hidden="true" />
-                    <span className="font-medium text-xs">{countryCount}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent><p>Country-level approximations</p></TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-          
-          {jobsWithLocation < totalJobs && (
-            <>
-              <div className="w-px h-4 bg-border" aria-hidden="true" />
-              <Badge 
-                variant={mappedPercentage >= 80 ? 'default' : 'secondary'}
-                className="text-xs"
-              >
-                {mappedPercentage}% mapped
-              </Badge>
-            </>
+
+          {/* Confidence pills */}
+          {exactCount > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 bg-emerald-500/10 rounded-full px-2 py-1 cursor-default">
+                  <Navigation className="w-3 h-3 text-emerald-500" aria-hidden="true" />
+                  <span className="font-medium text-xs text-emerald-700 dark:text-emerald-400">{exactCount}</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent><p>Exact city locations</p></TooltipContent>
+            </Tooltip>
           )}
+          {stateCount > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 bg-amber-500/10 rounded-full px-2 py-1 cursor-default">
+                  <MapPin className="w-3 h-3 text-amber-500" aria-hidden="true" />
+                  <span className="font-medium text-xs text-amber-700 dark:text-amber-400">{stateCount}</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent><p>State-level approximations</p></TooltipContent>
+            </Tooltip>
+          )}
+          {countryCount > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 bg-blue-500/10 rounded-full px-2 py-1 cursor-default">
+                  <Globe className="w-3 h-3 text-blue-500" aria-hidden="true" />
+                  <span className="font-medium text-xs text-blue-700 dark:text-blue-400">{countryCount}</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent><p>Country-level approximations</p></TooltipContent>
+            </Tooltip>
+          )}
+          
+          {/* Mapped percentage */}
+          <Badge 
+            variant={mappedPercentage >= 80 ? 'default' : 'secondary'}
+            className="text-[10px] px-2 py-0.5"
+          >
+            {mappedPercentage}%
+          </Badge>
         </div>
       </div>
     </TooltipProvider>
