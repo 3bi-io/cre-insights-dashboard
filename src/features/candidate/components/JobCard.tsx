@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 
 interface JobCardProps {
   job: any;
-  onApply?: (jobId: string, orgSlug?: string) => void;
+  onApply?: (jobId: string, orgSlug?: string, applyUrl?: string) => void;
   showSaveButton?: boolean;
 }
 
@@ -34,7 +34,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onApply, showSaveButton =
     e.preventDefault();
     e.stopPropagation();
     if (onApply) {
-      onApply(job.id, job.organizations?.slug);
+      onApply(job.id, job.organizations?.slug, job.apply_url);
     }
   };
 
