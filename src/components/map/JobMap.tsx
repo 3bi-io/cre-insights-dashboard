@@ -335,25 +335,25 @@ export const JobMap = memo(function JobMap({
           intensity={displayMode === 'density' ? 1 : 0.8}
         />
 
-        <MapZoomControls />
+        {interactive && <MapZoomControls />}
 
         {showMarkers && (
           <MarkerClusterGroup
             chunkedLoading
-            spiderfyOnMaxZoom={true}
+            spiderfyOnMaxZoom={interactive}
             showCoverageOnHover={false}
             maxClusterRadius={clusterRadius}
             iconCreateFunction={iconCreateFn}
             animate={true}
             spiderfyDistanceMultiplier={1.5}
-            zoomToBoundsOnClick={true}
+            zoomToBoundsOnClick={interactive}
           >
             {locations.map((location) => (
               <JobMarker
                 key={location.id}
                 location={location}
-                isSelected={selectedLocation?.id === location.id}
-                onClick={() => onLocationSelect(location)}
+                isSelected={interactive ? selectedLocation?.id === location.id : false}
+                onClick={interactive ? () => onLocationSelect(location) : () => {}}
                 displayMode={displayMode}
               />
             ))}
