@@ -93,7 +93,7 @@ const sections: LegalSection[] = [
   },
   {
     id: 'liability',
-    title: '9. Limitation of Liability',
+    title: '10. Limitation of Liability',
     content: <p>In no event shall Apply AI, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses.</p>,
   },
   {
