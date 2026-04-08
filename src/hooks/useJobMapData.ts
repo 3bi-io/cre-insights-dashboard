@@ -44,6 +44,8 @@ export interface MapLocation {
   isExact: boolean;
   /** Granularity of the plotted position */
   confidence: LocationConfidence;
+  /** Whether this is an international (non-US) location */
+  isInternational: boolean;
   jobCount: number;
   jobs: MapJob[];
   companies: string[];
