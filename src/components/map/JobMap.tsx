@@ -348,33 +348,33 @@ export const JobMap = memo(function JobMap({
 
       <MapContainer
         center={US_CENTER}
-        zoom={DEFAULT_ZOOM}
-        scrollWheelZoom={interactive ? !isMobile : false}
-        className="w-full h-full rounded-lg"
-        minZoom={MIN_ZOOM}
-        maxZoom={MAX_ZOOM}
-        keyboard={interactive}
+        zoom={heroMode ? 4 : DEFAULT_ZOOM}
+        scrollWheelZoom={interactive && !heroMode ? !isMobile : false}
+        className={`w-full h-full ${heroMode ? '' : 'rounded-lg'}`}
+        minZoom={heroMode ? 3 : MIN_ZOOM}
+        maxZoom={heroMode ? 6 : MAX_ZOOM}
+        keyboard={interactive && !heroMode}
         keyboardPanDelta={80}
-        touchZoom={interactive}
-        dragging={interactive}
-        doubleClickZoom={interactive}
+        touchZoom={interactive && !heroMode}
+        dragging={interactive && !heroMode}
+        doubleClickZoom={interactive && !heroMode}
         zoomControl={false}
         bounceAtZoomLimits={false}
-        attributionControl={interactive}
+        attributionControl={!heroMode && interactive}
       >
         <TileLayer
           attribution={MAP_ATTRIBUTION}
-          url={tileUrl}
+          url={finalTileUrl}
         />
 
-        {interactive && (
+        {interactive && !heroMode && (
           <MapController 
             selectedLocation={selectedLocation} 
             onMapClick={handleMapClick}
           />
         )}
 
-        {interactive && (
+        {interactive && !heroMode && (
           <KeyboardNavigationHandler
             locations={locations}
             selectedLocation={selectedLocation}
@@ -382,39 +382,49 @@ export const JobMap = memo(function JobMap({
           />
         )}
 
-        <MapBoundsController
-          locations={locations}
-          enabled={autoFitBounds}
-        />
+        {!heroMode && (
+          <MapBoundsController
+            locations={locations}
+            enabled={autoFitBounds}
+          />
+        )}
 
-        <LazyHeatMapLayer 
-          locations={locations} 
-          visible={showHeatMap}
-          intensity={displayMode === 'density' ? 1 : 0.8}
-        />
+        {!heroMode && (
+          <LazyHeatMapLayer 
+            locations={locations} 
+            visible={showHeatMap}
+            intensity={displayMode === 'density' ? 1 : 0.8}
+          />
+        )}
 
-        {interactive && <MapZoomControls />}
+        {interactive && !heroMode && <MapZoomControls />}
 
         {showMarkers && (
           <MarkerClusterGroup
             chunkedLoading
-            spiderfyOnMaxZoom={interactive}
+            spiderfyOnMaxZoom={!heroMode && interactive}
             showCoverageOnHover={false}
-            maxClusterRadius={clusterRadius}
+            maxClusterRadius={finalClusterRadius}
             iconCreateFunction={iconCreateFn}
-            animate={true}
+            animate={!heroMode}
             spiderfyDistanceMultiplier={1.5}
-            zoomToBoundsOnClick={interactive}
+            zoomToBoundsOnClick={!heroMode && interactive}
+            disableClusteringAtZoom={heroMode ? 99 : undefined}
           >
-            {locations.map((location) => (
-              <JobMarker
-                key={location.id}
-                location={location}
-                isSelected={interactive ? selectedLocation?.id === location.id : false}
-                onClick={interactive ? () => onLocationSelect(location) : () => {}}
-                displayMode={displayMode}
-              />
-            ))}
+            {heroMode
+              ? locations.map((location) => (
+                  <HeroMarker key={location.id} location={location} />
+                ))
+              : locations.map((location) => (
+                  <JobMarker
+                    key={location.id}
+                    location={location}
+                    isSelected={interactive ? selectedLocation?.id === location.id : false}
+                    onClick={interactive ? () => onLocationSelect(location) : () => {}}
+                    displayMode={displayMode}
+                  />
+                ))
+            }
           </MarkerClusterGroup>
         )}
       </MapContainer>
