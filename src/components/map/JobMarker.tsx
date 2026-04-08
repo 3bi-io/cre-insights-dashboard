@@ -1,8 +1,6 @@
 /**
  * Enhanced Job Marker Component
- * Accessible map markers with improved mobile touch targets
- * Mobile: Direct click opens panel (no popup)
- * Desktop/Tablet: Click shows popup with preview
+ * Accessible map markers with confidence badges and improved mobile touch targets
  */
 
 import { memo, useMemo, useRef, useEffect } from 'react';
@@ -12,6 +10,7 @@ import { MapLocation } from '@/hooks/useJobMapData';
 import { MapPin, Building2, Briefcase } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/design-system/Button';
+import { LocationConfidenceBadge } from './LocationConfidenceBadge';
 import { formatDistanceToNow } from 'date-fns';
 import { IS_TOUCH_DEVICE, MARKER_SIZE, MARKER_THRESHOLDS } from './constants';
 import { useMapContextOptional } from './MapContext';
@@ -20,19 +19,17 @@ interface JobMarkerProps {
   location: MapLocation;
   isSelected: boolean;
   onClick: () => void;
-  /** If true, clicking marker opens panel directly (skips popup) */
   directToPanel?: boolean;
 }
 
 function getMarkerColor(jobCount: number): string {
-  if (jobCount >= MARKER_THRESHOLDS.HOT) return 'hsl(262, 83%, 58%)'; // Purple for hot spots
-  if (jobCount >= MARKER_THRESHOLDS.HIGH) return 'hsl(217, 91%, 60%)'; // Blue for high
-  if (jobCount >= MARKER_THRESHOLDS.MEDIUM) return 'hsl(142, 76%, 36%)';  // Green for medium
-  return 'hsl(var(--primary))'; // Primary for low
+  if (jobCount >= MARKER_THRESHOLDS.HOT) return 'hsl(262, 83%, 58%)';
+  if (jobCount >= MARKER_THRESHOLDS.HIGH) return 'hsl(217, 91%, 60%)';
+  if (jobCount >= MARKER_THRESHOLDS.MEDIUM) return 'hsl(142, 76%, 36%)';
+  return 'hsl(var(--primary))';
 }
 
 function getMarkerSize(jobCount: number, isTouchDevice: boolean): number {
-  // Larger minimum size for touch devices (44px minimum for WCAG compliance)
   if (jobCount >= MARKER_THRESHOLDS.HOT) {
     return isTouchDevice ? MARKER_SIZE.LARGE_TOUCH : MARKER_SIZE.LARGE;
   }
@@ -45,6 +42,13 @@ function getMarkerSize(jobCount: number, isTouchDevice: boolean): number {
   return isTouchDevice ? MARKER_SIZE.BASE_TOUCH : MARKER_SIZE.BASE;
 }
 
+/** Border ring color per confidence level */
+function getConfidenceBorder(confidence: string): string {
+  if (confidence === 'exact') return '0 0 0 3px white';
+  if (confidence === 'state') return '0 0 0 3px white, 0 0 0 5px rgba(245, 158, 11, 0.5)';
+  return '0 0 0 3px white, 0 0 0 5px rgba(59, 130, 246, 0.5)';
+}
+
 export const JobMarker = memo(function JobMarker({
   location,
   isSelected,
@@ -55,17 +59,16 @@ export const JobMarker = memo(function JobMarker({
   const markerRef = useRef<L.Marker>(null);
   const mapContext = useMapContextOptional();
   
-  // On mobile, skip popup and go directly to panel
   const isMobile = mapContext?.isMobile ?? false;
   const directToPanel = directToPanelProp ?? isMobile;
   const isTouchDevice = mapContext?.isTouchDevice ?? IS_TOUCH_DEVICE;
 
-  // Create custom accessible icon
   const icon = useMemo(() => {
     const size = getMarkerSize(location.jobCount, isTouchDevice);
     const color = getMarkerColor(location.jobCount);
     const selectedScale = isSelected ? 1.15 : 1;
     const finalSize = Math.round(size * selectedScale);
+    const boxShadow = `0 4px 12px rgba(0, 0, 0, 0.3), ${getConfidenceBorder(location.confidence)}`;
 
     const html = `
       <div 
@@ -80,14 +83,14 @@ export const JobMarker = memo(function JobMarker({
           color: white;
           font-weight: 600;
           font-size: ${Math.max(12, finalSize * 0.35)}px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 0 3px white;
+          box-shadow: ${boxShadow};
           transition: transform 0.2s ease;
           cursor: pointer;
           ${isSelected ? 'outline: 3px solid hsl(var(--ring)); outline-offset: 2px;' : ''}
         "
         role="button"
         tabindex="0"
-        aria-label="${location.jobCount} jobs in ${location.displayName}"
+        aria-label="${location.jobCount} jobs in ${location.displayName} (${location.confidence} location)"
         aria-pressed="${isSelected}"
       >
         ${location.jobCount}
@@ -100,27 +103,21 @@ export const JobMarker = memo(function JobMarker({
       iconSize: L.point(finalSize, finalSize),
       iconAnchor: L.point(finalSize / 2, finalSize / 2),
     });
-  }, [location.jobCount, location.displayName, isSelected, isTouchDevice]);
+  }, [location.jobCount, location.displayName, location.confidence, isSelected, isTouchDevice]);
 
-  // Close popup when directToPanel mode and clicking
   useEffect(() => {
     if (directToPanel && markerRef.current) {
       markerRef.current.closePopup();
     }
   }, [directToPanel, isSelected]);
 
-  // Handle marker click
   const handleClick = () => {
     if (directToPanel) {
-      // Mobile: Close any popup and directly trigger panel
       markerRef.current?.closePopup();
       onClick();
-    } else {
-      // Desktop/Tablet: Let the popup open naturally, onClick will be called from button
     }
   };
 
-  // Preview jobs for popup
   const previewJobs = location.jobs.slice(0, 3);
 
   return (
@@ -137,7 +134,6 @@ export const JobMarker = memo(function JobMarker({
         },
       }}
     >
-      {/* Only show popup on non-mobile devices */}
       {!directToPanel && (
         <Popup
           className="job-location-popup"
@@ -165,11 +161,7 @@ export const JobMarker = memo(function JobMarker({
                   {location.jobCount} {location.jobCount === 1 ? 'job' : 'jobs'} available
                 </p>
               </div>
-              {!location.isExact && (
-                <Badge variant="secondary" className="text-xs">
-                  Regional
-                </Badge>
-              )}
+              <LocationConfidenceBadge confidence={location.confidence} />
             </div>
 
             {/* Companies */}
@@ -185,18 +177,9 @@ export const JobMarker = memo(function JobMarker({
 
             {/* Categories */}
             {location.topCategories.length > 0 && (
-              <div 
-                className="flex flex-wrap gap-1"
-                role="list"
-                aria-label="Job categories"
-              >
+              <div className="flex flex-wrap gap-1" role="list" aria-label="Job categories">
                 {location.topCategories.map((category) => (
-                  <Badge 
-                    key={category} 
-                    variant="outline" 
-                    className="text-xs"
-                    role="listitem"
-                  >
+                  <Badge key={category} variant="outline" className="text-xs" role="listitem">
                     {category}
                   </Badge>
                 ))}
@@ -204,17 +187,9 @@ export const JobMarker = memo(function JobMarker({
             )}
 
             {/* Preview Jobs */}
-            <div 
-              className="space-y-2 pt-2 border-t border-border"
-              role="list"
-              aria-label="Sample job listings"
-            >
+            <div className="space-y-2 pt-2 border-t border-border" role="list" aria-label="Sample job listings">
               {previewJobs.map((job) => (
-                <div 
-                  key={job.id} 
-                  className="flex items-start gap-2 text-sm"
-                  role="listitem"
-                >
+                <div key={job.id} className="flex items-start gap-2 text-sm" role="listitem">
                   <Briefcase className="w-3.5 h-3.5 mt-0.5 text-muted-foreground shrink-0" aria-hidden="true" />
                   <div className="min-w-0 flex-1">
                     <p className="font-medium truncate">{job.title || job.job_title}</p>
@@ -231,7 +206,6 @@ export const JobMarker = memo(function JobMarker({
               ))}
             </div>
 
-            {/* View All Button */}
             <Button
               variant="default"
               size="sm"

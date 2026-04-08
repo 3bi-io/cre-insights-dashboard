@@ -1,10 +1,6 @@
 /**
  * Enhanced Job List Panel Component
- * Responsive panel for displaying jobs at a location
- * Mobile: Bottom drawer with snap points and swipe gestures
- * Tablet: Narrower sheet from right
- * Desktop: Full-width sheet from right
- * Features virtual scrolling for large job lists (20+ jobs)
+ * Shows confidence badge and plotted location details
  */
 
 import { memo } from 'react';
@@ -14,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/design-system/Button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
+import { LocationConfidenceBadge } from './LocationConfidenceBadge';
 import { cn } from '@/lib/utils';
 import { useMapContextOptional } from './MapContext';
 import { DRAWER_SNAP_POINTS, DEFAULT_DRAWER_SNAP, SHEET_WIDTH_DESKTOP, SHEET_WIDTH_TABLET } from './constants';
@@ -25,7 +22,6 @@ interface JobListPanelProps {
   onClose: () => void;
 }
 
-// Memoized job list content with virtual scrolling
 const JobListContent = memo(function JobListContent({ 
   location, 
   onClose,
@@ -37,13 +33,7 @@ const JobListContent = memo(function JobListContent({
   isTablet: boolean;
 }) {
   return (
-    <div 
-      className={cn(
-        "flex flex-col h-full",
-        // On mobile drawer, add extra bottom padding for home indicator
-        isMobile && "pb-safe"
-      )}
-    >
+    <div className={cn("flex flex-col h-full", isMobile && "pb-safe")}>
       {/* Header */}
       <div className="flex-shrink-0 p-4 border-b border-border">
         <div className="flex items-start justify-between gap-3">
@@ -53,14 +43,19 @@ const JobListContent = memo(function JobListContent({
                 <MapPin className="w-5 h-5 text-primary shrink-0" aria-hidden="true" />
                 <span className="truncate">{location.displayName}</span>
               </h2>
-              {!location.isExact && (
-                <Badge variant="secondary" className="text-xs shrink-0">
-                  Regional
-                </Badge>
-              )}
+              <LocationConfidenceBadge confidence={location.confidence} size="md" />
             </div>
             <p className="text-sm text-muted-foreground mt-1">
               {location.jobCount} {location.jobCount === 1 ? 'job' : 'jobs'} available
+            </p>
+            {/* Plotted location detail */}
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {location.confidence === 'exact' 
+                ? `📍 Plotted at ${location.city}, ${location.state}` 
+                : location.confidence === 'state'
+                ? `📍 Approximate — state center for ${location.state}`
+                : `📍 Approximate — country-level placement`
+              }
             </p>
           </div>
           <Button
@@ -74,7 +69,6 @@ const JobListContent = memo(function JobListContent({
           </Button>
         </div>
 
-        {/* Companies at location */}
         {location.companies.length > 0 && (
           <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
             <Building2 className="w-4 h-4 shrink-0" aria-hidden="true" />
@@ -85,16 +79,10 @@ const JobListContent = memo(function JobListContent({
           </div>
         )}
 
-        {/* Top categories */}
         {location.topCategories.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-3" role="list" aria-label="Job categories">
             {location.topCategories.map((category) => (
-              <Badge 
-                key={category} 
-                variant="outline" 
-                className="text-xs"
-                role="listitem"
-              >
+              <Badge key={category} variant="outline" className="text-xs" role="listitem">
                 {category}
               </Badge>
             ))}
@@ -102,7 +90,6 @@ const JobListContent = memo(function JobListContent({
         )}
       </div>
 
-      {/* Virtual Job List - efficiently handles large lists */}
       <VirtualJobList
         jobs={location.jobs}
         isMobile={isMobile}
@@ -119,15 +106,12 @@ export const JobListPanel = memo(function JobListPanel({
 }: JobListPanelProps) {
   const mapContext = useMapContextOptional();
   const isMobileFallback = useIsMobile();
-  
-  // Use context if available, fallback to hook
   const isMobile = mapContext?.isMobile ?? isMobileFallback;
   const isTablet = mapContext?.isTablet ?? false;
   const isOpen = location !== null;
 
   if (!location) return null;
 
-  // Mobile: Use bottom drawer with snap points
   if (isMobile) {
     return (
       <Drawer 
@@ -141,36 +125,23 @@ export const JobListPanel = memo(function JobListPanel({
           className="max-h-[95dvh] focus:outline-none"
           aria-describedby="drawer-description"
         >
-          {/* Drag handle for mobile */}
           <div className="mx-auto mt-2 mb-1 h-1.5 w-12 rounded-full bg-muted" aria-hidden="true" />
-          
           <DrawerHeader className="sr-only">
             <DrawerTitle>Jobs in {location.displayName}</DrawerTitle>
             <DrawerDescription id="drawer-description">
               View {location.jobCount} job opportunities in this location
             </DrawerDescription>
           </DrawerHeader>
-          
-          <JobListContent 
-            location={location} 
-            onClose={onClose} 
-            isMobile={true}
-            isTablet={false}
-          />
+          <JobListContent location={location} onClose={onClose} isMobile={true} isTablet={false} />
         </DrawerContent>
       </Drawer>
     );
   }
 
-  // Tablet/Desktop: Use side sheet
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent 
-        className={cn(
-          "p-0 focus:outline-none",
-          // Narrower on tablet, full width on desktop
-          isTablet ? SHEET_WIDTH_TABLET : SHEET_WIDTH_DESKTOP
-        )}
+        className={cn("p-0 focus:outline-none", isTablet ? SHEET_WIDTH_TABLET : SHEET_WIDTH_DESKTOP)}
         side="right"
         aria-describedby="sheet-description"
       >
@@ -180,13 +151,7 @@ export const JobListPanel = memo(function JobListPanel({
             View {location.jobCount} job opportunities in this location
           </SheetDescription>
         </SheetHeader>
-        
-        <JobListContent 
-          location={location} 
-          onClose={onClose}
-          isMobile={false}
-          isTablet={isTablet}
-        />
+        <JobListContent location={location} onClose={onClose} isMobile={false} isTablet={isTablet} />
       </SheetContent>
     </Sheet>
   );
