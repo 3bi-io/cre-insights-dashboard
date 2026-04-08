@@ -178,30 +178,41 @@ export const MapAIAssistantPanel = memo(function MapAIAssistantPanel({
     );
   }
 
-  // Mobile collapsed state
-  if (isMobile && !isExpanded) {
+  // Collapsed state (desktop and mobile)
+  if (!isExpanded) {
+    const hint = initialInsight
+      ? initialInsight.slice(0, 55) + '…'
+      : totalJobs > 0
+        ? `Need help narrowing ${visibleJobs} jobs?`
+        : 'Explore jobs on the map';
+
     return (
-      <div className="absolute bottom-16 left-4 right-4 z-[1000]" role="complementary" aria-label="AI Job Search Guide">
+      <div
+        className={cn(
+          'absolute z-[1000]',
+          isMobile ? 'bottom-16 left-4 right-4' : 'bottom-4 left-4',
+        )}
+        role="complementary"
+        aria-label="AI Job Search Guide"
+      >
         <button
-          onClick={() => setIsExpanded(true)}
-          className="w-full bg-background/95 backdrop-blur-md rounded-lg shadow-lg border border-border px-3 py-2.5 flex items-center gap-2 text-left transition-all duration-200 active:scale-[0.98]"
+          onClick={() => toggleExpanded(true)}
+          aria-expanded="false"
+          className={cn(
+            'bg-background/95 backdrop-blur-md rounded-lg shadow-lg border border-border/50',
+            'flex items-center gap-2.5 text-left transition-all duration-200',
+            'hover:shadow-xl hover:border-primary/30 active:scale-[0.98]',
+            isMobile ? 'w-full px-3 py-2.5' : 'px-3.5 py-2.5',
+          )}
         >
           <Sparkles className="w-4 h-4 text-primary shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 text-xs">
-              <span className="font-semibold">{visibleJobs}</span>
-              <span className="text-muted-foreground">jobs</span>
+              <span className="font-semibold text-foreground">AI Job Search Guide</span>
               <span className="text-muted-foreground">·</span>
-              <span className="font-semibold">{uniqueLocations}</span>
-              <span className="text-muted-foreground">loc</span>
-              <span className="text-muted-foreground">·</span>
-              <span className="text-muted-foreground">{mappedPercentage}%</span>
+              <span className="text-muted-foreground">{visibleJobs} jobs</span>
             </div>
-            {initialInsight && (
-              <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-                {initialInsight.slice(0, 60)}…
-              </p>
-            )}
+            <p className="text-[11px] text-muted-foreground truncate mt-0.5">{hint}</p>
           </div>
           <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
         </button>
