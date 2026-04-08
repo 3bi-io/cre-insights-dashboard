@@ -202,11 +202,15 @@ export const JobMap = memo(function JobMap({
     return glowEffect;
   }, [displayMode]);
 
+  // Hero mode tile: always use light no-labels for clean backdrop
+  const finalTileUrl = heroMode ? 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png' : tileUrl;
+  const finalClusterRadius = heroMode ? 80 : clusterRadius;
+
   return (
     <div 
       className={`relative w-full h-full ${className}`}
-      role="application"
-      aria-label={`Interactive job map showing ${totalJobs} jobs across ${locations.length} locations`}
+      role={heroMode ? 'img' : 'application'}
+      aria-label={heroMode ? 'Map showing job locations across the United States' : `Interactive job map showing ${totalJobs} jobs across ${locations.length} locations`}
     >
       <style>{`
         .job-cluster {
@@ -243,6 +247,46 @@ export const JobMap = memo(function JobMap({
         .job-cluster-large {
           background: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(262 83% 48%) 100%);
         }
+
+        /* Hero mode styles — soft glowing dots, no text */
+        .hero-cluster {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          pointer-events: none;
+        }
+        .hero-cluster-dot {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          animation: hero-pulse 3s ease-in-out infinite;
+        }
+        .hero-cluster-small .hero-cluster-dot {
+          background: radial-gradient(circle, hsl(var(--primary) / 0.6) 0%, hsl(var(--primary) / 0.15) 70%, transparent 100%);
+          box-shadow: 0 0 12px hsl(var(--primary) / 0.3);
+        }
+        .hero-cluster-medium .hero-cluster-dot {
+          background: radial-gradient(circle, hsl(217 91% 60% / 0.6) 0%, hsl(217 91% 60% / 0.15) 70%, transparent 100%);
+          box-shadow: 0 0 20px hsl(217 91% 60% / 0.3);
+        }
+        .hero-cluster-large .hero-cluster-dot {
+          background: radial-gradient(circle, hsl(262 83% 58% / 0.55) 0%, hsl(262 83% 58% / 0.12) 70%, transparent 100%);
+          box-shadow: 0 0 28px hsl(262 83% 58% / 0.3);
+        }
+        @keyframes hero-pulse {
+          0%, 100% { opacity: 0.7; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.15); }
+        }
+
+        /* Hero mode marker overrides */
+        .hero-marker-dot {
+          border-radius: 50%;
+          pointer-events: none;
+          background: radial-gradient(circle, hsl(var(--primary) / 0.5) 0%, hsl(var(--primary) / 0.1) 70%, transparent 100%);
+          box-shadow: 0 0 8px hsl(var(--primary) / 0.25);
+        }
+
         .leaflet-container {
           font-family: inherit;
           border-radius: var(--radius);
