@@ -248,11 +248,11 @@ export const MapFilters = memo(function MapFilters({
                     <SelectTrigger id="mobile-category-filter" className="h-11">
                       <SelectValue placeholder="All categories" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[1001]">
                       <SelectItem value="all">All categories</SelectItem>
                       {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
