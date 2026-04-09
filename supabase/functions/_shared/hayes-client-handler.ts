@@ -296,7 +296,7 @@ async function processApplication(
   }
   
   // UTM attribution for this client
-  const utmSource = 'cdl_jobcast';
+  const utmSource = data.source || 'cdl_jobcast';
   const utmMedium = 'job_board';
   const utmCampaign = config.utmCampaign || config.clientSlug;
   
