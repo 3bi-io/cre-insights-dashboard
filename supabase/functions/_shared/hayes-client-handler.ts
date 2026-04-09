@@ -315,7 +315,7 @@ async function processApplication(
     cdl_class: data.cdl_class || null,
     exp: data.exp || null,
     driving_experience_years: data.driving_experience_years || null,
-    source: `hayes-${config.clientSlug}-inbound`,
+    source: data.source || `hayes-${config.clientSlug}-inbound`,
     status: 'pending',
     utm_source: utmSource,
     utm_medium: utmMedium,
