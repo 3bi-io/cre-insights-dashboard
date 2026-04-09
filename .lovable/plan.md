@@ -1,25 +1,34 @@
 
 
-# Create Hayes Outbound Voice Agent & Callback Jeremy Schuler
+# Remove Job Listings for Hub Group, TMC, and Werner
 
-## What we'll do
+## Summary
+Delete all 302 job listings across three clients. Applications linked to these jobs will have their `job_listing_id` set to the orphan marker UUID by the existing `mark_orphaned_applications` trigger.
 
-1. **Insert a new voice agent record** for Hayes AI Recruiting with outbound enabled:
-   - `agent_name`: "Outbound Agent - Hayes AI Recruiting"
-   - `organization_id`: `84214b48-7b51-45bc-ad7f-723bcf50466c`
-   - `client_id`: `49dce1cb-4830-440d-8835-6ce59b552012`
-   - `elevenlabs_agent_id`: `agent_3201kfp75kshfgwr1kfs310715z3`
-   - `agent_phone_number_id`: `phnum_6901kg7vdsf5em2sh1cc1933d8j4`
-   - `is_outbound_enabled`: `true`
-   - `is_active`: `true`
-   - `voice_id`: `9BWtsMINqrJLrRacOk9x` (standard platform voice)
-   - `llm_model`: `gpt-4o-mini`
+## Steps
 
-2. **Trigger the outbound call** to Jeremy Schuler (application `e5913566-c664-41bb-96e5-d33823c09334`) by invoking the `elevenlabs-outbound-call` edge function with the new voice agent.
+1. **Disable Google indexing trigger** on `job_listings` to prevent transaction failures during bulk delete (per project memory on batch operations).
+2. **Delete job listings** for the three client IDs.
+3. **Re-enable the trigger** immediately after.
 
-## Technical details
+## SQL Migration
 
-- Single SQL INSERT into `voice_agents` table using the Supabase insert tool
-- One edge function invocation to initiate the callback
-- No schema changes required
+```sql
+-- Disable indexing trigger to prevent failures during bulk delete
+ALTER TABLE job_listings DISABLE TRIGGER trg_google_indexing_notify;
+
+DELETE FROM job_listings 
+WHERE client_id IN (
+  '8ca3faca-b91c-4ab8-a9af-b145ab265228',  -- Hub Group
+  'feb3479f-4116-42a5-bb6a-811406c1c99a',  -- Werner Enterprises
+  '50657f4d-c47b-4104-a307-b82d5fa4a1df'   -- TMC Transportation
+);
+
+-- Re-enable trigger
+ALTER TABLE job_listings ENABLE TRIGGER trg_google_indexing_notify;
+```
+
+## Side Effects
+- The `mark_orphaned_applications` trigger will automatically update any linked applications to the orphan marker UUID.
+- No code changes needed.
 
