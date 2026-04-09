@@ -350,6 +350,13 @@ async function processApplication(
     utm_campaign: utmCampaign,
     applied_at: new Date().toISOString(),
     raw_payload: data,
+    // Flag CDL JobCast-sourced applications missing experience for post-submission enrichment
+    needs_enrichment: (!data.exp && !data.driving_experience_years && !data.months && !data.experience)
+      && ['ZipRecruiter', 'TheTruckersReportJobs', 'Adzuna', 'cdl_jobcast'].includes(utmSource),
+    enrichment_fields: (!data.exp && !data.driving_experience_years && !data.months && !data.experience)
+      && ['ZipRecruiter', 'TheTruckersReportJobs', 'Adzuna', 'cdl_jobcast'].includes(utmSource)
+      ? ['exp', 'driving_experience_years', 'cdl_class', 'driver_type']
+      : null,
   };
   
   const { data: application, error } = await insertApplication(supabase, applicationData);
