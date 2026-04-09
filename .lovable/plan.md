@@ -1,82 +1,73 @@
 
 
-# Fix Experience-to-Months Parsing and Backfill driving_experience_years
+# Enrich CDL JobCast Applications with Experience Data
 
 ## Problem
 
-The `driving_experience_years` column is null or wrong for most R.E. Garrison applications despite `exp` having parseable values like "48+ Months", "5 years", "6 Months", "More than 3 months". The current code only derives `driving_experience_years` from numeric `months`/`experience` fields but never parses the text `exp` field.
+CDL JobCast webhooks from ZipRecruiter, Adzuna, and TheTruckersReportJobs only send basic contact fields (name, email, phone, city, state, zip, source, job_id). The experience data visible in CDL JobCast's portal (Driver Type, Driving Experience) is **not included in their outbound webhook payloads**, and CDL JobCast does not expose a public API to pull applicant details.
 
-Current data:
-- "48+ Months" → `driving_experience_years` = null (should be 4)
-- "5 years" → `driving_experience_years` = 0 (should be 5)
-- "6 Months" → `driving_experience_years` = null (should be 0)
-- "More than 3 months" → `driving_experience_years` = 3 (correct, came from numeric field)
-- 144 records have both `exp` and `driving_experience_years` as null
+There is no `getapplicants`, `getapplications`, or `getleads` endpoint — only `getfeeds` for job listings. This means we cannot "source from CDL JobCast's side" because they don't provide an API for it.
 
-## Changes
+## Proposed Solution: Post-Submission Experience Collection
 
-### 1. Add `parseExpToYears()` helper in `hayes-client-handler.ts`
+Since CDL JobCast won't send experience data, we create a **post-inbound enrichment function** that collects missing experience fields from applicants after they are received. Two mechanisms:
 
-A function that extracts years from the text `exp` value:
+### 1. Create `enrich-application` edge function
 
-```typescript
-function parseExpToYears(exp: string | null): number | null {
-  if (!exp) return null;
-  const lower = exp.toLowerCase().trim();
-  
-  // Match "N years" or "N+ years"
-  const yearsMatch = lower.match(/(\d+)\+?\s*years?/);
-  if (yearsMatch) return parseInt(yearsMatch[1]);
-  
-  // Match "N months" or "N+ months" or "more than N months"
-  const monthsMatch = lower.match(/(\d+)\+?\s*months?/);
-  if (monthsMatch) return Math.floor(parseInt(monthsMatch[1]) / 12);
-  
-  return null;
-}
-```
+A new edge function that can be called to enrich applications missing experience data. It will:
 
-### 2. Update experience mapping in handler (lines 316-323)
+- Accept an application ID (or batch of IDs)
+- Check which fields are missing (exp, driving_experience_years, cdl_class, driver_type)
+- For applications from CDL JobCast sources, mark them as needing enrichment by setting a flag
+- Integrate with the existing ElevenLabs voice screening flow to collect experience during the screening call
 
-Use `parseExpToYears` as the final fallback for `driving_experience_years`:
+### 2. Expand the ElevenLabs voice agent data collection
+
+The existing voice screening system already calls applicants. Update the voice agent's data collection to explicitly ask about:
+- Driving experience (years/months)
+- CDL class (A, B, etc.)
+- Driver type (Owner Operator, Company, Lease Purchase)
+
+Then write those values back to the application record after the call.
+
+### 3. Add experience collection to the inbound handler as defaults
+
+For CDL JobCast sources specifically, set sensible defaults and flag for enrichment:
 
 ```typescript
-const expValue = data.exp 
-  || (data.months ? `${data.months} Months` : null) 
-  || (data.experience ? `${data.experience} months` : null);
+// In hayes-client-handler.ts processApplication()
+const needsEnrichment = !data.exp && !data.driving_experience_years 
+  && (utmSource === 'cdl_jobcast' || ['ZipRecruiter', 'TheTruckersReportJobs', 'Adzuna'].includes(data.source));
 
-const drivingExpYears = data.driving_experience_years 
-  || (data.months ? Math.floor(parseInt(data.months) / 12) : null)
-  || (data.experience ? Math.floor(parseInt(data.experience) / 12) : null)
-  || parseExpToYears(expValue);
+// Add to applicationData:
+needs_enrichment: needsEnrichment,
+enrichment_fields: needsEnrichment ? ['exp', 'driving_experience_years', 'cdl_class', 'driver_type'] : null,
 ```
 
-Then use these computed values in `applicationData`.
-
-### 3. Backfill existing records
-
-Use the data modification tool to update `driving_experience_years` from the `exp` text for R.E. Garrison applications:
+### 4. Backfill flag on existing records
 
 ```sql
 UPDATE applications
-SET driving_experience_years = CASE
-  WHEN exp ~* '(\d+)\+?\s*years?' THEN (regexp_match(exp, '(\d+)\+?\s*years?', 'i'))[1]::int
-  WHEN exp ~* '(\d+)\+?\s*months?' THEN FLOOR((regexp_match(exp, '(\d+)\+?\s*months?', 'i'))[1]::int / 12)::int
-  ELSE driving_experience_years
-END
+SET needs_enrichment = true
 WHERE job_listing_id IN (
   SELECT id FROM job_listings WHERE client_id = 'be8b645e-d480-4c22-8e75-b09a7fc1db7a'
 )
-AND exp IS NOT NULL
-AND (driving_experience_years IS NULL OR driving_experience_years = 0);
+AND driving_experience_years IS NULL
+AND exp IS NULL
+AND source IN ('ZipRecruiter', 'TheTruckersReportJobs', 'Adzuna');
 ```
 
-### 4. Redeploy `hayes-inbound` edge function
+## Important Context
 
-### Files modified
-- `supabase/functions/_shared/hayes-client-handler.ts` — add `parseExpToYears` helper, refactor experience mapping
-- Data update via insert tool — backfill `driving_experience_years` from `exp` text
+CDL JobCast does **not** have a public API for pulling applicant details — I tested `getapplicants`, `getapplications`, and `getleads` endpoints, all return 404. The only available endpoint is `getfeeds` which returns job listings XML. To get experience data flowing from CDL JobCast directly, you would need to contact them and request they add `driver_type` and `driving_experience` fields to their webhook payload.
 
-### Result
-All 7 records with `exp` values will get correct `driving_experience_years` (e.g., "48+ Months" → 4, "5 years" → 5). Future applications will also have `driving_experience_years` auto-derived from any text `exp` value.
+## Alternative: Direct contact with CDL JobCast
+
+The fastest path to populate all experience fields is to ask CDL JobCast to include `driver_type`, `driving_experience`, and `cdl_class` in their webhook POST body. The handler code is already prepared to capture these fields when they arrive.
+
+### Files to create/modify
+- `supabase/functions/enrich-application/index.ts` — new enrichment function
+- `supabase/functions/_shared/hayes-client-handler.ts` — add enrichment flag logic
+- New migration — add `needs_enrichment` boolean column to applications table
+- Backfill existing CDL JobCast records
 
