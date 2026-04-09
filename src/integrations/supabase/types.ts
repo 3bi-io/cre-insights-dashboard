@@ -656,6 +656,7 @@ export type Database = {
           emergency_contact_phone: string | null
           emergency_contact_relationship: string | null
           employment_history: Json | null
+          enrichment_fields: string[] | null
           enrichment_status: string | null
           exp: string | null
           felony_details: string | null
@@ -677,6 +678,7 @@ export type Database = {
           military_service: string | null
           military_start_date: string | null
           months: string | null
+          needs_enrichment: boolean | null
           notes: string | null
           over_21: string | null
           passport_card: string | null
@@ -755,6 +757,7 @@ export type Database = {
           emergency_contact_phone?: string | null
           emergency_contact_relationship?: string | null
           employment_history?: Json | null
+          enrichment_fields?: string[] | null
           enrichment_status?: string | null
           exp?: string | null
           felony_details?: string | null
@@ -776,6 +779,7 @@ export type Database = {
           military_service?: string | null
           military_start_date?: string | null
           months?: string | null
+          needs_enrichment?: boolean | null
           notes?: string | null
           over_21?: string | null
           passport_card?: string | null
@@ -854,6 +858,7 @@ export type Database = {
           emergency_contact_phone?: string | null
           emergency_contact_relationship?: string | null
           employment_history?: Json | null
+          enrichment_fields?: string[] | null
           enrichment_status?: string | null
           exp?: string | null
           felony_details?: string | null
@@ -875,6 +880,7 @@ export type Database = {
           military_service?: string | null
           military_start_date?: string | null
           months?: string | null
+          needs_enrichment?: boolean | null
           notes?: string | null
           over_21?: string | null
           passport_card?: string | null
