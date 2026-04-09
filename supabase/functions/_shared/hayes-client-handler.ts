@@ -26,6 +26,25 @@ const RE_GARRISON_TITLE_TEMPLATE = 'CDL-A Drivers: Top Tier Lease Purchase Progr
  * Apply client-specific title corrections:
  * - R.E. Garrison: Replace "CO " prefix with "LP " (Lease Purchase program)
  */
+/**
+ * Parse text experience values like "48+ Months", "5 years", "More than 3 months"
+ * into an integer number of years.
+ */
+function parseExpToYears(exp: string | null): number | null {
+  if (!exp) return null;
+  const lower = exp.toLowerCase().trim();
+
+  // Match "N years" or "N+ years"
+  const yearsMatch = lower.match(/(\d+)\+?\s*years?/);
+  if (yearsMatch) return parseInt(yearsMatch[1]);
+
+  // Match "N months" or "N+ months" or "more than N months"
+  const monthsMatch = lower.match(/(\d+)\+?\s*months?/);
+  if (monthsMatch) return Math.floor(parseInt(monthsMatch[1]) / 12);
+
+  return null;
+}
+
 function applyTitleCorrections(title: string, clientId: string): string {
   if (clientId === RE_GARRISON_CLIENT_ID && title.startsWith('CO ')) {
     return 'LP ' + title.slice(3);
