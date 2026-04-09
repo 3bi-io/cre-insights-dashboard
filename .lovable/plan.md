@@ -1,34 +1,51 @@
 
 
-# Remove Job Listings for Hub Group, TMC, and Werner
+# Create CDL Job Now Carriers as Clients
 
 ## Summary
-Delete all 302 job listings across three clients. Applications linked to these jobs will have their `job_listing_id` set to the orphan marker UUID by the existing `mark_orphaned_applications` trigger.
+Insert 23 new client records for organization `fd4d6327-32df-467f-aba7-ccfeecccd934` (dev-5761e7e0), one for each carrier found on cdljobnow.com/jobs that doesn't already exist.
 
-## Steps
+## Already Existing (skip)
+- Hub Group
+- TMC Transportation
+- Werner Enterprises
 
-1. **Disable Google indexing trigger** on `job_listings` to prevent transaction failures during bulk delete (per project memory on batch operations).
-2. **Delete job listings** for the three client IDs.
-3. **Re-enable the trigger** immediately after.
+## New Carriers to Create (23)
+1. APL Cargo, Inc.
+2. C.R. England
+3. Chicago Intermodal Transportation
+4. Crete Carrier Corporation
+5. Dart
+6. Go2 Logistics
+7. Heartland Express
+8. Hogan Transports
+9. Hub Group Final Mile
+10. IMC Logistics
+11. J&M Tank Lines
+12. J&R Schugel
+13. J.B. Hunt
+14. J.L. Rothrock Inc.
+15. Kottke Trucking, Inc
+16. Marten Transport
+17. Melton Truck Lines
+18. Messer
+19. Ryder
+20. Soar Transportation Group
+21. System Transport
+22. U.S. Xpress
+23. Western Express, Inc.
 
-## SQL Migration
+## Implementation
+Single SQL INSERT using the Supabase insert tool (data operation, not schema change):
 
 ```sql
--- Disable indexing trigger to prevent failures during bulk delete
-ALTER TABLE job_listings DISABLE TRIGGER trg_google_indexing_notify;
-
-DELETE FROM job_listings 
-WHERE client_id IN (
-  '8ca3faca-b91c-4ab8-a9af-b145ab265228',  -- Hub Group
-  'feb3479f-4116-42a5-bb6a-811406c1c99a',  -- Werner Enterprises
-  '50657f4d-c47b-4104-a307-b82d5fa4a1df'   -- TMC Transportation
-);
-
--- Re-enable trigger
-ALTER TABLE job_listings ENABLE TRIGGER trg_google_indexing_notify;
+INSERT INTO clients (name, status, organization_id) VALUES
+  ('APL Cargo, Inc.', 'active', 'fd4d6327-32df-467f-aba7-ccfeecccd934'),
+  ('C.R. England', 'active', 'fd4d6327-32df-467f-aba7-ccfeecccd934'),
+  ('Chicago Intermodal Transportation', 'active', 'fd4d6327-32df-467f-aba7-ccfeecccd934'),
+  -- ... all 23 carriers
+  ('Western Express, Inc.', 'active', 'fd4d6327-32df-467f-aba7-ccfeecccd934');
 ```
 
-## Side Effects
-- The `mark_orphaned_applications` trigger will automatically update any linked applications to the orphan marker UUID.
-- No code changes needed.
+No code changes or migrations needed -- this is a data insert only.
 
