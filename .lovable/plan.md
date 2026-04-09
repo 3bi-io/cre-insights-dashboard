@@ -1,70 +1,82 @@
 
 
-# Import CDL JobCast Experience Fields into Applications
+# Fix Experience-to-Months Parsing and Backfill driving_experience_years
 
-## Current State
+## Problem
 
-The CDL JobCast payload sends experience data in multiple fields:
-- `exp` — text like "48+ Months", "6 Months", "More than 3 months" (most common, 7/150 records populated)
-- `experience` — numeric months like "36" (rare, 1/150)
-- `months` — numeric months like "36" (rare, 1/150)
-- `driving_experience_years` — integer years like "3" (rare, 1/150)
+The `driving_experience_years` column is null or wrong for most R.E. Garrison applications despite `exp` having parseable values like "48+ Months", "5 years", "6 Months", "More than 3 months". The current code only derives `driving_experience_years` from numeric `months`/`experience` fields but never parses the text `exp` field.
 
-The handler already maps `exp` and `driving_experience_years` to their respective DB columns. However, when the payload uses `experience` or `months` instead (and `exp` is absent), those values are lost.
+Current data:
+- "48+ Months" → `driving_experience_years` = null (should be 4)
+- "5 years" → `driving_experience_years` = 0 (should be 5)
+- "6 Months" → `driving_experience_years` = null (should be 0)
+- "More than 3 months" → `driving_experience_years` = 3 (correct, came from numeric field)
+- 144 records have both `exp` and `driving_experience_years` as null
 
 ## Changes
 
-### 1. Update `supabase/functions/_shared/hayes-client-handler.ts`
+### 1. Add `parseExpToYears()` helper in `hayes-client-handler.ts`
 
-Enhance the experience mapping to use `experience` and `months` as fallbacks:
+A function that extracts years from the text `exp` value:
 
 ```typescript
-// Build a normalized exp value from available fields
+function parseExpToYears(exp: string | null): number | null {
+  if (!exp) return null;
+  const lower = exp.toLowerCase().trim();
+  
+  // Match "N years" or "N+ years"
+  const yearsMatch = lower.match(/(\d+)\+?\s*years?/);
+  if (yearsMatch) return parseInt(yearsMatch[1]);
+  
+  // Match "N months" or "N+ months" or "more than N months"
+  const monthsMatch = lower.match(/(\d+)\+?\s*months?/);
+  if (monthsMatch) return Math.floor(parseInt(monthsMatch[1]) / 12);
+  
+  return null;
+}
+```
+
+### 2. Update experience mapping in handler (lines 316-323)
+
+Use `parseExpToYears` as the final fallback for `driving_experience_years`:
+
+```typescript
 const expValue = data.exp 
   || (data.months ? `${data.months} Months` : null) 
   || (data.experience ? `${data.experience} months` : null);
 
-// Parse driving_experience_years from numeric fields if not directly provided
 const drivingExpYears = data.driving_experience_years 
   || (data.months ? Math.floor(parseInt(data.months) / 12) : null)
-  || (data.experience ? Math.floor(parseInt(data.experience) / 12) : null);
+  || (data.experience ? Math.floor(parseInt(data.experience) / 12) : null)
+  || parseExpToYears(expValue);
 ```
 
-Then use these computed values in the application data:
-```typescript
-exp: expValue || null,
-driving_experience_years: drivingExpYears || null,
-```
+Then use these computed values in `applicationData`.
 
-### 2. Backfill existing R.E. Garrison applications
+### 3. Backfill existing records
 
-Update records that have `experience` or `months` in `raw_payload` but empty `exp`/`driving_experience_years` columns:
+Use the data modification tool to update `driving_experience_years` from the `exp` text for R.E. Garrison applications:
 
 ```sql
--- Backfill exp from raw_payload experience/months
 UPDATE applications
-SET 
-  exp = COALESCE(exp, 
-    CASE WHEN raw_payload->>'months' IS NOT NULL THEN (raw_payload->>'months') || ' Months' END,
-    CASE WHEN raw_payload->>'experience' IS NOT NULL THEN (raw_payload->>'experience') || ' months' END
-  ),
-  driving_experience_years = COALESCE(driving_experience_years,
-    CASE WHEN raw_payload->>'months' IS NOT NULL THEN FLOOR((raw_payload->>'months')::int / 12)::int END,
-    CASE WHEN raw_payload->>'experience' IS NOT NULL THEN FLOOR((raw_payload->>'experience')::int / 12)::int END
-  )
+SET driving_experience_years = CASE
+  WHEN exp ~* '(\d+)\+?\s*years?' THEN (regexp_match(exp, '(\d+)\+?\s*years?', 'i'))[1]::int
+  WHEN exp ~* '(\d+)\+?\s*months?' THEN FLOOR((regexp_match(exp, '(\d+)\+?\s*months?', 'i'))[1]::int / 12)::int
+  ELSE driving_experience_years
+END
 WHERE job_listing_id IN (
   SELECT id FROM job_listings WHERE client_id = 'be8b645e-d480-4c22-8e75-b09a7fc1db7a'
 )
-AND exp IS NULL
-AND (raw_payload->>'experience' IS NOT NULL OR raw_payload->>'months' IS NOT NULL);
+AND exp IS NOT NULL
+AND (driving_experience_years IS NULL OR driving_experience_years = 0);
 ```
 
-### 3. Redeploy `hayes-inbound` edge function
+### 4. Redeploy `hayes-inbound` edge function
 
 ### Files modified
-- `supabase/functions/_shared/hayes-client-handler.ts` — enhanced experience field mapping
-- New migration — backfill existing records
+- `supabase/functions/_shared/hayes-client-handler.ts` — add `parseExpToYears` helper, refactor experience mapping
+- Data update via insert tool — backfill `driving_experience_years` from `exp` text
 
 ### Result
-All CDL JobCast experience data (`exp`, `experience`, `months`, `driving_experience_years`) will be captured and displayed in the R.E. Garrison dashboard, regardless of which field the payload uses.
+All 7 records with `exp` values will get correct `driving_experience_years` (e.g., "48+ Months" → 4, "5 years" → 5). Future applications will also have `driving_experience_years` auto-derived from any text `exp` value.
 
