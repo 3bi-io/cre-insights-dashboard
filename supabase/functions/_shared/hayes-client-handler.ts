@@ -339,6 +339,9 @@ async function processApplication(
     driving_experience_years: data.driving_experience_years
       || (data.months ? Math.floor(parseInt(data.months) / 12) : null)
       || (data.experience ? Math.floor(parseInt(data.experience) / 12) : null)
+      || parseExpToYears(data.exp
+        || (data.months ? `${data.months} Months` : null)
+        || (data.experience ? `${data.experience} months` : null))
       || null,
     source: data.source || `hayes-${config.clientSlug}-inbound`,
     status: 'pending',
