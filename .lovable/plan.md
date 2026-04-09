@@ -1,93 +1,45 @@
 
 
-# Map Page (`/map`) Visibility and Styling Refactor
+# Route CDL JobCast Payload `source` to `utm_source` for R.E. Garrison
 
-## Problems Identified
+## Problem
+When CDL JobCast forwards applications for R.E. Garrison, the payload includes a `source` field with the actual originating job board (e.g., "ZipRecruiter", "TheTruckersReportJobs", "Adzuna"). However, the `utm_source` is hardcoded to `'cdl_jobcast'` for all applications, losing the granular source attribution. The UI displays `utm_source`, so recruiters only see "cdl_jobcast" instead of the real source.
 
-### 1. Overlapping and Cluttered Controls (All Devices)
-- **Filters and zoom controls overlap at `top-20`** — the filter bar and the MapZoomControls both position near the top-right, causing visual collision on medium viewports.
-- **Bottom-right area is crowded** — Theme switcher, layer controls (Heat/Pins) stack in `bottom-4 right-4`, overlapping with AI assistant panel and mobile view switcher in `bottom-4 left/center`.
-- **MapStats component is imported but never rendered** on the page — stats data is only passed to the AI panel.
+## Solution
+Use the payload's `source` field as `utm_source` when present, falling back to `'cdl_jobcast'` only when the payload doesn't specify a source.
 
-### 2. Mobile-Specific Issues
-- **Display mode selector takes full width** below search, pushing map content down and consuming valuable screen real estate.
-- **AI assistant bar overlaps the Map/List switcher** — both sit at the bottom, the AI bar at `bottom-16` and switcher at `bottom-4`, but they visually compete.
-- **Theme switcher + layer controls overlap with the Map/List switcher** in the bottom-right corner.
-- **Zoom controls are cut off** — the `+` button is missing from the mobile screenshot (scrolled out of view or hidden behind filter bar).
-- **MobileJobListView has `pt-[88px]`** hardcoded padding that may not match actual filter bar height, creating dead space or overlap depending on filter count.
+## Changes
 
-### 3. Tablet Edge Cases
-- At the current viewport (1048px), the page is between tablet and desktop breakpoints. Filter dropdowns and display mode selector wrap awkwardly.
+### 1. Update `supabase/functions/_shared/hayes-client-handler.ts`
+In the `processApplication` function (~line 298-301), change the UTM attribution logic:
 
-### 4. Display Mode Inconsistencies
-- Switching between Standard/Density/Detail doesn't adjust the UI chrome visibility. In Density mode (macro view), filters and controls should be less prominent. In Detail mode, they should remain accessible.
-- The display mode selector style (frosted glass pill) doesn't visually match the filter controls above it — inconsistent border radius and background treatment.
-
-### 5. Visual Hierarchy and Spacing
-- Filter bar uses `top-20` (80px from top) which was originally meant to clear the header, but the map container already starts at `top-16` (64px from the header). This creates a 16px gap between map top and filter bar — wasted space.
-- No visual grouping of related controls (zoom + layer + theme are all separate floating elements).
-
----
-
-## Plan
-
-### Step 1: Consolidate Bottom Controls Layout
-Create a unified bottom control bar strategy:
-- **Desktop**: Left side = AI assistant. Right side = vertically stacked group (theme switcher + layer controls). Stats integrated into the AI collapsed bar.
-- **Mobile**: Bottom center = Map/List switcher. AI assistant moves to a FAB-style button in the bottom-left. Theme + layer controls move to the top-right (near zoom). Remove MapStats as a separate element — fold key stats into the AI collapsed bar (already done).
-
-### Step 2: Fix Filter Bar Positioning
-- Change filter bar from `top-20` to `top-3` (relative to the map container which already starts below the header).
-- On mobile, make the filter bar sticky at the top of the map area with consistent padding.
-- Remove the hardcoded `pt-[88px]` from `MobileJobListView` — use a dynamic spacer or CSS calc based on actual filter height.
-
-### Step 3: Reorganize Right-Side Controls
-Combine zoom controls, theme switcher, and layer controls into a single vertically stacked panel on the right side:
-
-```text
-Desktop right side:        Mobile right side:
-┌─────┐                    ┌─────┐
-│  +  │                    │  +  │
-│  -  │                    │  -  │
-│  ⌂  │                    │  ⌂  │
-├─────┤                    ├─────┤
-│ ☀ ◻ ☾│                   │ ☀◻☾ │
-├─────┤                    ├─────┤
-│ 🔥  │                    │ 🔥  │
-│ 📍  │                    │ 📍  │
-└─────┘                    └─────┘
+**Before:**
+```typescript
+const utmSource = 'cdl_jobcast';
 ```
 
-This eliminates the scattered floating controls and creates one clear control stack.
+**After:**
+```typescript
+const utmSource = data.source || 'cdl_jobcast';
+```
 
-### Step 4: Simplify Mobile Display Mode
-- Move the display mode selector into the mobile filter popover (alongside company/category filters) instead of rendering it as a full-width row.
-- On desktop/tablet, keep it inline with filters but ensure it wraps cleanly.
+This preserves the payload's `source` value (e.g., "ZipRecruiter") as `utm_source` while keeping `cdl_jobcast` as the fallback. The `source` field on the application record stays as `hayes-re-garrison-inbound` for internal routing — only `utm_source` changes.
 
-### Step 5: Fix Mobile AI Assistant Positioning
-- When collapsed, position the AI bar just above the Map/List switcher with proper spacing (`bottom-[4.5rem]`).
-- When expanded, use a bottom sheet / drawer pattern consistent with the JobListPanel instead of absolute positioning that fights other elements.
+### 2. Backfill existing R.E. Garrison applications (migration)
+Run a SQL migration to update existing applications where `raw_payload->>'source'` contains a usable value but `utm_source` is stuck at `cdl_jobcast`:
 
-### Step 6: Adjust Map Container Offsets
-- Change map container from `top-16` to `top-0` since the parent already accounts for the header with `h-[calc(100dvh-4rem)]`.
-- Update filter positioning accordingly — filters overlay the map at `top-3` with proper z-indexing.
+```sql
+UPDATE applications
+SET utm_source = raw_payload->>'source'
+WHERE job_listing_id IN (
+  SELECT id FROM job_listings WHERE client_id = 'be8b645e-d480-4c22-8e75-b09a7fc1db7a'
+)
+AND utm_source = 'cdl_jobcast'
+AND raw_payload->>'source' IS NOT NULL
+AND raw_payload->>'source' != '';
+```
 
-### Step 7: Dark/Light Theme Consistency
-- Ensure all floating controls use consistent glass morphism treatment: `bg-background/90 backdrop-blur-md border-border/50 shadow-lg`.
-- Standardize border-radius across all floating elements to `rounded-lg`.
-
----
-
-## Files to Modify
-
-| File | Changes |
-|---|---|
-| `src/pages/public/JobMapPage.tsx` | Restructure control layout, remove `top-16` offset from map container, consolidate right-side controls, move display mode into mobile popover |
-| `src/components/map/MapFilters.tsx` | Update positioning from `top-20` to `top-3`, embed display mode selector in mobile popover, fix responsive wrapping |
-| `src/components/map/MapControls.tsx` | Merge `MapZoomControls` positioning into the consolidated right-side stack, remove hardcoded absolute positioning so parent controls layout |
-| `src/components/map/MapAIAssistantPanel.tsx` | Fix mobile collapsed position to avoid overlapping Map/List switcher, consistent spacing |
-| `src/components/map/MobileJobListView.tsx` | Replace hardcoded `pt-[88px]` with proper spacing that adapts to filter height |
-| `src/components/map/MapThemeSwitcher.tsx` | Minor: remove absolute positioning so it can be composed into the control stack |
-| `src/components/map/JobMap.tsx` | Remove `MapZoomControls` from inside `MapContainer` (move to page-level control stack) |
-| `src/components/map/constants.ts` | Add consistent spacing constants for control positions |
+### Files modified
+- `supabase/functions/_shared/hayes-client-handler.ts` — use payload source as `utm_source`
+- New migration — backfill existing records
 
