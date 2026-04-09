@@ -1,45 +1,41 @@
 
 
-# Route CDL JobCast Payload `source` to `utm_source` for R.E. Garrison
+# Display CDL JobCast Source in R.E. Garrison Dashboard
 
 ## Problem
-When CDL JobCast forwards applications for R.E. Garrison, the payload includes a `source` field with the actual originating job board (e.g., "ZipRecruiter", "TheTruckersReportJobs", "Adzuna"). However, the `utm_source` is hardcoded to `'cdl_jobcast'` for all applications, losing the granular source attribution. The UI displays `utm_source`, so recruiters only see "cdl_jobcast" instead of the real source.
-
-## Solution
-Use the payload's `source` field as `utm_source` when present, falling back to `'cdl_jobcast'` only when the payload doesn't specify a source.
+The `source` field on R.E. Garrison applications is hardcoded to `hayes-re-garrison-inbound`, so the dashboard shows that generic label instead of the actual originating job board (e.g., "ZipRecruiter", "TheTruckersReportJobs").
 
 ## Changes
 
-### 1. Update `supabase/functions/_shared/hayes-client-handler.ts`
-In the `processApplication` function (~line 298-301), change the UTM attribution logic:
+### 1. Update `supabase/functions/_shared/hayes-client-handler.ts` (line 318)
+For R.E. Garrison only, use the payload's `source` value as the application `source` field, falling back to the existing convention:
 
-**Before:**
 ```typescript
-const utmSource = 'cdl_jobcast';
+// Before:
+source: `hayes-${config.clientSlug}-inbound`,
+
+// After:
+source: data.source || `hayes-${config.clientSlug}-inbound`,
 ```
 
-**After:**
-```typescript
-const utmSource = data.source || 'cdl_jobcast';
-```
+This applies to all Hayes clients so any client whose payload includes a granular source will benefit. If no source is in the payload, the existing routing label is preserved.
 
-This preserves the payload's `source` value (e.g., "ZipRecruiter") as `utm_source` while keeping `cdl_jobcast` as the fallback. The `source` field on the application record stays as `hayes-re-garrison-inbound` for internal routing — only `utm_source` changes.
-
-### 2. Backfill existing R.E. Garrison applications (migration)
-Run a SQL migration to update existing applications where `raw_payload->>'source'` contains a usable value but `utm_source` is stuck at `cdl_jobcast`:
+### 2. Backfill existing R.E. Garrison applications
+Run a data update (via insert tool) to set `source` from `raw_payload->>'source'` for existing records:
 
 ```sql
 UPDATE applications
-SET utm_source = raw_payload->>'source'
+SET source = raw_payload->>'source'
 WHERE job_listing_id IN (
   SELECT id FROM job_listings WHERE client_id = 'be8b645e-d480-4c22-8e75-b09a7fc1db7a'
 )
-AND utm_source = 'cdl_jobcast'
+AND source = 'hayes-re-garrison-inbound'
 AND raw_payload->>'source' IS NOT NULL
 AND raw_payload->>'source' != '';
 ```
 
-### Files modified
-- `supabase/functions/_shared/hayes-client-handler.ts` — use payload source as `utm_source`
-- New migration — backfill existing records
+### 3. Redeploy the `hayes-inbound` edge function
+
+## Result
+The dashboard will show "ZipRecruiter", "TheTruckersReportJobs", etc. in the Source column instead of "hayes-re-garrison-inbound" (or the client name derived from it).
 
