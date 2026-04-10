@@ -15,6 +15,7 @@ import { ATSDeliverySection } from './client-portal/ATSDeliverySection';
 import { RecentApplicantsTable } from './client-portal/RecentApplicantsTable';
 import { JobPerformanceSection } from './client-portal/JobPerformanceSection';
 import { VoiceConversationsSection } from './client-portal/VoiceConversationsSection';
+import { ScheduledCallbacksSection } from './client-portal/ScheduledCallbacksSection';
 
 interface ClientPortalDashboardProps {
   overrideClientId?: string;
