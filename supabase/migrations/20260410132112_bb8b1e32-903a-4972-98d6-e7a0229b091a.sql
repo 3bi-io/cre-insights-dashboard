@@ -1,0 +1,1 @@
+ALTER TABLE public.scheduled_callbacks ALTER COLUMN recruiter_user_id DROP NOT NULL;
