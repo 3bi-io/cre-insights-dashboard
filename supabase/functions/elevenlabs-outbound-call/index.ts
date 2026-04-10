@@ -1387,6 +1387,38 @@ async function processOutboundCall(
               logger.error('Failed to schedule after-hours callback', { error: callbackError });
             } else {
               logger.info(`Scheduled after-hours callback ${callbackCall?.id} for ${callbackAt} (method: ${schedulingMethod}, calendar: ${hasCalendarConnections})`);
+              
+              // Also insert into scheduled_callbacks so it appears in the client portal
+              const callbackEnd = new Date(new Date(callbackAt).getTime() + 15 * 60 * 1000).toISOString();
+              let driverName: string | null = null;
+              let driverPhone: string | null = null;
+              if (applicationId) {
+                const { data: appData } = await supabase
+                  .from('applications')
+                  .select('first_name, last_name, phone')
+                  .eq('id', applicationId)
+                  .maybeSingle();
+                if (appData) {
+                  driverName = [appData.first_name, appData.last_name].filter(Boolean).join(' ') || null;
+                  driverPhone = appData.phone || null;
+                }
+              }
+              const { error: scErr } = await supabase
+                .from('scheduled_callbacks')
+                .insert({
+                  organization_id: organizationId,
+                  application_id: applicationId || null,
+                  scheduled_start: callbackAt,
+                  scheduled_end: callbackEnd,
+                  status: 'pending',
+                  driver_name: driverName,
+                  driver_phone: driverPhone || normalizedPhone,
+                  booking_source: 'after_hours_auto',
+                  notes: `After-hours callback scheduled via ${schedulingMethod}. Original call: ${callRecord.id}.`,
+                });
+              if (scErr) {
+                logger.error('Failed to create scheduled_callbacks record for after-hours callback', { error: scErr });
+              }
             }
           }
         }

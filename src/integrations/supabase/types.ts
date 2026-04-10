@@ -6481,7 +6481,7 @@ export type Database = {
           notes: string | null
           nylas_event_id: string | null
           organization_id: string | null
-          recruiter_user_id: string
+          recruiter_user_id: string | null
           scheduled_end: string
           scheduled_start: string
           sms_confirmation_sent: boolean | null
@@ -6502,7 +6502,7 @@ export type Database = {
           notes?: string | null
           nylas_event_id?: string | null
           organization_id?: string | null
-          recruiter_user_id: string
+          recruiter_user_id?: string | null
           scheduled_end: string
           scheduled_start: string
           sms_confirmation_sent?: boolean | null
@@ -6523,7 +6523,7 @@ export type Database = {
           notes?: string | null
           nylas_event_id?: string | null
           organization_id?: string | null
-          recruiter_user_id?: string
+          recruiter_user_id?: string | null
           scheduled_end?: string
           scheduled_start?: string
           sms_confirmation_sent?: boolean | null

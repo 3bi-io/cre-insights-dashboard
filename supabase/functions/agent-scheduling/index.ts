@@ -240,12 +240,13 @@ async function handleCheckAvailability(
         .insert({
           organization_id: organization_id,
           application_id: application_id && isValidUUID(application_id) ? application_id : null,
-          client_id: resolvedClientIdForFallback,
           scheduled_start: scheduledAtIso,
           scheduled_end: new Date(scheduledTime.getTime() + 15 * 60 * 1000).toISOString(),
           status: 'pending',
+          driver_name: appName || null,
+          driver_phone: appPhone || null,
+          booking_source: 'ai_agent',
           notes: `Auto-scheduled callback (no calendar connected). Candidate: ${appName || 'Unknown'}. AI will call back at this time — recruiter follow-up recommended.`,
-          source: 'ai_agent',
         });
       
       if (scErr) {
