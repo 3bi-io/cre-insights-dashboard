@@ -138,6 +138,13 @@ export const ClientPortalDashboard: React.FC<ClientPortalDashboardProps> = ({ ov
 
         <div className="border-t border-border/30" />
 
+        {/* Section 5b: Scheduled Callbacks */}
+        {activeClientId && (
+          <ScheduledCallbacksSection clientId={activeClientId} />
+        )}
+
+        <div className="border-t border-border/30" />
+
         {/* Section 6: Recent Applicants */}
         {activeClientId && (
           <RecentApplicantsTable clientId={activeClientId} dateRange={dateRange} />
