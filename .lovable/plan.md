@@ -1,40 +1,26 @@
 
 
-## Plan: Update Twilio API Key from SKa56156 to SKdf66a3 Across All ElevenLabs Phone Records
+## Plan: Verify and Fix Twilio Auth Token for ElevenLabs Phone Import
 
 ### Problem
-The Twilio API Key `SKa56156...` has been decommissioned. All ElevenLabs phone number records store this old key for telephony. Since PATCH doesn't update stored Twilio credentials, each phone record must be deleted and re-imported with the new key `SKdf66a3...`.
+All 11 phone imports are still failing with Twilio Error 20003 (Authentication). The Account SID (`AC6e7c280b...`) is correct, but the Auth Token starting with `e018c0a1a...` is being rejected by Twilio (via ElevenLabs).
 
 ### Steps
 
-1. **Update the `TWILIO_ACCOUNT_SID` secret** to the new API Key SID starting with `SKdf66a3`.
+1. **Create a temporary verification edge function** (`verify-twilio-creds`) that makes a direct Twilio API call (`GET /2010-04-01/Accounts/{SID}.json`) to confirm whether the current `TWILIO_AUTH_TOKEN` is valid. This isolates whether the problem is the token itself or something ElevenLabs-specific.
 
-2. **Update the `TWILIO_AUTH_TOKEN` secret** to the API Secret that corresponds to the `SKdf66a3` key (if not already done).
+2. **Based on the result:**
+   - If the direct call **succeeds**: The credentials are valid but ElevenLabs may need time to propagate, or there's a different issue with the `/create` endpoint format.
+   - If the direct call **fails**: The Auth Token is wrong. You'll need to copy the exact token from [Twilio Console → Account Dashboard](https://console.twilio.com/) (click "Show" next to Auth Token).
 
-3. **Create a temporary edge function** (`update-elevenlabs-phones`) that:
-   - Lists all 11 unique phone number IDs from the `voice_agents` table
-   - For each, calls `GET /v1/convai/phone-numbers/{id}` to capture the current phone number and label
-   - Deletes the record via `DELETE /v1/convai/phone-numbers/{id}`
-   - Re-imports it via `POST /v1/convai/phone-numbers/import` with the new `SKdf66a3` SID and matching auth token
-   - Returns the old-to-new phone number ID mapping
+3. **Once credentials are verified**, re-run the `update-elevenlabs-phones` function to import all 11 phone numbers.
 
-4. **Update `voice_agents` table** — run UPDATE statements to replace old `agent_phone_number_id` values with the new IDs returned from ElevenLabs.
+4. **Update `voice_agents` table** with new phone number IDs returned by ElevenLabs.
 
-5. **Redeploy `elevenlabs-outbound-call`** to pick up the new secrets.
-
-6. **Verify** — run a test call to confirm the full pipeline works with the new credentials.
-
-7. **Re-queue the 13 failed applicant calls** if the test succeeds.
-
-8. **Clean up** — delete the temporary edge function.
+5. **Clean up** temporary functions.
 
 ### Technical Details
-- 11 distinct phone number IDs across all voice agents need re-importing
-- ElevenLabs import endpoint: `POST /v1/convai/phone-numbers/import` with `telephony_provider: 'twilio'`, `phone_number`, `twilio_account_sid` (the new SK key), `twilio_auth_token` (the API secret), and `label`
-- The `twilio-client.ts` shared utility reads `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` from env — no code changes needed there since it just uses whatever secret is set
-- Multiple voice agents share the same phone number IDs, so the DB update must handle many-to-one mappings
-
-### Prerequisites
-Before I execute this plan, please confirm:
-- You have already updated **both** `TWILIO_ACCOUNT_SID` (to `SKdf66a3...`) and `TWILIO_AUTH_TOKEN` (to the corresponding API Secret) in the project secrets. If not, please do so first.
+- The verification function will log the token length and first 10 chars to help identify mismatches (e.g., trailing whitespace, wrong token copied).
+- Twilio primary Auth Tokens are exactly 32 hex characters. If the length differs, the token is wrong.
+- The `e018c0a1a...` prefix will be checked against the direct API response.
 
