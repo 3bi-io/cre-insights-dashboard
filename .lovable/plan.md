@@ -1,26 +1,25 @@
 
 
-## Plan: Verify and Fix Twilio Auth Token for ElevenLabs Phone Import
+## Plan: Test Pemberton Outbound Agent
 
-### Problem
-All 11 phone imports are still failing with Twilio Error 20003 (Authentication). The Account SID (`AC6e7c280b...`) is correct, but the Auth Token starting with `e018c0a1a...` is being rejected by Twilio (via ElevenLabs).
+### What We Know
+- **Pemberton Outbound Agent**: `17891613-458e-432e-a328-f26f3305a0ee` (agent_id: `agent_0101kfp6waxpezy8r56ewhx8eqya`, phone: `phnum_5501k910q8qzfnmbmznw6zqx3p8j`)
+- **Twilio secrets**: Manually updated by user
+- **Pemberton phone number**: Re-added in ElevenLabs
+- **Recent applicant**: Lucy Hulon (`8662f8c2-78ee-46c2-ba3a-9072a25c8250`, phone: `+19106510751`) — most recent Pemberton applicant, still pending
 
 ### Steps
 
-1. **Create a temporary verification edge function** (`verify-twilio-creds`) that makes a direct Twilio API call (`GET /2010-04-01/Accounts/{SID}.json`) to confirm whether the current `TWILIO_AUTH_TOKEN` is valid. This isolates whether the problem is the token itself or something ElevenLabs-specific.
+1. **Insert a test outbound call record** for Lucy Hulon queued to the Pemberton outbound agent, with `status = 'queued'` and `scheduled_at = now()`.
 
-2. **Based on the result:**
-   - If the direct call **succeeds**: The credentials are valid but ElevenLabs may need time to propagate, or there's a different issue with the `/create` endpoint format.
-   - If the direct call **fails**: The Auth Token is wrong. You'll need to copy the exact token from [Twilio Console → Account Dashboard](https://console.twilio.com/) (click "Show" next to Auth Token).
+2. **Invoke the `elevenlabs-outbound-call` edge function** with `process_queue: true` to pick up and execute the queued call.
 
-3. **Once credentials are verified**, re-run the `update-elevenlabs-phones` function to import all 11 phone numbers.
+3. **Check the result** — verify the response shows success (call_sid, conversation_id) rather than the previous Error 20003.
 
-4. **Update `voice_agents` table** with new phone number IDs returned by ElevenLabs.
-
-5. **Clean up** temporary functions.
+4. **If it fails**, check edge function logs for the specific error to diagnose whether it's still a credential issue or something else.
 
 ### Technical Details
-- The verification function will log the token length and first 10 chars to help identify mismatches (e.g., trailing whitespace, wrong token copied).
-- Twilio primary Auth Tokens are exactly 32 hex characters. If the length differs, the token is wrong.
-- The `e018c0a1a...` prefix will be checked against the direct API response.
+- The function uses `TWILIO_ACCOUNT_SID` + `TWILIO_AUTH_TOKEN` from secrets (updated by user)
+- The phone number ID `phnum_5501k910q8qzfnmbmznw6zqx3p8j` was re-imported by user in ElevenLabs
+- Only one call will be queued to limit blast radius
 
