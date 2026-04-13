@@ -40,12 +40,12 @@ Deno.serve(async (req) => {
       const importBody = {
         phone_number: info.phone,
         label: info.label,
-        sid: TWILIO_ACCOUNT_SID,
-        token: TWILIO_AUTH_TOKEN,
+        twilio_account_sid: TWILIO_ACCOUNT_SID,
+        twilio_auth_token: TWILIO_AUTH_TOKEN,
         telephony_provider: 'twilio',
       };
 
-      const importRes = await fetch(`${BASE}/create`, {
+      const importRes = await fetch(`${BASE}/import`, {
         method: 'POST',
         headers: { ...headers, 'Content-Type': 'application/json' },
         body: JSON.stringify(importBody),
