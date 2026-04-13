@@ -1274,7 +1274,7 @@ async function processOutboundCall(
             .update({
               status: 'failed',
               retry_count: currentRetryCount + 1,
-              error_message: `ElevenLabs body error after ${maxRetries} retries: ${String(bodyErrorMsg).substring(0, 500)}`,
+              error_message: `ElevenLabs body error after ${maxBodyRetries} retries: ${String(bodyErrorMsg).substring(0, 500)}`,
               updated_at: new Date().toISOString()
             })
             .eq('id', callRecord.id);
