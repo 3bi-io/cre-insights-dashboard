@@ -1,25 +1,27 @@
 
 
-## Plan: Test Pemberton Outbound Agent
+## Plan: Update Voice Agent Phone Number IDs
 
-### What We Know
-- **Pemberton Outbound Agent**: `17891613-458e-432e-a328-f26f3305a0ee` (agent_id: `agent_0101kfp6waxpezy8r56ewhx8eqya`, phone: `phnum_5501k910q8qzfnmbmznw6zqx3p8j`)
-- **Twilio secrets**: Manually updated by user
-- **Pemberton phone number**: Re-added in ElevenLabs
-- **Recent applicant**: Lucy Hulon (`8662f8c2-78ee-46c2-ba3a-9072a25c8250`, phone: `+19106510751`) — most recent Pemberton applicant, still pending
+### Summary
+Update 5 phone number IDs in the `voice_agents` table to reflect newly re-imported ElevenLabs phone numbers. One (Pemberton outbound) is already correct.
 
-### Steps
+### Clarification Needed
+**"Hayes - inbound"**: No agent named "Inbound Agent - Hayes" exists. Should the new Hayes inbound phone ID (`phnum_0501kp492f6ff5r89jsjmdt3jafr`) be applied to **"Inbound Agent - Global"** (`4da4a67c`)?
 
-1. **Insert a test outbound call record** for Lucy Hulon queued to the Pemberton outbound agent, with `status = 'queued'` and `scheduled_at = now()`.
+### Updates to Execute
 
-2. **Invoke the `elevenlabs-outbound-call` edge function** with `process_queue: true` to pick up and execute the queued call.
+| # | Agent Name | Record ID | Old Phone ID | New Phone ID |
+|---|-----------|-----------|-------------|-------------|
+| 1 | Inbound Agent - Pemberton | `4ad4e337` | `phnum_9501k96e...` | `phnum_1201kp49hfxkefetzzy08ssbjgbf` |
+| 2 | Outbound Agent - Danny Herman | `0d300a8f` | `phnum_6901kg7v...` | `phnum_9101kp49kg55f73vtdv7tgqb70eg` |
+| 3 | Outbound Agent - Hayes AI Recruiting | `5af69ab6` | `phnum_6901kg7v...` | `phnum_9401kp47a9hwfg3awrjfsb3k7w96` |
+| 4 | Outbound Agent - James Burg Trucking | `23981299` | `phnum_01jzpapr...` | `phnum_4201kp49bbv2fe185kz96m4c1xwn` |
+| 5 | Inbound Agent - Global (Hayes?) | `4da4a67c` | `phnum_3801k1yf...` | `phnum_0501kp492f6ff5r89jsjmdt3jafr` |
 
-3. **Check the result** — verify the response shows success (call_sid, conversation_id) rather than the previous Error 20003.
-
-4. **If it fails**, check edge function logs for the specific error to diagnose whether it's still a credential issue or something else.
+Pemberton outbound is already up to date — no change needed.
 
 ### Technical Details
-- The function uses `TWILIO_ACCOUNT_SID` + `TWILIO_AUTH_TOKEN` from secrets (updated by user)
-- The phone number ID `phnum_5501k910q8qzfnmbmznw6zqx3p8j` was re-imported by user in ElevenLabs
-- Only one call will be queued to limit blast radius
+- Single migration with 5 UPDATE statements against `voice_agents`
+- Each sets `agent_phone_number_id` and `updated_at = now()`
+- No code changes required — the edge functions already read phone IDs from this table dynamically
 
