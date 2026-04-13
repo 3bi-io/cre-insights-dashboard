@@ -13,6 +13,7 @@ interface SubmissionResult {
   clientName?: string;
   clientLogoUrl?: string;
   hasVoiceAgent?: boolean;
+  organizationId?: string;
 }
 
 /**
@@ -49,10 +50,10 @@ const EmbedApply: React.FC = () => {
 
   // Handle successful submission (called from within the form)
   const handleSubmissionSuccess = useCallback((result: SubmissionResult) => {
-    // Merge context logo with result
     setSubmissionResult({
       ...result,
       clientLogoUrl: result.clientLogoUrl || clientLogoUrl || undefined,
+      organizationId: result.organizationId,
     });
     setIsSubmitted(true);
     
@@ -73,6 +74,8 @@ const EmbedApply: React.FC = () => {
           clientName={submissionResult.clientName}
           clientLogoUrl={submissionResult.clientLogoUrl}
           hasVoiceAgent={submissionResult.hasVoiceAgent}
+          organizationId={submissionResult.organizationId}
+          source={source}
         />
       </div>
     );

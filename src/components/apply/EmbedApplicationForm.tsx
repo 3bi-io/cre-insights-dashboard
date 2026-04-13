@@ -49,6 +49,7 @@ interface EmbedApplicationFormProps {
     applicationId: string;
     clientName?: string;
     hasVoiceAgent?: boolean;
+    organizationId?: string;
   }) => void;
 }
 
@@ -72,8 +73,9 @@ export const EmbedApplicationForm = ({ clientName, industryVertical, onSubmitSuc
     onSuccess: (data) => {
       onSubmitSuccess?.({
         applicationId: data.applicationId,
-        clientName: data.organizationName, // Backend still uses organizationName
+        clientName: data.organizationName,
         hasVoiceAgent: data.hasVoiceAgent,
+        organizationId: data.organizationId,
       });
     },
   });
