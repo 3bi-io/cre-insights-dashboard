@@ -1256,7 +1256,8 @@ async function processOutboundCall(
 
       if (callRecord) {
         const currentRetryCount = (callRecord.retry_count as number) || 0;
-        if (currentRetryCount < maxRetries) {
+        const maxBodyRetries = 3;
+        if (currentRetryCount < maxBodyRetries) {
           await supabase
             .from('outbound_calls')
             .update({
