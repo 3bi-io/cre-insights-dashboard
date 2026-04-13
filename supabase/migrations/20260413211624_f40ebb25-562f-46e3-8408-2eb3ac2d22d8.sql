@@ -1,0 +1,1 @@
+UPDATE public.voice_agents SET agent_phone_number_id = 'phnum_2801kp4b2tpdemr98yc0wgwqw22s', updated_at = now() WHERE id = '60c3b369-3e40-476b-aeab-a39e741d9298';
