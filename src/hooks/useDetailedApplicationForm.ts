@@ -237,7 +237,7 @@ const deserializeFormData = (data: SerializableFormData): DetailedFormData => ({
   dotPhysicalDate: data.dotPhysicalDate ? new Date(data.dotPhysicalDate) : null,
 });
 
-export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
+export const useDetailedApplicationForm = (clientLogoUrl?: string | null, clientId?: string | null) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
