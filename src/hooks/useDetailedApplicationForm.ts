@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { normalizePhoneNumber } from '@/utils/phoneNormalizer';
 import { format } from 'date-fns';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { useClientFieldConfig } from '@/hooks/useClientFieldConfig';
 import { logger } from '@/lib/logger';
 
 export interface EmployerEntry {
