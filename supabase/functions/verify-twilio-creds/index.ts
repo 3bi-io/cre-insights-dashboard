@@ -10,27 +10,30 @@ Deno.serve(async (req) => {
 
   const sid = Deno.env.get('TWILIO_ACCOUNT_SID')!;
   const token = Deno.env.get('TWILIO_AUTH_TOKEN')!;
-
-  const sidPreview = sid.slice(0, 10);
-  const tokenPreview = token.slice(0, 10);
-  const tokenLength = token.length;
-
-  // Direct Twilio API call to verify credentials
-  const url = `https://api.twilio.com/2010-04-01/Accounts/${sid}.json`;
   const auth = btoa(`${sid}:${token}`);
 
-  const res = await fetch(url, {
+  // Test 1: List incoming phone numbers
+  const listUrl = `https://api.twilio.com/2010-04-01/Accounts/${sid}/IncomingPhoneNumbers.json?PageSize=1`;
+  const listRes = await fetch(listUrl, {
     headers: { 'Authorization': `Basic ${auth}` },
   });
+  const listBody = await listRes.json();
 
-  const body = await res.json();
+  // Test 2: Look up a specific number
+  const lookupUrl = `https://api.twilio.com/2010-04-01/Accounts/${sid}/IncomingPhoneNumbers.json?PhoneNumber=%2B12133297677`;
+  const lookupRes = await fetch(lookupUrl, {
+    headers: { 'Authorization': `Basic ${auth}` },
+  });
+  const lookupBody = await lookupRes.json();
 
   return new Response(JSON.stringify({
-    sid_preview: sidPreview,
-    token_preview: tokenPreview,
-    token_length: tokenLength,
-    twilio_status: res.status,
-    twilio_response: res.ok ? { friendly_name: body.friendly_name, status: body.status } : body,
+    list_status: listRes.status,
+    list_count: listBody.incoming_phone_numbers?.length,
+    list_first: listBody.incoming_phone_numbers?.[0]?.phone_number,
+    lookup_status: lookupRes.status,
+    lookup_count: lookupBody.incoming_phone_numbers?.length,
+    lookup_match: lookupBody.incoming_phone_numbers?.[0]?.phone_number,
+    error: !listRes.ok ? listBody : undefined,
   }, null, 2), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
