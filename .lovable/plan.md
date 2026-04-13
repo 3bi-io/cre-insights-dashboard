@@ -1,23 +1,40 @@
 
 
-## Plan: Verify Twilio Credentials End-to-End and Re-queue Calls (Round 6)
+## Plan: Update Twilio API Key from SKa56156 to SKdf66a3 Across All ElevenLabs Phone Records
 
 ### Problem
-All v5 calls exhausted their 3 retries within 6 minutes of being queued — likely before ElevenLabs propagated the updated Twilio SID. The error logs have rotated, so the exact failure reason is unconfirmed. We need to verify the credentials are now working before re-queuing.
+The Twilio API Key `SKa56156...` has been decommissioned. All ElevenLabs phone number records store this old key for telephony. Since PATCH doesn't update stored Twilio credentials, each phone record must be deleted and re-imported with the new key `SKdf66a3...`.
 
 ### Steps
 
-1. **Verify ElevenLabs phone records have correct Twilio SID** — Create a temporary edge function that calls `GET /v1/convai/phone-numbers/{id}` for all three phone IDs and returns the stored `twilio_account_sid` (masked) so we can confirm they match the current secret.
+1. **Update the `TWILIO_ACCOUNT_SID` secret** to the new API Key SID starting with `SKdf66a3`.
 
-2. **Test a single outbound call** — Queue just 1 test call to confirm the full pipeline works end-to-end (ElevenLabs → Twilio → phone rings). Wait for it to process before proceeding.
+2. **Update the `TWILIO_AUTH_TOKEN` secret** to the API Secret that corresponds to the `SKdf66a3` key (if not already done).
 
-3. **If test succeeds, re-queue the remaining 13 applicant calls** — Fresh inserts with `status = 'queued'`, `retry_count = 0`, metadata `triggered_by: 'requeue_verified_v6'`.
+3. **Create a temporary edge function** (`update-elevenlabs-phones`) that:
+   - Lists all 11 unique phone number IDs from the `voice_agents` table
+   - For each, calls `GET /v1/convai/phone-numbers/{id}` to capture the current phone number and label
+   - Deletes the record via `DELETE /v1/convai/phone-numbers/{id}`
+   - Re-imports it via `POST /v1/convai/phone-numbers/import` with the new `SKdf66a3` SID and matching auth token
+   - Returns the old-to-new phone number ID mapping
 
-4. **Clean up** the temporary verification function.
+4. **Update `voice_agents` table** — run UPDATE statements to replace old `agent_phone_number_id` values with the new IDs returned from ElevenLabs.
+
+5. **Redeploy `elevenlabs-outbound-call`** to pick up the new secrets.
+
+6. **Verify** — run a test call to confirm the full pipeline works with the new credentials.
+
+7. **Re-queue the 13 failed applicant calls** if the test succeeds.
+
+8. **Clean up** — delete the temporary edge function.
 
 ### Technical Details
-- Step 1 uses the `ELEVENLABS_API_KEY` secret to query the phone number API directly.
-- Step 2 inserts a single outbound_calls record and monitors its status for ~2 minutes.
-- Step 3 only proceeds after confirmed success from step 2.
-- This staged approach avoids wasting all 3 retries on still-stale credentials.
+- 11 distinct phone number IDs across all voice agents need re-importing
+- ElevenLabs import endpoint: `POST /v1/convai/phone-numbers/import` with `telephony_provider: 'twilio'`, `phone_number`, `twilio_account_sid` (the new SK key), `twilio_auth_token` (the API secret), and `label`
+- The `twilio-client.ts` shared utility reads `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` from env — no code changes needed there since it just uses whatever secret is set
+- Multiple voice agents share the same phone number IDs, so the DB update must handle many-to-one mappings
+
+### Prerequisites
+Before I execute this plan, please confirm:
+- You have already updated **both** `TWILIO_ACCOUNT_SID` (to `SKdf66a3...`) and `TWILIO_AUTH_TOKEN` (to the corresponding API Secret) in the project secrets. If not, please do so first.
 
