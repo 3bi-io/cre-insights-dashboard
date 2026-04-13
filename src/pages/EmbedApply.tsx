@@ -50,10 +50,10 @@ const EmbedApply: React.FC = () => {
 
   // Handle successful submission (called from within the form)
   const handleSubmissionSuccess = useCallback((result: SubmissionResult) => {
-    // Merge context logo with result
     setSubmissionResult({
       ...result,
       clientLogoUrl: result.clientLogoUrl || clientLogoUrl || undefined,
+      organizationId: result.organizationId,
     });
     setIsSubmitted(true);
     
