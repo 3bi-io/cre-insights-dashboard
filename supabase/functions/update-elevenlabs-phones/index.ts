@@ -4,8 +4,8 @@ const corsHeaders = {
 };
 
 const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY')!;
-const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')!;
-const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')!;
+const TWILIO_API_KEY_SID = Deno.env.get('TWILIO_API_KEY_SID')!;
+const TWILIO_API_KEY_SECRET = Deno.env.get('TWILIO_API_KEY_SECRET')!;
 const BASE = 'https://api.elevenlabs.io/v1/convai/phone-numbers';
 
 const headers = { 'xi-api-key': ELEVENLABS_API_KEY };
