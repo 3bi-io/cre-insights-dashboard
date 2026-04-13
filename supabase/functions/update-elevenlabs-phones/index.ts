@@ -4,13 +4,9 @@ const corsHeaders = {
 };
 
 const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY')!;
-const TWILIO_API_KEY_SID = Deno.env.get('TWILIO_API_KEY_SID')!;
-const TWILIO_API_KEY_SECRET = Deno.env.get('TWILIO_API_KEY_SECRET')!;
 const BASE = 'https://api.elevenlabs.io/v1/convai/phone-numbers';
-
 const headers = { 'xi-api-key': ELEVENLABS_API_KEY };
 
-// Data captured from first run - old ID -> phone number + agent assignments
 const PHONES_TO_IMPORT: Record<string, { phone: string; label: string }> = {
   'phnum_7401k96e8sdrepsbdk5j370d01tc': { phone: '+12133297677', label: 'Hayes AI Recruiting - LA' },
   'phnum_5501k910q8qzfnmbmznw6zqx3p8j': { phone: '+12565002580', label: 'Hayes AI Recruiting - AL' },
@@ -30,18 +26,31 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  // Log which SID we're using (first 10 chars only)
-  const sidPreview = TWILIO_API_KEY_SID.slice(0, 10);
+  // Accept sid/token from request body OR fall back to env
+  const body = await req.json().catch(() => ({}));
+  const sid = body.sid || Deno.env.get('TWILIO_API_KEY_SID')!;
+  const token = body.token || Deno.env.get('TWILIO_API_KEY_SECRET')!;
+  
+  // Only import specific phone if provided, otherwise all
+  const phoneFilter = body.phone_filter;
 
-  const results: Record<string, any> = { _using_sid: sidPreview };
+  const sidPreview = sid.slice(0, 10);
+  const tokenPreview = token.slice(0, 6);
+  const tokenLen = token.length;
 
-  for (const [oldId, info] of Object.entries(PHONES_TO_IMPORT)) {
+  const results: Record<string, any> = { _using_sid: sidPreview, _token_preview: tokenPreview, _token_len: tokenLen };
+
+  const entries = phoneFilter 
+    ? Object.entries(PHONES_TO_IMPORT).filter(([_, info]) => info.phone === phoneFilter)
+    : Object.entries(PHONES_TO_IMPORT);
+
+  for (const [oldId, info] of entries) {
     try {
       const importBody = {
         phone_number: info.phone,
         label: info.label,
-        sid: TWILIO_API_KEY_SID,
-        token: TWILIO_API_KEY_SECRET,
+        sid,
+        token,
         provider: 'twilio',
       };
 
