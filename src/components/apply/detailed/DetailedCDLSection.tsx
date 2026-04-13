@@ -108,9 +108,11 @@ export const DetailedCDLSection = React.memo(({
 
       {/* Experience Level - always shown */}
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Commercial Driving Experience</Label>
+        <Label className="text-sm font-medium">
+          Commercial Driving Experience {isFieldRequired('experience') && <span className="text-destructive">*</span>}
+        </Label>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {EXPERIENCE_OPTIONS.map((option) => (
+          {(isFieldEnabled('experienceLowOptions') ? EXPERIENCE_OPTIONS : EXPERIENCE_OPTIONS.filter(o => ['1-2 years', '2-5 years', '5+ years'].includes(o.value))).map((option) => (
             <button
               key={option.value} type="button"
               onClick={() => onInputChange('experience', option.value)}
@@ -132,7 +134,7 @@ export const DetailedCDLSection = React.memo(({
         <div className="space-y-6 pt-4 border-t border-border animate-in slide-in-from-top-2 duration-300">
           {/* CDL Class - always shown when CDL=yes */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium">CDL Class</Label>
+            <Label className="text-sm font-medium">CDL Class {isFieldRequired('cdlClass') && <span className="text-destructive">*</span>}</Label>
             <SelectionButtonGroup
               options={CDL_CLASS_OPTIONS}
               value={formData.cdlClass}
@@ -234,7 +236,7 @@ export const DetailedCDLSection = React.memo(({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {isFieldEnabled('medicalCardExpiration') && (
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Medical Card Expiration</Label>
+              <Label className="text-sm font-medium">Medical Card Expiration {isFieldRequired('medicalCardExpiration') && <span className="text-destructive">*</span>}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("w-full h-14 justify-start text-left font-normal rounded-xl border-2", !formData.medicalCardExpiration && "text-muted-foreground")}>
@@ -272,7 +274,7 @@ export const DetailedCDLSection = React.memo(({
         <div className="space-y-4">
           {isFieldEnabled('accidentHistory') && (
             <div className="space-y-2">
-              <Label htmlFor="accidentHistory" className="text-sm font-medium">Accident History (last 3 years)</Label>
+              <Label htmlFor="accidentHistory" className="text-sm font-medium">Accident History (last 3 years) {isFieldRequired('accidentHistory') && <span className="text-destructive">*</span>}</Label>
               <Textarea id="accidentHistory" value={formData.accidentHistory} onChange={(e) => onInputChange('accidentHistory', e.target.value)}
                 placeholder="Please describe any accidents in the last 3 years, or type 'None'" rows={3}
                 className="text-base rounded-xl border-2 focus:border-primary transition-colors resize-none" />
@@ -280,7 +282,7 @@ export const DetailedCDLSection = React.memo(({
           )}
           {isFieldEnabled('violationHistory') && (
             <div className="space-y-2">
-              <Label htmlFor="violationHistory" className="text-sm font-medium">Moving Violations (last 3 years)</Label>
+              <Label htmlFor="violationHistory" className="text-sm font-medium">Moving Violations (last 3 years) {isFieldRequired('violationHistory') && <span className="text-destructive">*</span>}</Label>
               <Textarea id="violationHistory" value={formData.violationHistory} onChange={(e) => onInputChange('violationHistory', e.target.value)}
                 placeholder="Please describe any moving violations in the last 3 years, or type 'None'" rows={3}
                 className="text-base rounded-xl border-2 focus:border-primary transition-colors resize-none" />

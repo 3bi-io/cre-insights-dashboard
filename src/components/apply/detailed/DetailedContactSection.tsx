@@ -198,7 +198,7 @@ export const DetailedContactSection = React.memo(({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="address1" className="text-sm font-medium">Street Address</Label>
+          <Label htmlFor="address1" className="text-sm font-medium">Street Address {isFieldRequired('address1') && <span className="text-destructive">*</span>}</Label>
           <AddressAutocompleteInput
             id="address1"
             name="address1"

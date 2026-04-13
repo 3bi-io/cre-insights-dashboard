@@ -86,7 +86,7 @@ export const DetailedBackgroundSection = React.memo(({
       {isFieldEnabled('convictedFelony') && (
         <>
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Have you been convicted of a felony?</Label>
+            <Label className="text-sm font-medium">Have you been convicted of a felony? {isFieldRequired('convictedFelony') && <span className="text-destructive">*</span>}</Label>
             <SelectionButtonGroup options={FELONY_OPTIONS} value={formData.convictedFelony} onChange={(value) => onInputChange('convictedFelony', value)} columns={2} />
           </div>
           {formData.convictedFelony === 'yes' && (
