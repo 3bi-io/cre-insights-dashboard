@@ -26,10 +26,10 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  // Accept sid/token from request body OR fall back to env
+  // Use primary Twilio Account SID + Auth Token
   const body = await req.json().catch(() => ({}));
-  const sid = body.sid || Deno.env.get('TWILIO_API_KEY_SID')!;
-  const token = body.token || Deno.env.get('TWILIO_API_KEY_SECRET')!;
+  const sid = body.sid || Deno.env.get('TWILIO_ACCOUNT_SID')!;
+  const token = body.token || Deno.env.get('TWILIO_AUTH_TOKEN')!;
   
   // Only import specific phone if provided, otherwise all
   const phoneFilter = body.phone_filter;
