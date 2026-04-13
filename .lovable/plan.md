@@ -1,61 +1,42 @@
 
 
-# Plan: Church Transportation Required Fields & Customization
+## Plan: Re-queue Failed API Key Outbound Calls
 
-## Summary
-Configure Church Transportation's detailed application form to enforce required fields, remove irrelevant questions, and restrict experience options to 18+ months only.
+### Summary
 
-## Church Transportation Client ID
-`dffb0ef4-07a0-494f-9790-ef9868e143c7` (from existing config)
+13 legitimate applicants had their outbound calls fail due to the invalid ElevenLabs API key (`401 invalid_api_key`). These applicants have no successful or pending calls and need to be re-queued so the system retries them with the new working key.
 
-## Step 1: Database Migration — Insert field configuration rows
+2 test/junk records will be excluded: "Artemas Peck" (+10000000000) and "blah blah" (+11212555999).
 
-Insert rows into `client_application_fields` for Church Transportation:
+### Applicants to Re-queue
 
-**Fields to make required (enabled=true, required=true):**
-| field_key | Purpose |
-|---|---|
-| `dateOfBirth` | Date of Birth |
-| `ssn` | SSN (last 4) |
-| `address1` | Street Address |
-| `experience` | Driving experience |
-| `cdlClass` | CDL Class (when CDL=yes) |
-| `medicalCardExpiration` | Med card expiration |
-| `accidentHistory` | Accident history |
-| `violationHistory` | Moving violations |
-| `employers` | Previous employment |
-| `convictedFelony` | Felony question |
+| Name | Phone | 
+|------|-------|
+| Carolyn Askew | +14796700892 |
+| Dale Bennett | +19379740610 |
+| Darius Brown | +18036698271 |
+| Devon Smith | +12525582521 |
+| Domingo Saucedo | +19038178892 |
+| Donna Davis | +17345529679 |
+| JaMichael Smith | +16592524151 |
+| Joseph Cotton | +11229733983 |
+| Lucy Hulon | +19106510751 |
+| Shaun Nichols | +16823753104 |
+| Stephen Baugus | +19109166514 |
+| Stephen MacNeil | +13863022701 |
+| Steve Lewis | +16787704046 |
 
-**Fields to disable (enabled=false):**
-| field_key | Purpose |
-|---|---|
-| `canWorkWeekends` | Remove — OTR position, weekends required |
-| `canWorkNights` | Remove — OTR position |
-| `experienceLowOptions` | Signal to hide experience options below 18 months |
+### Steps
 
-## Step 2: Code Change — Filter experience options for client config
+1. **Insert 13 new outbound_calls records** with `status = 'queued'`, `retry_count = 0`, preserving the original `application_id`, `voice_agent_id`, `organization_id`, and `phone_number`. Metadata will note `triggered_by: 'requeue_api_key_fix'`.
 
-**File:** `src/components/apply/detailed/DetailedCDLSection.tsx`
+2. **Redeploy the `elevenlabs-outbound-call` edge function** to ensure it picks up the updated `ELEVENLABS_API_KEY` secret (per the deployment standards memory).
 
-Add logic to check `isFieldEnabled('experienceLowOptions')`. When disabled, filter the `EXPERIENCE_OPTIONS` array to only show `'1-2 years'`, `'2-5 years'`, and `'5+ years'` (18+ months).
+3. The existing cron job (runs every minute) will automatically pick up the new queued calls and process them with the working API key.
 
-## Step 3: Code Change — Add required indicators to fields
+### Technical Details
 
-Several fields (experience, accidentHistory, violationHistory, cdlClass, medicalCardExpiration, convictedFelony) currently don't show required asterisks from `isFieldRequired`. Update labels in:
-- `DetailedCDLSection.tsx` — add required indicator to experience, cdlClass, medicalCardExpiration, accidentHistory, violationHistory
-- `DetailedBackgroundSection.tsx` — add required indicator to convictedFelony
-- `DetailedContactSection.tsx` — add required indicator to address1
-
-## Step 4: Code Change — Validation enforcement
-
-**File:** `src/hooks/useDetailedApplicationForm.ts`
-
-The `validateStep` function currently hardcodes validation. It needs to be enhanced to respect `isFieldRequired` from client config. This requires passing the field config into the hook or extending the validation. The simplest approach: pass `clientId` into the hook, use `useClientFieldConfig` internally, and check required fields during validation for each step.
-
-## What the applicant will see
-- Steps 1-2: DOB, SSN, and full address all required with red asterisks
-- Step 3: CDL Class required, med card expiration required, experience shows only "1-2 Years", "2-5 Years", "5+ Years" options; accident/violation history required
-- Step 4: Employment history required (at least 1 employer with full info)
-- Step 5: Felony question required; weekend/night work questions removed entirely
-- Step 6: Consent step unchanged
+- New calls are inserted as fresh queue entries rather than updating the failed records, to preserve the audit trail of the original failures.
+- The `scheduled_at` field will be set to `now()` so they are immediately eligible for processing.
+- The edge function redeploy is critical: without it, the function may still use the cached old API key.
 
