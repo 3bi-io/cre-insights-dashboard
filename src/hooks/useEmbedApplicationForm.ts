@@ -68,6 +68,7 @@ const initialFormData: FormData = {
 interface SubmitResponse {
   message: string;
   applicationId: string;
+  organizationId?: string;
   organizationName?: string;
   hasVoiceAgent?: boolean;
 }
