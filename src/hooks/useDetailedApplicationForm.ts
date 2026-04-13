@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { normalizePhoneNumber } from '@/utils/phoneNormalizer';
 import { format } from 'date-fns';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { useClientFieldConfig } from '@/hooks/useClientFieldConfig';
 import { logger } from '@/lib/logger';
 
 export interface EmployerEntry {
@@ -237,12 +238,13 @@ const deserializeFormData = (data: SerializableFormData): DetailedFormData => ({
   dotPhysicalDate: data.dotPhysicalDate ? new Date(data.dotPhysicalDate) : null,
 });
 
-export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
+export const useDetailedApplicationForm = (clientLogoUrl?: string | null, clientId?: string | null) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const jobId = searchParams.get('job_id') || searchParams.get('job_listing_id') || searchParams.get('jobId') || searchParams.get('job');
+  const { isFieldRequired } = useClientFieldConfig(clientId ?? null);
   
   // Support app_id from URL query params (SMS verification link flow)
   const appIdFromUrl = searchParams.get('app_id') || searchParams.get('appId');
@@ -391,22 +393,45 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
 
   const validateStep = useCallback((step: number): boolean => {
     switch (step) {
-      case 1:
-        return !!(formData.firstName && formData.lastName);
-      case 2:
-        return !!(formData.email && formData.phone);
-      case 3:
-        return !!formData.cdl;
-      case 4:
-        return true; // Experience section is optional
-      case 5:
-        return true; // Background section is optional
+      case 1: {
+        const base = !!(formData.firstName && formData.lastName);
+        if (!base) return false;
+        if (isFieldRequired('dateOfBirth') && !formData.dateOfBirth) return false;
+        if (isFieldRequired('ssn') && !formData.ssn) return false;
+        return true;
+      }
+      case 2: {
+        const base = !!(formData.email && formData.phone);
+        if (!base) return false;
+        if (isFieldRequired('address1') && !formData.address1) return false;
+        return true;
+      }
+      case 3: {
+        if (!formData.cdl) return false;
+        if (isFieldRequired('experience') && !formData.experience) return false;
+        if (formData.cdl === 'yes' && isFieldRequired('cdlClass') && !formData.cdlClass) return false;
+        if (isFieldRequired('medicalCardExpiration') && !formData.medicalCardExpiration) return false;
+        if (isFieldRequired('accidentHistory') && !formData.accidentHistory) return false;
+        if (isFieldRequired('violationHistory') && !formData.violationHistory) return false;
+        return true;
+      }
+      case 4: {
+        if (isFieldRequired('employers')) {
+          const hasEmployer = formData.employers.some(e => e.companyName && e.startDate && e.endDate);
+          if (!hasEmployer) return false;
+        }
+        return true;
+      }
+      case 5: {
+        if (isFieldRequired('convictedFelony') && !formData.convictedFelony) return false;
+        return true;
+      }
       case 6:
         return !!(formData.drugConsent && formData.dataConsent && formData.ageVerification && formData.agreePrivacyPolicy && formData.backgroundCheckConsent);
       default:
         return true;
     }
-  }, [formData]);
+  }, [formData, isFieldRequired]);
 
   const submitApplication = useMutation({
     mutationFn: async (data: DetailedFormData) => {

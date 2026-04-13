@@ -63,7 +63,7 @@ export const DetailedApplicationForm = () => {
     lastSaved,
     restoreDraft,
     discardDraft,
-  } = useDetailedApplicationForm(clientLogoUrl);
+  } = useDetailedApplicationForm(clientLogoUrl, clientId);
 
   const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);
 
