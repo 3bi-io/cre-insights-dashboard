@@ -1249,6 +1249,40 @@ async function processOutboundCall(
       elevenLabsData = { status: 'initiated' };
     }
 
+    // Detect body-level failures (ElevenLabs returns HTTP 200 but success:false with Twilio auth errors)
+    if ((elevenLabsData as Record<string, unknown>).success === false) {
+      const bodyErrorMsg = (elevenLabsData as Record<string, unknown>).message || 'Unknown body-level error';
+      logger.error('ElevenLabs returned success:false in 200 response', { message: bodyErrorMsg });
+
+      if (callRecord) {
+        const currentRetryCount = (callRecord.retry_count as number) || 0;
+        if (currentRetryCount < maxRetries) {
+          await supabase
+            .from('outbound_calls')
+            .update({
+              status: 'queued',
+              retry_count: currentRetryCount + 1,
+              error_message: `ElevenLabs body error: ${String(bodyErrorMsg).substring(0, 500)}`,
+              scheduled_at: new Date(Date.now() + (currentRetryCount + 1) * 15 * 60 * 1000).toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', callRecord.id);
+        } else {
+          await supabase
+            .from('outbound_calls')
+            .update({
+              status: 'failed',
+              retry_count: currentRetryCount + 1,
+              error_message: `ElevenLabs body error after ${maxRetries} retries: ${String(bodyErrorMsg).substring(0, 500)}`,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', callRecord.id);
+        }
+      }
+
+      return { success: false, error: 'ElevenLabs body-level failure', details: String(bodyErrorMsg) };
+    }
+
     // Normalize callSid (ElevenLabs returns camelCase "callSid", not snake_case)
     const callSid = elevenLabsData.callSid || elevenLabsData.call_sid || null;
 
