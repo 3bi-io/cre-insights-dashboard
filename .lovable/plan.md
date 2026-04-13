@@ -1,26 +1,37 @@
 
 
-## Plan: Re-push Updated Twilio SID to ElevenLabs and Re-queue Calls (Round 5)
+## Plan: Add Church Transportation ZipRecruiter Conversion Pixel to Thank You Pages
 
-### Problem
-The Twilio Account SID was updated, but the three ElevenLabs phone number records still have the old SID. ElevenLabs uses those stored credentials when placing calls, causing the persistent `HTTP 401: Authenticate` error.
+### What This Does
+Adds a ZipRecruiter conversion tracking pixel (`enc_account_id=4987c3a9`) that fires **only** when a Church Transportation applicant completes their application **and** the traffic source is ZipRecruiter. This tracks actual conversions, not clicks.
 
-### Steps
+### How It Works
 
-1. **Update ElevenLabs phone records with new Twilio SID** — Create and run a temporary edge function that PATCHes all three ElevenLabs phone IDs with the current `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` from project secrets:
-   - `phnum_0001k48rgfw7fbfbr0p6njkt54n5` (Pemberton, +12149721334)
-   - `phnum_4301k2678yq4e5va2pee8e11wdjz` (Danny Herman, +12512775924)
-   - `phnum_5301khcb0877fkpt3t3e57qd0gba` (James Burg, +15864745525)
+The pixel will render as an invisible 1x1 image on the thank you page only when two conditions are met:
+1. The applicant belongs to **Church Transportation** (org ID: `dffb0ef4-07a0-494f-9790-ef9868e143c7`)
+2. The traffic source is **ZipRecruiter** (detected via `utm_source` parameter)
 
-2. **Verify** each phone record via GET to confirm the updated SID is active.
+### Changes
 
-3. **Redeploy `elevenlabs-outbound-call`** to pick up the new `TWILIO_ACCOUNT_SID` secret.
+**1. Create `ChurchZipRecruiterPixel` component** (`src/components/tracking/ChurchZipRecruiterPixel.tsx`)
+- Renders `<img src="https://track.ziprecruiter.com/conversion?enc_account_id=4987c3a9" width="1" height="1" />` with off-screen positioning
+- Only renders when `organizationId` matches Church Transportation AND `source` contains "ziprecruiter"
 
-4. **Re-queue the 13 failed calls** with fresh inserts (`status = 'queued'`, `retry_count = 0`, metadata `triggered_by: 'requeue_twilio_sid_fix_v5'`).
+**2. Pass `source` and `organizationId` through to ThankYou page**
 
-5. **Clean up** the temporary edge function.
+- **`src/hooks/useApplicationForm.ts`**: Add `source` (from URL `utm_source` param) and `organizationId` to the `/thank-you` navigation state
+- **`src/hooks/useDetailedApplicationForm.ts`**: Same — add `source` and `organizationId` to navigation state
+- **`src/pages/ThankYou.tsx`**: Extract `source` and `organizationId` from state, render `ChurchZipRecruiterPixel` conditionally
+
+**3. Embed flow** (`src/components/apply/EmbedThankYou.tsx` + `src/pages/EmbedApply.tsx`)
+- Add `source` and `organizationId` props to `EmbedThankYou`
+- Pass them through from `EmbedApply` submission result
+- Render the pixel conditionally in `EmbedThankYou`
 
 ### Technical Details
-- Uses ElevenLabs API `PATCH /v1/convai/phone-numbers/{id}` with `telephony_provider: 'twilio'`, the new `twilio_account_sid`, `twilio_auth_token`, and `phone_number`.
-- Fresh DB inserts preserve the audit trail of all prior failed rounds.
+- Church Transportation org ID: `dffb0ef4-07a0-494f-9790-ef9868e143c7`
+- Pixel: `https://track.ziprecruiter.com/conversion?enc_account_id=4987c3a9`
+- Source detection: checks `utm_source` URL param (matching existing pattern in `useSourceDetection.ts`)
+- The existing `ZipRecruiterPixel` (`enc_account_id=8e21fb39`) remains unchanged on the apply pages — it serves a different account
+- This new pixel fires post-conversion on thank you pages only, per ZipRecruiter's instructions
 
