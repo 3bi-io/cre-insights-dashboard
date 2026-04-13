@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
         importBody.agent_id = agentId;
       }
 
-      const importRes = await fetch(`${BASE}/import`, {
+      const importRes = await fetch(`${BASE}/create`, {
         method: 'POST',
         headers: { ...headers, 'Content-Type': 'application/json' },
         body: JSON.stringify(importBody),
