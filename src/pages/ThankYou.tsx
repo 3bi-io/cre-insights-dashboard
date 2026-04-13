@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, Phone, Clock, ClipboardList } from "lucide-react";
 import { SEO } from '@/components/SEO';
 import { LogoAvatar, LogoAvatarImage } from '@/components/ui/logo-avatar';
+import ChurchZipRecruiterPixel from '@/components/tracking/ChurchZipRecruiterPixel';
 
 interface ThankYouState {
   organizationName?: string;
+  organizationId?: string;
   hasVoiceAgent?: boolean;
   logoUrl?: string;
   applicationId?: string;
+  source?: string;
   formData?: {
     firstName?: string;
     lastName?: string;
@@ -39,9 +42,11 @@ const ThankYou = () => {
   
   const urlParams = new URLSearchParams(location.search);
   const organizationName = state?.organizationName || 'our team';
+  const organizationId = state?.organizationId;
   const hasVoiceAgent = state?.hasVoiceAgent ?? false;
   const logoUrl = state?.logoUrl;
   const applicationId = state?.applicationId || urlParams.get('app_id');
+  const source = state?.source;
   const formData = state?.formData;
 
   const handleContinueToFullApplication = () => {
@@ -110,6 +115,9 @@ const ThankYou = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Church Transportation ZipRecruiter conversion pixel */}
+              <ChurchZipRecruiterPixel organizationId={organizationId} source={source} />
 
               {/* Continue to Full Application CTA */}
               {(formData || applicationId) && (

@@ -3,12 +3,15 @@ import { CheckCircle, Phone, Mail, Clock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { LogoAvatar, LogoAvatarImage } from '@/components/ui/logo-avatar';
 import { useEmbedMode } from '@/hooks/useEmbedMode';
+import ChurchZipRecruiterPixel from '@/components/tracking/ChurchZipRecruiterPixel';
 
 interface EmbedThankYouProps {
   applicationId?: string;
   clientName?: string;
   clientLogoUrl?: string;
   hasVoiceAgent?: boolean;
+  organizationId?: string;
+  source?: string;
 }
 
 export const EmbedThankYou: React.FC<EmbedThankYouProps> = ({
@@ -16,6 +19,8 @@ export const EmbedThankYou: React.FC<EmbedThankYouProps> = ({
   clientName,
   clientLogoUrl,
   hasVoiceAgent = false,
+  organizationId,
+  source,
 }) => {
   const { notifyParent, hideBranding } = useEmbedMode();
 
@@ -96,6 +101,9 @@ export const EmbedThankYou: React.FC<EmbedThankYouProps> = ({
               Reference: {applicationId.slice(0, 8).toUpperCase()}
             </p>
           )}
+
+          {/* Church Transportation ZipRecruiter conversion pixel */}
+          <ChurchZipRecruiterPixel organizationId={organizationId} source={source} />
 
           {/* Powered by branding */}
           {!hideBranding && (

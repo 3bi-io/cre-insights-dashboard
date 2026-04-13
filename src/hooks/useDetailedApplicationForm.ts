@@ -585,8 +585,10 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null, client
       navigate('/thank-you', {
         state: {
           organizationName: data.organizationName,
+          organizationId: data.organizationId,
           hasVoiceAgent: data.hasVoiceAgent,
-          logoUrl: clientLogoUrl
+          logoUrl: clientLogoUrl,
+          source: searchParams.get('utm_source') || searchParams.get('utmSource') || searchParams.get('source') || '',
         }
       });
     },

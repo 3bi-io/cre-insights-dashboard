@@ -13,6 +13,7 @@ interface SubmissionResult {
   clientName?: string;
   clientLogoUrl?: string;
   hasVoiceAgent?: boolean;
+  organizationId?: string;
 }
 
 /**
@@ -73,6 +74,8 @@ const EmbedApply: React.FC = () => {
           clientName={submissionResult.clientName}
           clientLogoUrl={submissionResult.clientLogoUrl}
           hasVoiceAgent={submissionResult.hasVoiceAgent}
+          organizationId={submissionResult.organizationId}
+          source={source}
         />
       </div>
     );

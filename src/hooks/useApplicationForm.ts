@@ -242,9 +242,11 @@ export const useApplicationForm = (clientLogoUrl?: string | null) => {
       navigate('/thank-you', { 
         state: { 
           organizationName: data.organizationName,
+          organizationId: data.organizationId,
           hasVoiceAgent: data.hasVoiceAgent,
           logoUrl: clientLogoUrl,
           applicationId: data.applicationId,
+          source: formData.utm_source,
           formData: {
             firstName: formData.firstName,
             lastName: formData.lastName,
