@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { LogoAvatar, LogoAvatarImage } from '@/components/ui/logo-avatar';
 import { useEmbedMode } from '@/hooks/useEmbedMode';
 import ChurchZipRecruiterPixel from '@/components/tracking/ChurchZipRecruiterPixel';
+import AdmiralMerchantsJobCastPixel from '@/components/tracking/AdmiralMerchantsJobCastPixel';
 
 interface EmbedThankYouProps {
   applicationId?: string;
@@ -12,6 +13,7 @@ interface EmbedThankYouProps {
   hasVoiceAgent?: boolean;
   organizationId?: string;
   source?: string;
+  clientId?: string;
 }
 
 export const EmbedThankYou: React.FC<EmbedThankYouProps> = ({
@@ -21,6 +23,7 @@ export const EmbedThankYou: React.FC<EmbedThankYouProps> = ({
   hasVoiceAgent = false,
   organizationId,
   source,
+  clientId,
 }) => {
   const { notifyParent, hideBranding } = useEmbedMode();
 
@@ -104,6 +107,7 @@ export const EmbedThankYou: React.FC<EmbedThankYouProps> = ({
 
           {/* Church Transportation ZipRecruiter conversion pixel */}
           <ChurchZipRecruiterPixel organizationId={organizationId} source={source} />
+          <AdmiralMerchantsJobCastPixel clientId={clientId} />
 
           {/* Powered by branding */}
           {!hideBranding && (

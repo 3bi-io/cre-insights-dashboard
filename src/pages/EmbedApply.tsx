@@ -14,6 +14,7 @@ interface SubmissionResult {
   clientLogoUrl?: string;
   hasVoiceAgent?: boolean;
   organizationId?: string;
+  clientId?: string;
 }
 
 /**
@@ -26,7 +27,7 @@ interface SubmissionResult {
 const EmbedApply: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { hideBranding, notifyParent, sendHeight } = useEmbedMode();
-  const { clientName, clientLogoUrl, jobTitle, location, source, industryVertical, isLoading: contextLoading } = useApplyContext();
+  const { clientName, clientLogoUrl, clientId, jobTitle, location, source, industryVertical, isLoading: contextLoading } = useApplyContext();
   const { setTheme } = useTheme();
 
   // Track submission state for inline thank you
@@ -54,6 +55,7 @@ const EmbedApply: React.FC = () => {
       ...result,
       clientLogoUrl: result.clientLogoUrl || clientLogoUrl || undefined,
       organizationId: result.organizationId,
+      clientId: clientId || undefined,
     });
     setIsSubmitted(true);
     
@@ -76,6 +78,7 @@ const EmbedApply: React.FC = () => {
           hasVoiceAgent={submissionResult.hasVoiceAgent}
           organizationId={submissionResult.organizationId}
           source={source}
+          clientId={submissionResult.clientId}
         />
       </div>
     );
