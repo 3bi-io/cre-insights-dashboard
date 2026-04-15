@@ -1,42 +1,51 @@
 
 
-## Plan: Add ZipRecruiter Tracking Pixels for Danny Herman, Pemberton, and James Burg
+## Plan: Attach Outbound Voice Agent Phone to Admiral Merchants & Verify System
 
-### Summary
-Add ZipRecruiter conversion pixels that fire on the thank-you page for three Hayes clients, only when the traffic source is ZipRecruiter (matching the Church Transportation pattern).
+### Current State
+- **Admiral Merchants outbound agent** (`8a10a805-fcaf-4e8f-b5e5-423f7025afc3`) exists with `elevenlabs_agent_id: agent_9801knm3vmjvfh181zxfgjqpbnb3`, `is_outbound_enabled: true`, but **`agent_phone_number_id` is NULL** — outbound calls cannot route.
+- **Inbound agent** (`a21d2baf-3e97-455b-9dc0-225cacb861c7`) exists and is active.
+- **Email templates** already cover all 5 lifecycle stages (application_received, status_update, interview_invitation, offer, rejection) with branded headers, client logo support, and "Complete Your Full Application" CTAs. These are fully functional via the `send-application-email` edge function.
+- **Cron jobs** are all healthy:
+  - `process-outbound-call-queue` — every 1 minute ✅
+  - `sync-stuck-outbound-calls` — every 3 minutes ✅
+  - All other crons (feed sync, digest, indexing, syndication) running correctly ✅
 
-### Client Details
-| Client | Client ID | ZipRecruiter Account ID |
-|--------|-----------|------------------------|
-| Danny Herman Trucking | `1d54e463-4d7f-4a05-8189-3e33d0586dea` | `d1e4d672` |
-| Pemberton Truck Lines | `67cadf11-8cce-41c6-8e19-7d2bb0be3b03` | `8e21fb39` |
-| James Burg Trucking | `b2a29507-32a6-4f5e-85d6-a7e6ffac3c52` | `d21c34cc` |
+### What Needs to Happen
 
-### What Changes
+**1. Update Admiral Merchants outbound agent with phone number ID**
 
-**1. Create `ClientZipRecruiterPixels` component**
+Run a SQL update on `voice_agents` to set `agent_phone_number_id = 'phnum_8901kp9fhf1xe6htj5mqx6jgqf7x'` for the outbound agent record (`id: 8a10a805-fcaf-4e8f-b5e5-423f7025afc3`).
 
-New file: `src/components/tracking/ClientZipRecruiterPixels.tsx`
+This is the single blocking issue — without the phone number ID, the outbound call edge function cannot initiate calls for Admiral Merchants applicants.
 
-- Takes `clientId` and `source` as props
-- Contains a map of client IDs to ZipRecruiter `enc_account_id` values
-- Renders only when the client matches AND source includes "ziprecruiter"
-- Single component handles all three clients (avoids 3 separate files)
+**2. Verify email template delivery for Admiral Merchants**
 
-**2. Add pixel to both thank-you pages**
+No code changes needed. The existing `send-application-email` edge function already:
+- Sends branded emails with Admiral Merchants' logo and company name
+- Includes the "Complete Your Full Application" CTA with pre-filled link
+- Covers all 5 email types (received, status update, interview, offer, rejection)
 
-- `src/pages/ThankYou.tsx` — render `ClientZipRecruiterPixels` with `clientId` and `source`
-- `src/components/apply/EmbedThankYou.tsx` — render `ClientZipRecruiterPixels` with `clientId` and `source`
+**3. Confirm cron schedule (already verified)**
 
-**3. Clean up existing `ZipRecruiterPixel.tsx`**
+All crons are running at optimal frequencies. No changes needed.
 
-The existing generic `ZipRecruiterPixel.tsx` uses Pemberton's same account ID (`8e21fb39`) with no client/source gating. It will be removed since the new component supersedes it.
+### Summary of Changes
 
-### Files Modified
-| File | Change |
-|------|--------|
-| `src/components/tracking/ClientZipRecruiterPixels.tsx` | New — unified ZipRecruiter pixel component |
-| `src/pages/ThankYou.tsx` | Add new pixel component |
-| `src/components/apply/EmbedThankYou.tsx` | Add new pixel component |
-| `src/components/tracking/ZipRecruiterPixel.tsx` | Remove (superseded) |
+| Action | Detail |
+|--------|--------|
+| **DB Update** | Set `agent_phone_number_id = 'phnum_8901kp9fhf1xe6htj5mqx6jgqf7x'` on outbound voice agent `8a10a805-fcaf-4e8f-b5e5-423f7025afc3` |
+| **Email templates** | Already built — no changes needed |
+| **Cron jobs** | Already running — no changes needed |
+
+### Technical Detail
+The update will be executed via the Supabase insert tool (data update, not schema change):
+```sql
+UPDATE voice_agents 
+SET agent_phone_number_id = 'phnum_8901kp9fhf1xe6htj5mqx6jgqf7x',
+    updated_at = now()
+WHERE id = '8a10a805-fcaf-4e8f-b5e5-423f7025afc3';
+```
+
+After this single update, Admiral Merchants outbound calls will be fully operational — new applicants will be automatically queued for screening calls by the existing cron infrastructure.
 
