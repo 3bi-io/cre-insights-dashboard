@@ -6,6 +6,7 @@ import { CheckCircle, Phone, Clock, ClipboardList } from "lucide-react";
 import { SEO } from '@/components/SEO';
 import { LogoAvatar, LogoAvatarImage } from '@/components/ui/logo-avatar';
 import ChurchZipRecruiterPixel from '@/components/tracking/ChurchZipRecruiterPixel';
+import AdmiralMerchantsJobCastPixel from '@/components/tracking/AdmiralMerchantsJobCastPixel';
 
 interface ThankYouState {
   organizationName?: string;
@@ -14,6 +15,7 @@ interface ThankYouState {
   logoUrl?: string;
   applicationId?: string;
   source?: string;
+  clientId?: string;
   formData?: {
     firstName?: string;
     lastName?: string;
@@ -47,6 +49,7 @@ const ThankYou = () => {
   const logoUrl = state?.logoUrl;
   const applicationId = state?.applicationId || urlParams.get('app_id');
   const source = state?.source;
+  const clientId = state?.clientId;
   const formData = state?.formData;
 
   const handleContinueToFullApplication = () => {
@@ -118,6 +121,7 @@ const ThankYou = () => {
 
               {/* Church Transportation ZipRecruiter conversion pixel */}
               <ChurchZipRecruiterPixel organizationId={organizationId} source={source} />
+              <AdmiralMerchantsJobCastPixel clientId={clientId} />
 
               {/* Continue to Full Application CTA */}
               {(formData || applicationId) && (

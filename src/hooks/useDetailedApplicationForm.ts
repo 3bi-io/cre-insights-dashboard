@@ -589,6 +589,7 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null, client
           hasVoiceAgent: data.hasVoiceAgent,
           logoUrl: clientLogoUrl,
           source: searchParams.get('utm_source') || searchParams.get('utmSource') || searchParams.get('source') || '',
+          clientId: searchParams.get('client_id') || searchParams.get('clientId') || '',
         }
       });
     },

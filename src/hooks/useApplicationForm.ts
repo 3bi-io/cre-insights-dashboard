@@ -248,6 +248,7 @@ export const useApplicationForm = (clientLogoUrl?: string | null) => {
           logoUrl: clientLogoUrl,
           applicationId: data.applicationId,
           source: formData.utm_source,
+          clientId: formData.client_id,
           formData: {
             firstName: formData.firstName,
             lastName: formData.lastName,
