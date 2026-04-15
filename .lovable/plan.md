@@ -1,43 +1,42 @@
 
 
-## Plan: Add CDL JobCast Tracking Pixel for Admiral Merchants
+## Plan: Add ZipRecruiter Tracking Pixels for Danny Herman, Pemberton, and James Burg
 
 ### Summary
-Add a conversion tracking pixel that fires on the thank you page whenever an Admiral Merchants applicant submits their application. The pixel will load an invisible iframe/image pointing to `https://cdljobcast.com/jobform?job_id=y5eVQj5dEP`.
+Add ZipRecruiter conversion pixels that fire on the thank-you page for three Hayes clients, only when the traffic source is ZipRecruiter (matching the Church Transportation pattern).
+
+### Client Details
+| Client | Client ID | ZipRecruiter Account ID |
+|--------|-----------|------------------------|
+| Danny Herman Trucking | `1d54e463-4d7f-4a05-8189-3e33d0586dea` | `d1e4d672` |
+| Pemberton Truck Lines | `67cadf11-8cce-41c6-8e19-7d2bb0be3b03` | `8e21fb39` |
+| James Burg Trucking | `b2a29507-32a6-4f5e-85d6-a7e6ffac3c52` | `d21c34cc` |
 
 ### What Changes
 
-**1. Pass `clientId` through to thank you pages**
+**1. Create `ClientZipRecruiterPixels` component**
 
-Currently, `client_id` exists in the form data but is not forwarded to the thank you page state. We need to thread it through:
+New file: `src/components/tracking/ClientZipRecruiterPixels.tsx`
 
-- **`useApplicationForm.ts`** — add `clientId: formData.client_id` to the navigate state
-- **`useDetailedApplicationForm.ts`** — add `clientId` to the navigate state  
-- **`ThankYouState` interface in `ThankYou.tsx`** — add `clientId?: string`
-- **`EmbedApply.tsx`** — add `clientId` to `SubmissionResult` interface and pass to `EmbedThankYou`
-- **`EmbedThankYou.tsx`** — accept `clientId` prop
+- Takes `clientId` and `source` as props
+- Contains a map of client IDs to ZipRecruiter `enc_account_id` values
+- Renders only when the client matches AND source includes "ziprecruiter"
+- Single component handles all three clients (avoids 3 separate files)
 
-**2. Create `AdmiralMerchantsJobCastPixel` component**
+**2. Add pixel to both thank-you pages**
 
-New file: `src/components/tracking/AdmiralMerchantsJobCastPixel.tsx`
+- `src/pages/ThankYou.tsx` — render `ClientZipRecruiterPixels` with `clientId` and `source`
+- `src/components/apply/EmbedThankYou.tsx` — render `ClientZipRecruiterPixels` with `clientId` and `source`
 
-- Follows exact same pattern as `ChurchZipRecruiterPixel`
-- Renders only when `clientId === '53d7dd20-d743-4d34-93e9-eb7175c39da1'` (Admiral Merchants)
-- Fires on ALL Admiral Merchants submissions regardless of source
-- Renders a 1x1 hidden image pointing to `https://cdljobcast.com/jobform?job_id=y5eVQj5dEP`
+**3. Clean up existing `ZipRecruiterPixel.tsx`**
 
-**3. Add pixel to both thank you pages**
-
-- `src/pages/ThankYou.tsx` — render `AdmiralMerchantsJobCastPixel` alongside existing Church pixel
-- `src/components/apply/EmbedThankYou.tsx` — render `AdmiralMerchantsJobCastPixel` alongside existing Church pixel
+The existing generic `ZipRecruiterPixel.tsx` uses Pemberton's same account ID (`8e21fb39`) with no client/source gating. It will be removed since the new component supersedes it.
 
 ### Files Modified
 | File | Change |
 |------|--------|
-| `src/components/tracking/AdmiralMerchantsJobCastPixel.tsx` | New — tracking pixel component |
-| `src/hooks/useApplicationForm.ts` | Pass `clientId` to thank you state |
-| `src/hooks/useDetailedApplicationForm.ts` | Pass `clientId` to thank you state |
-| `src/pages/ThankYou.tsx` | Accept `clientId`, render new pixel |
-| `src/components/apply/EmbedThankYou.tsx` | Accept `clientId`, render new pixel |
-| `src/pages/EmbedApply.tsx` | Thread `clientId` through to EmbedThankYou |
+| `src/components/tracking/ClientZipRecruiterPixels.tsx` | New — unified ZipRecruiter pixel component |
+| `src/pages/ThankYou.tsx` | Add new pixel component |
+| `src/components/apply/EmbedThankYou.tsx` | Add new pixel component |
+| `src/components/tracking/ZipRecruiterPixel.tsx` | Remove (superseded) |
 
