@@ -5,6 +5,7 @@ import { LogoAvatar, LogoAvatarImage } from '@/components/ui/logo-avatar';
 import { useEmbedMode } from '@/hooks/useEmbedMode';
 import ChurchZipRecruiterPixel from '@/components/tracking/ChurchZipRecruiterPixel';
 import AdmiralMerchantsJobCastPixel from '@/components/tracking/AdmiralMerchantsJobCastPixel';
+import ClientZipRecruiterPixels from '@/components/tracking/ClientZipRecruiterPixels';
 
 interface EmbedThankYouProps {
   applicationId?: string;
@@ -108,6 +109,7 @@ export const EmbedThankYou: React.FC<EmbedThankYouProps> = ({
           {/* Church Transportation ZipRecruiter conversion pixel */}
           <ChurchZipRecruiterPixel organizationId={organizationId} source={source} />
           <AdmiralMerchantsJobCastPixel clientId={clientId} />
+          <ClientZipRecruiterPixels clientId={clientId} source={source} />
 
           {/* Powered by branding */}
           {!hideBranding && (

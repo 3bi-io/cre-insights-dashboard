@@ -7,6 +7,7 @@ import { SEO } from '@/components/SEO';
 import { LogoAvatar, LogoAvatarImage } from '@/components/ui/logo-avatar';
 import ChurchZipRecruiterPixel from '@/components/tracking/ChurchZipRecruiterPixel';
 import AdmiralMerchantsJobCastPixel from '@/components/tracking/AdmiralMerchantsJobCastPixel';
+import ClientZipRecruiterPixels from '@/components/tracking/ClientZipRecruiterPixels';
 
 interface ThankYouState {
   organizationName?: string;
@@ -122,6 +123,7 @@ const ThankYou = () => {
               {/* Church Transportation ZipRecruiter conversion pixel */}
               <ChurchZipRecruiterPixel organizationId={organizationId} source={source} />
               <AdmiralMerchantsJobCastPixel clientId={clientId} />
+              <ClientZipRecruiterPixels clientId={clientId} source={source} />
 
               {/* Continue to Full Application CTA */}
               {(formData || applicationId) && (
