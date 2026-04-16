@@ -56,6 +56,7 @@ const SuperAdminFeeds = () => {
   const availableUsers = [
     // Hayes & Major National Carriers
     { value: 'danny_herman_trucking', label: 'Danny Herman Trucking (Hayes)' },
+    { value: 'trucks_for_you_inc', label: 'Trucks For You Inc (Hayes)' },
     { value: 'prime_inc', label: 'Prime Inc' },
     { value: 'schneider', label: 'Schneider' },
     { value: 'swift_transportation', label: 'Swift Transportation' },
