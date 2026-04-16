@@ -1,36 +1,24 @@
 
 
-## Plan: Import CDL Job Cast Jobs for Trucks For You Inc
+## Plan: Update Trucks For You Inc Logo
 
-### What Was Found
-
-- **CDL Job Cast feed user**: `trucks_for_you_inc` — confirmed active with multiple OTR CDL-A job listings
-- **Client**: Trucks For You Inc (ID: `cc4a05e9-2c87-4e71-b7f5-49d8bd709540`), Hayes organization
-- **Current job count**: 0 active listings
-- **Missing from UI**: `trucks_for_you_inc` is not in the carrier dropdown on the Super Admin Feeds page
+### What was found
+- **Website**: drivetfy.com has a navy blue/white "TFY - TRUCKS FOR YOU" logo
+- **Client**: Trucks For You Inc (ID: `cc4a05e9-2c87-4e71-b7f5-49d8bd709540`) — currently has no logo
+- **Logo URL**: Available from Wix static hosting
 
 ### Steps
 
-**1. Add "Trucks For You Inc" to the carrier dropdown**
+**1. Download the logo and upload to Supabase Storage**
 
-In `src/pages/SuperAdminFeeds.tsx`, add `{ value: 'trucks_for_you_inc', label: 'Trucks For You Inc (Hayes)' }` to the `availableUsers` array so it can be selected from the feed UI going forward.
+Download the TFY logo image from the Wix CDN, upload it to the `client-logos` storage bucket with the filename `cc4a05e9-2c87-4e71-b7f5-49d8bd709540-logo.jpg`.
 
-**2. Trigger the feed import via the existing edge function**
+**2. Update the client record**
 
-Call the `import-jobs-from-feed` edge function with:
-- `feedUrl`: `https://cdljobcast.com/client/recruiting/getfeeds?user=trucks_for_you_inc&board=AIRecruiter`
-- `organizationId`: `84214b48-7b51-45bc-ad7f-723bcf50466c` (Hayes)
-- `clientId`: `cc4a05e9-2c87-4e71-b7f5-49d8bd709540` (Trucks For You Inc)
+Use the insert tool to set `logo_url` on the `clients` table for Trucks For You Inc to the new Supabase Storage public URL.
 
-This will parse the XML feed, create job listings, and map them all to the Trucks For You Inc client.
-
-**3. Verify import results**
-
-Query the database to confirm jobs were imported and correctly mapped to the client.
-
-### Files Modified
-
-| File | Change |
-|------|--------|
-| `src/pages/SuperAdminFeeds.tsx` | Add `trucks_for_you_inc` to carrier dropdown |
+### Technical Details
+- Storage bucket: `client-logos` (existing)
+- Logo source: `https://static.wixstatic.com/media/ec2930_4a3897f848fd4c05a3aefe8fd391a2f6~mv2.jpg/v1/fill/w_297,h_149,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/ec2930_4a3897f848fd4c05a3aefe8fd391a2f6~mv2.jpg`
+- No code changes needed — this is a data-only operation
 
