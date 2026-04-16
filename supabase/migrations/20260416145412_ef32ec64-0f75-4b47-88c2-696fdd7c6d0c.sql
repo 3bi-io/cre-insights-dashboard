@@ -1,0 +1,1 @@
+UPDATE job_listings SET apply_url = NULL, updated_at = now() WHERE client_id = 'cc4a05e9-2c87-4e71-b7f5-49d8bd709540' AND status = 'active';
