@@ -1,0 +1,24 @@
+
+UPDATE clients SET logo_url = 'https://aplcargo.com/wp-content/uploads/2024/11/cropped-Untitled-1-1.png' WHERE id = '1ce7fa3d-2ce2-4c7b-adaf-3923134f137b';
+UPDATE clients SET logo_url = 'https://images.contactout.com/companies/3afb0fbb2b5b5363a9bcc6b5ed5d1eaf' WHERE id = '41265ca1-af0f-4fce-99c6-36e9e93d54f6';
+UPDATE clients SET logo_url = 'https://www.crengland.com/wp-content/uploads/2023/08/cr-england-logo-sm.png' WHERE id = '77f15300-8eb6-450b-81f6-9d9db811d138';
+UPDATE clients SET logo_url = 'https://www.cretecarrier.com/wp-content/uploads/2021/06/crete-carrier-logo.png' WHERE id = '052d81a5-ee70-46ba-b9c9-6ca29a3ce635';
+UPDATE clients SET logo_url = 'https://dartamerica.com/wp-content/uploads/2023/01/dart-america-logo.png' WHERE id = '9bf93c57-fa33-48e1-9816-0749fbd54ebc';
+UPDATE clients SET logo_url = 'https://images.contactout.com/companies/2f73d28ca5253e90836dad6e230c25a6' WHERE id = '08adb34a-8e9d-4619-a81e-3e0686a08b14';
+UPDATE clients SET logo_url = 'https://static1.squarespace.com/static/55bb7bf2e4b05cd90b04ab9a/t/5f4a0e0ed93e4b4d8ff7fdb8/1598689804646/HeartlandExpress_logo_CMYK.png' WHERE id = 'ebe0ca21-f7db-45a4-ab64-c822cf7a851a';
+UPDATE clients SET logo_url = 'https://hogan1.com/wp-content/themes/hogan/assets/public/images/logo/logo-primary.svg' WHERE id = '785d8211-3b13-4e52-a607-08c0865a1758';
+UPDATE clients SET logo_url = 'https://applyai.jobs/logos/hubgroup-logo.png' WHERE id = '6e244c93-b24c-46db-875d-e5869798b11e';
+UPDATE clients SET logo_url = 'https://imccompanies.com/images/imc-logo.png' WHERE id = '163d0554-414c-47b2-8f8a-c355fe530382';
+UPDATE clients SET logo_url = 'https://jbhunt.com/content/experience-fragments/jbhunt/primary-nav/master/_jcr_content/root/main-par/header_v3/image.coreimg.png/1745513542586/jbh-logo-hires.png' WHERE id = 'f819a3a7-16bb-4244-8a92-e17c3f1ec777';
+UPDATE clients SET logo_url = 'https://www.rothrocktrucking.com/wp-content/uploads/2018/01/jl-rothrock-logo.png' WHERE id = 'b28ec4ae-81b6-4a7a-b6b9-9ab891dd67e7';
+UPDATE clients SET logo_url = 'https://jmtank.com/wp-content/uploads/2021/01/JM-Tank-Lines-Logo.png' WHERE id = '270edd7a-6ce7-4df3-8436-637124eb4c3f';
+UPDATE clients SET logo_url = 'https://jrschugel.com/wp-content/uploads/2022/04/JR-Schugel-Logo-New.png' WHERE id = '839aad92-c639-4514-bfd1-494f5d1fef31';
+UPDATE clients SET logo_url = 'https://www.kottke-trucking.com/wp-content/uploads/2024/02/KottkeTrucking_Horizontal_Blue.png' WHERE id = 'c9bc51c1-e226-4032-aea9-15f899c85741';
+UPDATE clients SET logo_url = 'https://www.marten.com/wp-content/uploads/2022/02/marten-logo.png' WHERE id = '74929fcd-75b1-4293-95cb-2f13b6c69581';
+UPDATE clients SET logo_url = 'https://meltontruck.com/wp-content/uploads/2024/01/melton-logo.png' WHERE id = '2da40a81-0731-411e-9e09-953d2c13bd46';
+UPDATE clients SET logo_url = 'https://adai-brand-assets.s3.amazonaws.com/assets/267/Messer-logo-400x400_1721268025.png' WHERE id = 'c0c385a2-432c-4b1b-99be-129359025cea';
+UPDATE clients SET logo_url = 'https://www.ryder.com/content/dam/ryder/logos/ryder-logo.png' WHERE id = '645607cf-14e4-4def-b972-ce542177bb01';
+UPDATE clients SET logo_url = 'https://soartransport.com/wp-content/themes/hightower_wp/images/logo.png' WHERE id = '92b63c42-f065-4583-80b1-5e37a7be0e46';
+UPDATE clients SET logo_url = 'https://systemtrans.com/files/2017/10/System-Transport_Logo_RGB_Full-Color-50px.png' WHERE id = '50acb54b-ad28-4443-9edb-e9b3aadad16d';
+UPDATE clients SET logo_url = 'https://companieslogo.com/img/orig/USX_BIG-106f90c5.png?t=1720244494' WHERE id = '1826c6d4-50d8-4c63-af99-439affa113fd';
+UPDATE clients SET logo_url = 'https://www.westernexp.com/images/logo.png' WHERE id = 'f637401b-da75-42cd-9c8e-b06c65b67652';
