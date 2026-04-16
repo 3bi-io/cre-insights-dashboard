@@ -1,51 +1,36 @@
 
 
-## Plan: Attach Outbound Voice Agent Phone to Admiral Merchants & Verify System
+## Plan: Import CDL Job Cast Jobs for Trucks For You Inc
 
-### Current State
-- **Admiral Merchants outbound agent** (`8a10a805-fcaf-4e8f-b5e5-423f7025afc3`) exists with `elevenlabs_agent_id: agent_9801knm3vmjvfh181zxfgjqpbnb3`, `is_outbound_enabled: true`, but **`agent_phone_number_id` is NULL** — outbound calls cannot route.
-- **Inbound agent** (`a21d2baf-3e97-455b-9dc0-225cacb861c7`) exists and is active.
-- **Email templates** already cover all 5 lifecycle stages (application_received, status_update, interview_invitation, offer, rejection) with branded headers, client logo support, and "Complete Your Full Application" CTAs. These are fully functional via the `send-application-email` edge function.
-- **Cron jobs** are all healthy:
-  - `process-outbound-call-queue` — every 1 minute ✅
-  - `sync-stuck-outbound-calls` — every 3 minutes ✅
-  - All other crons (feed sync, digest, indexing, syndication) running correctly ✅
+### What Was Found
 
-### What Needs to Happen
+- **CDL Job Cast feed user**: `trucks_for_you_inc` — confirmed active with multiple OTR CDL-A job listings
+- **Client**: Trucks For You Inc (ID: `cc4a05e9-2c87-4e71-b7f5-49d8bd709540`), Hayes organization
+- **Current job count**: 0 active listings
+- **Missing from UI**: `trucks_for_you_inc` is not in the carrier dropdown on the Super Admin Feeds page
 
-**1. Update Admiral Merchants outbound agent with phone number ID**
+### Steps
 
-Run a SQL update on `voice_agents` to set `agent_phone_number_id = 'phnum_8901kp9fhf1xe6htj5mqx6jgqf7x'` for the outbound agent record (`id: 8a10a805-fcaf-4e8f-b5e5-423f7025afc3`).
+**1. Add "Trucks For You Inc" to the carrier dropdown**
 
-This is the single blocking issue — without the phone number ID, the outbound call edge function cannot initiate calls for Admiral Merchants applicants.
+In `src/pages/SuperAdminFeeds.tsx`, add `{ value: 'trucks_for_you_inc', label: 'Trucks For You Inc (Hayes)' }` to the `availableUsers` array so it can be selected from the feed UI going forward.
 
-**2. Verify email template delivery for Admiral Merchants**
+**2. Trigger the feed import via the existing edge function**
 
-No code changes needed. The existing `send-application-email` edge function already:
-- Sends branded emails with Admiral Merchants' logo and company name
-- Includes the "Complete Your Full Application" CTA with pre-filled link
-- Covers all 5 email types (received, status update, interview, offer, rejection)
+Call the `import-jobs-from-feed` edge function with:
+- `feedUrl`: `https://cdljobcast.com/client/recruiting/getfeeds?user=trucks_for_you_inc&board=AIRecruiter`
+- `organizationId`: `84214b48-7b51-45bc-ad7f-723bcf50466c` (Hayes)
+- `clientId`: `cc4a05e9-2c87-4e71-b7f5-49d8bd709540` (Trucks For You Inc)
 
-**3. Confirm cron schedule (already verified)**
+This will parse the XML feed, create job listings, and map them all to the Trucks For You Inc client.
 
-All crons are running at optimal frequencies. No changes needed.
+**3. Verify import results**
 
-### Summary of Changes
+Query the database to confirm jobs were imported and correctly mapped to the client.
 
-| Action | Detail |
-|--------|--------|
-| **DB Update** | Set `agent_phone_number_id = 'phnum_8901kp9fhf1xe6htj5mqx6jgqf7x'` on outbound voice agent `8a10a805-fcaf-4e8f-b5e5-423f7025afc3` |
-| **Email templates** | Already built — no changes needed |
-| **Cron jobs** | Already running — no changes needed |
+### Files Modified
 
-### Technical Detail
-The update will be executed via the Supabase insert tool (data update, not schema change):
-```sql
-UPDATE voice_agents 
-SET agent_phone_number_id = 'phnum_8901kp9fhf1xe6htj5mqx6jgqf7x',
-    updated_at = now()
-WHERE id = '8a10a805-fcaf-4e8f-b5e5-423f7025afc3';
-```
-
-After this single update, Admiral Merchants outbound calls will be fully operational — new applicants will be automatically queued for screening calls by the existing cron infrastructure.
+| File | Change |
+|------|--------|
+| `src/pages/SuperAdminFeeds.tsx` | Add `trucks_for_you_inc` to carrier dropdown |
 
