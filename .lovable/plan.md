@@ -1,24 +1,29 @@
 
 
-## Plan: Update Trucks For You Inc Logo
+## Plan: Switch Trucks For You Inc to Internal Application Flow
 
-### What was found
-- **Website**: drivetfy.com has a navy blue/white "TFY - TRUCKS FOR YOU" logo
-- **Client**: Trucks For You Inc (ID: `cc4a05e9-2c87-4e71-b7f5-49d8bd709540`) — currently has no logo
-- **Logo URL**: Available from Wix static hosting
+### Problem
+All 25 Trucks For You Inc job listings currently have `apply_url` set to external CDL JobCast landing pages. The platform's routing logic redirects applicants to external URLs when `apply_url` is populated, bypassing your internal application form.
 
-### Steps
+### Solution
+Run a single database migration to set `apply_url = NULL` for all 25 Trucks For You Inc jobs. This will cause the platform to use the internal Apply AI application flow (`/apply?job_id=...` or `/jobs/{id}`).
 
-**1. Download the logo and upload to Supabase Storage**
+### Migration SQL
+```sql
+UPDATE job_listings
+SET apply_url = NULL, updated_at = now()
+WHERE client_id = 'cc4a05e9-2c87-4e71-b7f5-49d8bd709540'
+  AND status = 'active';
+```
 
-Download the TFY logo image from the Wix CDN, upload it to the `client-logos` storage bucket with the filename `cc4a05e9-2c87-4e71-b7f5-49d8bd709540-logo.jpg`.
+### Result
+After this change, the internal application links will be:
+- `https://applyai.jobs/apply?job_id={uuid}` — direct apply
+- `https://applyai.jobs/jobs/{uuid}` — job detail page with apply button
 
-**2. Update the client record**
-
-Use the insert tool to set `logo_url` on the `clients` table for Trucks For You Inc to the new Supabase Storage public URL.
+All 25 locations will route through your full internal application form.
 
 ### Technical Details
-- Storage bucket: `client-logos` (existing)
-- Logo source: `https://static.wixstatic.com/media/ec2930_4a3897f848fd4c05a3aefe8fd391a2f6~mv2.jpg/v1/fill/w_297,h_149,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/ec2930_4a3897f848fd4c05a3aefe8fd391a2f6~mv2.jpg`
-- No code changes needed — this is a data-only operation
+- Single UPDATE migration, no triggers need disabling (no bulk INSERT)
+- No code changes required — the routing logic in `src/features/external-vs-internal-apply-routing` already handles NULL `apply_url` as internal
 
