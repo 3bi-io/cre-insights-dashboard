@@ -1,56 +1,51 @@
 
 
-## Plan: Show Job Description Above Short Application (Indeed Compliance Fix)
+## Plan: Show Job Description on Universal Apply Links (No job_listing_id)
 
 ### Problem
-Indeed flags the short application page (`/apply?job_id=...`) for missing job description content. For **Danny Herman**, **Pemberton**, and **Admiral Merchants**, the page only shows job title + client name + form, but no description body. Indeed crawlers need visible description text on the apply page.
+The current implementation only fetches `job_description` / `job_summary` when a `job_listing_id` is present. Universal apply URLs like:
+
+`/apply?organization_id=...&client_id=1d54e463-4d7f-4a05-8189-3e33d0586dea`
+
+resolve via Priority 2 (client_id only) and never load any job description, so the panel never renders for these allow-listed clients (Danny Herman, Pemberton, Admiral Merchants).
 
 ### Solution
-Render the job's `description` / `job_summary` (already in `job_listings`) in a collapsible block placed **between** the `ApplicationHeader` and the `ApplicationForm`, gated to these three clients only (so we don't disrupt other client experiences).
+When a universal client-only URL resolves AND the client is in the allow-list, pick a representative active job listing for that client and use its description/summary as the page's "About this role" content. This keeps Indeed compliance for both flows without disturbing any other clients.
 
-### Affected Files
+### Selection rule for representative description
+For Priority 2 (client_id only), if `clientId` is in `JOB_DESCRIPTION_CLIENT_IDS`:
+1. Query `job_listings` for the most recently updated active listing for that client that has non-empty `job_description` or `job_summary`.
+2. Use its `job_description` / `job_summary` to populate context.
+3. Leave `jobListingId` and `jobTitle` as `null` (this is still a generic universal apply — we are only borrowing description text for compliance).
 
-1. **`src/hooks/useApplyContext.ts`**
-   - Add `jobDescription` and `jobSummary` to context.
-   - In the Priority 1 fetch, also select `description, job_summary` from `job_listings`.
+If no listing has description content, leave both null (panel won't render — same as today).
 
-2. **`src/components/apply/JobDescriptionPanel.tsx`** (new)
-   - Renders the description using the existing `markdownRenderer` (HTML-first, per memory `mem://ui/job-description-rendering-and-formatting`).
-   - Collapsed by default on mobile (max-height + "Read more" toggle), fully expanded on desktop.
-   - Visually clean: bordered card, muted background, `prose` typography, no form-distracting styling.
-   - SEO-friendly: content rendered in DOM (not behind a tab/modal) so Indeed crawlers see it.
+### Affected file
+**`src/hooks/useApplyContext.ts`** — extend Priority 2 branch only:
+- After fetching `clientInfo`, if the client is in the allow-list, run a follow-up query:
+  ```ts
+  supabase
+    .from('job_listings')
+    .select('job_description, job_summary')
+    .eq('client_id', clientId)
+    .eq('status', 'active')
+    .or('job_description.not.is.null,job_summary.not.is.null')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  ```
+- Set `jobDescription` / `jobSummary` on context from the result (fallback to `null`).
 
-3. **`src/pages/Apply.tsx`**
-   - Pull `clientId`, `jobDescription`, `jobSummary` from `useApplyContext`.
-   - Define an allow-list of client IDs:
-     - Danny Herman, Pemberton, Admiral Merchants (`53d7dd20-d743-4d34-93e9-eb7175c39da1`).
-   - Render `<JobDescriptionPanel />` between `ApplicationHeader` and the form **only when** `clientId` is in the allow-list AND description content exists.
-   - Skip rendering for the simulated (geo-blocked) and embed flows.
+### What does NOT change
+- `JobDescriptionPanel.tsx` — already handles missing title.
+- `jobDescriptionClients.ts` allow-list — same 3 clients.
+- `Apply.tsx` rendering condition — already `shouldShowJobDescription(clientId) && (jobDescription || jobSummary)`, which will now correctly evaluate true for universal links.
+- Priority 1 flow (job_listing_id present) — untouched.
+- Non-allow-listed clients — no extra query, no behavior change.
 
-### Layout
-
-```text
-┌──────────────────────────────┐
-│   ApplicationHeader          │  ← logo, title, location
-├──────────────────────────────┤
-│   JobDescriptionPanel (NEW)  │  ← collapsible markdown/HTML block
-│   "About this role"          │     (only for 3 clients)
-├──────────────────────────────┤
-│   ApplicationForm            │  ← existing short form
-└──────────────────────────────┘
-```
-
-### Why an allow-list (not all clients)
-- Avoids regression risk for clients whose UX is intentionally minimal.
-- Targets exactly the Indeed-flagged carriers.
-- Easy to expand later by adding client IDs to a single constant.
-
-### Technical Details
-- No DB migration needed — `job_listings.description` and `job_listings.job_summary` already exist.
-- Reuse existing `markdownRenderer.ts` utility (HTML-first detection already in place).
-- Allow-list constant lives in `src/components/apply/jobDescriptionClients.ts` for clarity.
-- Client IDs to confirm during implementation:
-  - Admiral Merchants: `53d7dd20-d743-4d34-93e9-eb7175c39da1` (from memory)
-  - Danny Herman + Pemberton: resolve via DB query at implementation time (under Hayes Recruiting org).
-- No changes to the `submit-application` edge function or routing logic.
+### Why this approach
+- Zero schema changes, zero new components.
+- Single targeted query, gated by allow-list, so no perf impact for other clients.
+- Indeed crawler sees real description text on universal apply URLs for the 3 flagged carriers.
+- Safe fallback: if no description exists, page renders exactly as it does today.
 
