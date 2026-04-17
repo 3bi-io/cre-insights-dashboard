@@ -4,6 +4,8 @@ import { ApplicationHeader } from '@/components/apply/ApplicationHeader';
 import { ApplicationForm } from '@/components/apply/ApplicationForm';
 import { SocialExpressForm } from '@/components/apply/SocialExpressForm';
 import { SimulatedApplicationForm } from '@/components/apply/SimulatedApplicationForm';
+import { JobDescriptionPanel } from '@/components/apply/JobDescriptionPanel';
+import { shouldShowJobDescription } from '@/components/apply/jobDescriptionClients';
 import { useApplyContext } from '@/hooks/useApplyContext';
 import { useGeoBlocking } from '@/contexts/GeoBlockingContext';
 import { useSourceDetection } from '@/hooks/useSourceDetection';
@@ -25,9 +27,14 @@ const Apply = () => {
     source,
     jobListingId,
     organizationId,
+    clientId,
     industryVertical,
+    jobDescription,
+    jobSummary,
     isLoading 
   } = useApplyContext();
+
+  const showJobDescription = shouldShowJobDescription(clientId) && (jobDescription || jobSummary);
 
   const routerLocation = useLocation();
   const { isOutsideAmericas, country, countryCode } = useGeoBlocking();
@@ -102,6 +109,15 @@ const Apply = () => {
               isLoading={isLoading}
               isExpressMode={isSocialTraffic && !isOutsideAmericas}
             />
+
+            {/* Job Description (Indeed compliance — allow-listed clients only, real applicants only) */}
+            {showJobDescription && !isOutsideAmericas && (
+              <JobDescriptionPanel
+                description={jobDescription}
+                summary={jobSummary}
+                jobTitle={jobTitle}
+              />
+            )}
             
             {/* Application Form — simulation mode for non-Americas users, express for Meta traffic */}
             <main>

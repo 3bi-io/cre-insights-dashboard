@@ -12,6 +12,8 @@ interface ApplyContext {
   clientId: string | null;
   source: string | null;
   industryVertical: string | null;
+  jobDescription: string | null;
+  jobSummary: string | null;
   isLoading: boolean;
 }
 
@@ -27,6 +29,8 @@ export const useApplyContext = (): ApplyContext => {
     clientId: null,
     source: null,
     industryVertical: null,
+    jobDescription: null,
+    jobSummary: null,
     isLoading: true,
   });
 
@@ -56,7 +60,7 @@ export const useApplyContext = (): ApplyContext => {
         // Step 1: Fetch job listing (get client_id, not joining clients due to RLS)
         const { data: jobListing } = await supabase
           .from('job_listings')
-          .select('id, title, city, state, client_id')
+          .select('id, title, city, state, client_id, job_description, job_summary')
           .eq('id', jobListingId)
           .maybeSingle();
 
@@ -90,6 +94,8 @@ export const useApplyContext = (): ApplyContext => {
             clientId: clientId || jobListing.client_id || null,
             source: utmSource,
             industryVertical,
+            jobDescription: (jobListing as any).job_description ?? null,
+            jobSummary: (jobListing as any).job_summary ?? null,
             isLoading: false,
           });
           return;
@@ -115,6 +121,8 @@ export const useApplyContext = (): ApplyContext => {
             clientId,
             source: utmSource,
             industryVertical: clientInfo.industry_vertical || null,
+            jobDescription: null,
+            jobSummary: null,
             isLoading: false,
           });
           return;
@@ -132,6 +140,8 @@ export const useApplyContext = (): ApplyContext => {
         clientId: clientId || null,
         source: utmSource,
         industryVertical: null,
+        jobDescription: null,
+        jobSummary: null,
         isLoading: false,
       });
     };
