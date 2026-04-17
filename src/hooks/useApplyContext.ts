@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { shouldShowJobDescription } from '@/components/apply/jobDescriptionClients';
 
 interface ApplyContext {
   jobTitle: string | null;
@@ -111,6 +112,27 @@ export const useApplyContext = (): ApplyContext => {
           .maybeSingle();
 
         if (clientInfo) {
+          // For Indeed-compliance allow-listed clients, borrow description
+          // from a representative active job listing so the panel renders
+          // even on universal (client_id-only) apply URLs.
+          let jobDescription: string | null = null;
+          let jobSummary: string | null = null;
+
+          if (shouldShowJobDescription(clientId)) {
+            const { data: repListing } = await supabase
+              .from('job_listings')
+              .select('job_description, job_summary')
+              .eq('client_id', clientId)
+              .eq('status', 'active')
+              .or('job_description.not.is.null,job_summary.not.is.null')
+              .order('updated_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            jobDescription = (repListing as any)?.job_description ?? null;
+            jobSummary = (repListing as any)?.job_summary ?? null;
+          }
+
           setContext({
             jobTitle: null,
             clientName: clientInfo.name || null,
@@ -121,8 +143,8 @@ export const useApplyContext = (): ApplyContext => {
             clientId,
             source: utmSource,
             industryVertical: clientInfo.industry_vertical || null,
-            jobDescription: null,
-            jobSummary: null,
+            jobDescription,
+            jobSummary,
             isLoading: false,
           });
           return;
