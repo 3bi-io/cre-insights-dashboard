@@ -1,20 +1,25 @@
 
 
-## Plan: Move Job Description Below Application Form
+## Plan: Remove ZipRecruiter Pixel from Apply Page
 
-### Change
-In `src/pages/Apply.tsx`, move the `<JobDescriptionPanel />` from above the form to below it (still inside the same `max-w-2xl` container, after the `<main>` block).
+### Problem
+`ZipRecruiterPixel` fires on `/apply` (page load) AND on `/thank-you` (post-submit). Double-firing inflates conversions and corrupts ZipRecruiter attribution data.
 
-### Why it still works for Indeed
-The description stays rendered in the page DOM on initial load (not behind a tab/modal/JS interaction), so Indeed's crawler still sees the content. Position on the page does not affect compliance — only presence does.
+### Solution
+Remove the pixel from the apply page entirely. Keep it firing only on `/thank-you` after a successful submission.
 
 ### Affected file
-- `src/pages/Apply.tsx` — relocate the `{showJobDescription && !isOutsideAmericas && (<JobDescriptionPanel ... />)}` block from above `<main>` to immediately after `</main>`.
+**`src/pages/Apply.tsx`**
+- Remove the `import ZipRecruiterPixel from '@/components/tracking/ZipRecruiterPixel';` line.
+- Remove the `{!isOutsideAmericas && <ZipRecruiterPixel />}` render at the bottom of the component.
 
 ### What does NOT change
-- `JobDescriptionPanel.tsx` — unchanged.
-- `useApplyContext.ts` — unchanged.
-- Allow-list (`jobDescriptionClients.ts`) — unchanged.
-- Geo-blocked / simulated flow — still skips the panel.
-- Mobile collapsible "Read more" behavior — unchanged.
+- `src/components/tracking/ZipRecruiterPixel.tsx` — kept as-is (still used on Thank You page).
+- Thank You page pixel firing — unchanged (per memory `mem://features/post-conversion-tracking-pixels`, conversions only count on `/thank-you`).
+- Geo-blocked flow — unchanged (was already excluded).
+- `SocialExpressForm`, `SimulatedApplicationForm`, `ApplicationForm` — unchanged.
+
+### Verification after change
+- Load `/apply?...` → no request to `track.ziprecruiter.com/conversion`.
+- Submit application → land on `/thank-you` → exactly one request to `track.ziprecruiter.com/conversion`.
 
