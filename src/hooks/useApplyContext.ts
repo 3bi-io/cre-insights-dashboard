@@ -60,7 +60,7 @@ export const useApplyContext = (): ApplyContext => {
         // Step 1: Fetch job listing (get client_id, not joining clients due to RLS)
         const { data: jobListing } = await supabase
           .from('job_listings')
-          .select('id, title, city, state, client_id, description, job_summary')
+          .select('id, title, city, state, client_id, job_description, job_summary')
           .eq('id', jobListingId)
           .maybeSingle();
 
@@ -94,7 +94,7 @@ export const useApplyContext = (): ApplyContext => {
             clientId: clientId || jobListing.client_id || null,
             source: utmSource,
             industryVertical,
-            jobDescription: (jobListing as any).description ?? null,
+            jobDescription: (jobListing as any).job_description ?? null,
             jobSummary: (jobListing as any).job_summary ?? null,
             isLoading: false,
           });
