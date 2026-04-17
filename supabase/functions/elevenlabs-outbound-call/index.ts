@@ -221,7 +221,7 @@ if (import.meta.main) {
       const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
       const { data: stuckCalls, error: fetchError } = await supabase
         .from('outbound_calls')
-        .select('id, elevenlabs_conversation_id, voice_agent_id, created_at')
+        .select('id, elevenlabs_conversation_id, voice_agent_id, created_at, call_sid')
         .eq('status', 'initiated')
         .lt('created_at', tenMinutesAgo)
         .not('elevenlabs_conversation_id', 'is', null)
@@ -292,13 +292,58 @@ if (import.meta.main) {
           } else if (elStatus === 'busy') {
             mappedStatus = 'busy';
           } else {
-            // If ElevenLabs still reports non-terminal status but the call is 30+ min old, force no_answer
+            // ElevenLabs still reports non-terminal status. Try Twilio fallback first, then time-based force-resolve.
             const callAgeMs = Date.now() - new Date(call.created_at).getTime();
-            const thirtyMinMs = 30 * 60 * 1000;
-            if (callAgeMs > thirtyMinMs) {
+            const fiveMinMs = 5 * 60 * 1000;
+            const tenMinMs = 10 * 60 * 1000;
+
+            // Twilio fallback: if call is >5min old and we have a call_sid, ask Twilio for the truth
+            const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+            const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+            if (callAgeMs > fiveMinMs && call.call_sid && twilioAccountSid && twilioAuthToken) {
+              try {
+                const twilioResp = await fetch(
+                  `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Calls/${call.call_sid}.json`,
+                  { headers: { 'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}` } }
+                );
+                if (twilioResp.ok) {
+                  const twilioData = await twilioResp.json();
+                  const twStatus = String(twilioData.status || '').toLowerCase();
+                  // Twilio terminal statuses: completed, no-answer, busy, failed, canceled
+                  if (twStatus === 'completed') {
+                    const dur = Number(twilioData.duration || 0);
+                    if (!dur || dur <= 0) {
+                      mappedStatus = 'no_answer';
+                    } else {
+                      mappedStatus = 'completed';
+                      durationSeconds = dur;
+                    }
+                    logger.info(`Call ${call.id} - Twilio fallback resolved as "${twStatus}" (duration ${dur}s) → ${mappedStatus}`);
+                  } else if (twStatus === 'no-answer' || twStatus === 'canceled') {
+                    mappedStatus = 'no_answer';
+                    logger.info(`Call ${call.id} - Twilio fallback resolved as "${twStatus}" → no_answer`);
+                  } else if (twStatus === 'busy') {
+                    mappedStatus = 'busy';
+                    logger.info(`Call ${call.id} - Twilio fallback resolved as busy`);
+                  } else if (twStatus === 'failed') {
+                    mappedStatus = 'failed';
+                    logger.info(`Call ${call.id} - Twilio fallback resolved as failed`);
+                  } else {
+                    logger.info(`Call ${call.id} - Twilio reports non-terminal status "${twStatus}", keeping initiated`);
+                  }
+                } else {
+                  logger.warn(`Call ${call.id} - Twilio fallback returned ${twilioResp.status}`);
+                }
+              } catch (twErr) {
+                logger.warn(`Call ${call.id} - Twilio fallback errored`, { error: String(twErr) });
+              }
+            }
+
+            // Time-based safety net: if still not resolved and call is 10+min old, force no_answer
+            if (mappedStatus === 'initiated' && callAgeMs > tenMinMs) {
               mappedStatus = 'no_answer';
               logger.info(`Call ${call.id} is ${Math.round(callAgeMs / 60000)}min old with ElevenLabs status "${elStatus}" - forcing no_answer`);
-            } else {
+            } else if (mappedStatus === 'initiated') {
               logger.info(`Call ${call.id} still has ElevenLabs status "${elStatus}" (age: ${Math.round(callAgeMs / 60000)}min) - keeping initiated`);
             }
           }
@@ -420,6 +465,21 @@ if (import.meta.main) {
                           }
                         }
 
+                        // Dead-number guard: if same applicant has 2+ no_answer in last 24h, stop retrying
+                        if (!skipRetry && fullCall.application_id && mappedStatus === 'no_answer') {
+                          const twentyFourHrAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+                          const { count: noAnswerCount } = await supabase
+                            .from('outbound_calls')
+                            .select('id', { count: 'exact', head: true })
+                            .eq('application_id', fullCall.application_id)
+                            .eq('status', 'no_answer')
+                            .gte('created_at', twentyFourHrAgo);
+
+                          if ((noAnswerCount ?? 0) >= 2) {
+                            logger.info(`Skipping retry for call ${call.id} - applicant has ${noAnswerCount} no_answer calls in last 24h (likely dead number)`);
+                            skipRetry = true;
+                          }
+                        }
                         if (!skipRetry) {
                           // Escalating delay: base * multiplier^attempt
                           const delayMinutes = Math.round(delayMinutesBase * Math.pow(escalationMultiplier, currentRetry));
