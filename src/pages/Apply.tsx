@@ -11,7 +11,6 @@ import { useGeoBlocking } from '@/contexts/GeoBlockingContext';
 import { useSourceDetection } from '@/hooks/useSourceDetection';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildBreadcrumbSchema } from '@/components/StructuredData';
-import ZipRecruiterPixel from '@/components/tracking/ZipRecruiterPixel';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
@@ -139,8 +138,6 @@ const Apply = () => {
           </div>
         </div>
       </div>
-      {/* Only fire pixel for real (non-simulated) submissions */}
-      {!isOutsideAmericas && <ZipRecruiterPixel />}
     </>
   );
 };
