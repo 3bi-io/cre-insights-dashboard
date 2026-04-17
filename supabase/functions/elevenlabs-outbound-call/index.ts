@@ -465,6 +465,21 @@ if (import.meta.main) {
                           }
                         }
 
+                        // Dead-number guard: if same applicant has 2+ no_answer in last 24h, stop retrying
+                        if (!skipRetry && fullCall.application_id && mappedStatus === 'no_answer') {
+                          const twentyFourHrAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+                          const { count: noAnswerCount } = await supabase
+                            .from('outbound_calls')
+                            .select('id', { count: 'exact', head: true })
+                            .eq('application_id', fullCall.application_id)
+                            .eq('status', 'no_answer')
+                            .gte('created_at', twentyFourHrAgo);
+
+                          if ((noAnswerCount ?? 0) >= 2) {
+                            logger.info(`Skipping retry for call ${call.id} - applicant has ${noAnswerCount} no_answer calls in last 24h (likely dead number)`);
+                            skipRetry = true;
+                          }
+                        }
                         if (!skipRetry) {
                           // Escalating delay: base * multiplier^attempt
                           const delayMinutes = Math.round(delayMinutesBase * Math.pow(escalationMultiplier, currentRetry));
