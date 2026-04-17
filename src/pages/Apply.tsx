@@ -110,15 +110,6 @@ const Apply = () => {
               isExpressMode={isSocialTraffic && !isOutsideAmericas}
             />
 
-            {/* Job Description (Indeed compliance — allow-listed clients only, real applicants only) */}
-            {showJobDescription && !isOutsideAmericas && (
-              <JobDescriptionPanel
-                description={jobDescription}
-                summary={jobSummary}
-                jobTitle={jobTitle}
-              />
-            )}
-            
             {/* Application Form — simulation mode for non-Americas users, express for Meta traffic */}
             <main>
               {isOutsideAmericas ? (
@@ -135,6 +126,15 @@ const Apply = () => {
                 <ApplicationForm clientName={clientName} clientLogoUrl={clientLogoUrl} industryVertical={industryVertical} />
               )}
             </main>
+
+            {/* Job Description (Indeed compliance — allow-listed clients only, real applicants only) */}
+            {showJobDescription && !isOutsideAmericas && (
+              <JobDescriptionPanel
+                description={jobDescription}
+                summary={jobSummary}
+                jobTitle={jobTitle}
+              />
+            )}
             
           </div>
         </div>
