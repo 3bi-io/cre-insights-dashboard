@@ -123,7 +123,7 @@ const ThankYou = () => {
               {/* Church Transportation ZipRecruiter conversion pixel */}
               <ChurchZipRecruiterPixel organizationId={organizationId} source={source} />
               <AdmiralMerchantsJobCastPixel clientId={clientId} />
-              <ClientZipRecruiterPixels clientId={clientId} source={source} />
+              <ClientZipRecruiterPixels clientId={clientId} />
 
               {/* Continue to Full Application CTA */}
               {(formData || applicationId) && (

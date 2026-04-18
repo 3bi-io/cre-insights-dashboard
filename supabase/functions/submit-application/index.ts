@@ -1159,6 +1159,7 @@ Deno.serve(async (req) => {
         { 
           applicationId: existingAppId,
           organizationId,
+          clientId: updateClientId,
           organizationName,
           hasVoiceAgent: false, // Don't trigger another call on update
           updated: true,
@@ -1252,6 +1253,7 @@ Deno.serve(async (req) => {
       { 
         applicationId: data.id,
         organizationId,
+        clientId: resolvedClientId,
         organizationName,
         hasVoiceAgent
       },

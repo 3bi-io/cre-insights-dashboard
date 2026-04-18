@@ -1,6 +1,8 @@
 /**
  * ZipRecruiter conversion pixels for specific clients.
- * Renders only when clientId matches AND source is ZipRecruiter.
+ * Renders on the post-conversion page (Thank You) for mapped clients,
+ * regardless of traffic source — ZipRecruiter requires the pixel to fire
+ * on every conversion view to properly attribute the conversion.
  */
 
 const CLIENT_ZIPRECRUITER_MAP: Record<string, string> = {
@@ -11,15 +13,12 @@ const CLIENT_ZIPRECRUITER_MAP: Record<string, string> = {
 
 interface ClientZipRecruiterPixelsProps {
   clientId?: string | null;
-  source?: string | null;
 }
 
 const ClientZipRecruiterPixels: React.FC<ClientZipRecruiterPixelsProps> = ({
   clientId,
-  source,
 }) => {
-  if (!clientId || !source) return null;
-  if (!source.toLowerCase().includes('ziprecruiter')) return null;
+  if (!clientId) return null;
 
   const accountId = CLIENT_ZIPRECRUITER_MAP[clientId];
   if (!accountId) return null;
