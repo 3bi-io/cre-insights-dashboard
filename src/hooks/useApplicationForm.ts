@@ -83,6 +83,7 @@ interface SubmitResponse {
   message: string;
   applicationId: string;
   organizationId?: string;
+  clientId?: string | null;
   organizationName?: string;
   hasVoiceAgent?: boolean;
 }
