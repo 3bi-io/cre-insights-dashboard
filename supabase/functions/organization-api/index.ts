@@ -138,7 +138,8 @@ Deno.serve(async (req) => {
 
     return response;
   } catch (err: unknown) {
-    logger.error('Organization API error', err);
+    const errDetail = err instanceof Error ? `${err.message}\n${err.stack}` : JSON.stringify(err);
+    logger.error(`Organization API error [${endpoint}]: ${errDetail}`);
     supabase.from('api_request_logs').insert({
       api_key_id: keyRow.id, organization_id: orgId, endpoint,
       origin: origin || null, response_status: 500, response_time_ms: Date.now() - startTime,
@@ -190,22 +191,35 @@ async function handleClients(supabase: any, orgId: string, cors: Record<string, 
 // deno-lint-ignore no-explicit-any
 async function handleJobs(supabase: any, orgId: string, url: URL, cors: Record<string, string>) {
   const clientId = url.searchParams.get('client_id');
+  const jobId = url.searchParams.get('job_id');
   const status = url.searchParams.get('status') || 'active';
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '100'), 500);
   const offset = parseInt(url.searchParams.get('offset') || '0');
 
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   let query = supabase
     .from('job_listings')
     .select('id, title, location, status, city, state, created_at, client_id')
-    .eq('organization_id', orgId)
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+    .eq('organization_id', orgId);
 
-  if (clientId) query = query.eq('client_id', clientId);
-  if (status !== 'all') query = query.eq('status', status);
+  if (jobId) {
+    if (!UUID_RE.test(jobId)) {
+      return jsonResponse({ error: 'Invalid job_id (must be UUID)' }, 400, cors);
+    }
+    query = query.eq('id', jobId);
+  } else {
+    query = query.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+    if (clientId) query = query.eq('client_id', clientId);
+    if (status !== 'all') query = query.eq('status', status);
+  }
 
   const { data: jobs, error } = await query;
   if (error) throw error;
+
+  if (jobId && (!jobs || jobs.length === 0)) {
+    return jsonResponse({ error: 'Job not found or not accessible' }, 404, cors);
+  }
 
   const enriched = await Promise.all((jobs || []).map(async (job: JobRow) => {
     const { count } = await supabase.from('applications').select('*', { count: 'exact', head: true }).eq('job_listing_id', job.id);
@@ -221,21 +235,60 @@ async function handleJobs(supabase: any, orgId: string, url: URL, cors: Record<s
 // deno-lint-ignore no-explicit-any
 async function handleApplications(supabase: any, orgId: string, url: URL, cors: Record<string, string>) {
   const clientId = url.searchParams.get('client_id');
+  const jobId = url.searchParams.get('job_id');
   const status = url.searchParams.get('status');
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 200);
   const offset = parseInt(url.searchParams.get('offset') || '0');
 
-  let jobQuery = supabase.from('job_listings').select('id, title, client_id').eq('organization_id', orgId);
-  if (clientId) jobQuery = jobQuery.eq('client_id', clientId);
-  const { data: jobs } = await jobQuery;
-  const jobIds = (jobs || []).map((j: JobRow) => j.id);
-  const jobMap = Object.fromEntries((jobs || []).map((j: JobRow) => [j.id, j]));
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  let jobs: JobRow[] = [];
+
+  if (jobId) {
+    if (!UUID_RE.test(jobId)) {
+      return jsonResponse({ error: 'Invalid job_id (must be UUID)' }, 400, cors);
+    }
+    // Verify job belongs to this org (cross-org isolation)
+    const { data: jobRow } = await supabase
+      .from('job_listings')
+      .select('id, title, client_id')
+      .eq('id', jobId)
+      .eq('organization_id', orgId)
+      .maybeSingle();
+
+    if (!jobRow) {
+      return jsonResponse({ error: 'Job not found or not accessible' }, 404, cors);
+    }
+    jobs = [jobRow];
+  } else {
+    // No job_id — guard against URL-overflow on large orgs
+    if (!clientId) {
+      const { count: orgJobCount } = await supabase
+        .from('job_listings')
+        .select('*', { count: 'exact', head: true })
+        .eq('organization_id', orgId);
+      if ((orgJobCount || 0) > 500) {
+        return jsonResponse({
+          error: 'client_id or job_id required for organizations with more than 500 jobs',
+          org_job_count: orgJobCount,
+        }, 400, cors);
+      }
+    }
+
+    let jobQuery = supabase.from('job_listings').select('id, title, client_id').eq('organization_id', orgId);
+    if (clientId) jobQuery = jobQuery.eq('client_id', clientId);
+    const { data: jobsData } = await jobQuery;
+    jobs = jobsData || [];
+  }
+
+  const jobIds = jobs.map((j: JobRow) => j.id);
+  const jobMap = Object.fromEntries(jobs.map((j: JobRow) => [j.id, j]));
 
   if (jobIds.length === 0) {
     return jsonResponse({ applications: [], total: 0 }, 200, cors);
   }
 
-  const clientIds = [...new Set((jobs || []).map((j: JobRow) => j.client_id).filter(Boolean))];
+  const clientIds = [...new Set(jobs.map((j: JobRow) => j.client_id).filter(Boolean))];
   let clientMap: Record<string, string> = {};
   if (clientIds.length > 0) {
     const { data: clients } = await supabase.from('clients').select('id, name').in('id', clientIds);
@@ -245,9 +298,14 @@ async function handleApplications(supabase: any, orgId: string, url: URL, cors: 
   let appQuery = supabase
     .from('applications')
     .select('id, first_name, last_name, status, applied_at, source, city, state, phone, applicant_email, job_listing_id, exp, cdl', { count: 'exact' })
-    .in('job_listing_id', jobIds)
     .order('applied_at', { ascending: false })
     .range(offset, offset + limit - 1);
+
+  if (jobId) {
+    appQuery = appQuery.eq('job_listing_id', jobId);
+  } else {
+    appQuery = appQuery.in('job_listing_id', jobIds);
+  }
 
   if (status) appQuery = appQuery.eq('status', status);
 
