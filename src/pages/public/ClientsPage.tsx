@@ -40,7 +40,7 @@ const ClientsPage = () => {
         .select('id, name, logo_url, city, state, job_count, industry_vertical')
         .order('name');
       if (error) throw error;
-      return (data || []) as PublicClient[];
+      return ((data || []) as PublicClient[]).filter(c => c.name?.toLowerCase() !== 'unassigned');
     },
     retry: 2,
     staleTime: 5 * 60 * 1000,
