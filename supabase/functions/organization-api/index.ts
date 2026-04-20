@@ -138,7 +138,8 @@ Deno.serve(async (req) => {
 
     return response;
   } catch (err: unknown) {
-    logger.error('Organization API error', err);
+    const errDetail = err instanceof Error ? `${err.message}\n${err.stack}` : JSON.stringify(err);
+    logger.error(`Organization API error [${endpoint}]: ${errDetail}`);
     supabase.from('api_request_logs').insert({
       api_key_id: keyRow.id, organization_id: orgId, endpoint,
       origin: origin || null, response_status: 500, response_time_ms: Date.now() - startTime,
