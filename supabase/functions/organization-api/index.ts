@@ -191,22 +191,35 @@ async function handleClients(supabase: any, orgId: string, cors: Record<string, 
 // deno-lint-ignore no-explicit-any
 async function handleJobs(supabase: any, orgId: string, url: URL, cors: Record<string, string>) {
   const clientId = url.searchParams.get('client_id');
+  const jobId = url.searchParams.get('job_id');
   const status = url.searchParams.get('status') || 'active';
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '100'), 500);
   const offset = parseInt(url.searchParams.get('offset') || '0');
 
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   let query = supabase
     .from('job_listings')
     .select('id, title, location, status, city, state, created_at, client_id')
-    .eq('organization_id', orgId)
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+    .eq('organization_id', orgId);
 
-  if (clientId) query = query.eq('client_id', clientId);
-  if (status !== 'all') query = query.eq('status', status);
+  if (jobId) {
+    if (!UUID_RE.test(jobId)) {
+      return jsonResponse({ error: 'Invalid job_id (must be UUID)' }, 400, cors);
+    }
+    query = query.eq('id', jobId);
+  } else {
+    query = query.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+    if (clientId) query = query.eq('client_id', clientId);
+    if (status !== 'all') query = query.eq('status', status);
+  }
 
   const { data: jobs, error } = await query;
   if (error) throw error;
+
+  if (jobId && (!jobs || jobs.length === 0)) {
+    return jsonResponse({ error: 'Job not found or not accessible' }, 404, cors);
+  }
 
   const enriched = await Promise.all((jobs || []).map(async (job: JobRow) => {
     const { count } = await supabase.from('applications').select('*', { count: 'exact', head: true }).eq('job_listing_id', job.id);
