@@ -1,56 +1,61 @@
 
 
-## Fix: Admiral Merchants applications not visible in Hayes client portal
+## Fix: applyai.jobs `organization-api` returns 500 on per-job fetches (Admiral visibility on Hayes site)
 
-### Root cause
+### Root cause — it's on our side, not upstream
 
-The Hayes recruiter user account (`cody@3bi.io`, role: `client`) is only assigned to **Pemberton Truck Lines** in the `user_client_assignments` table. There is **no assignment row linking any portal user to Admiral Merchants** (`53d7dd20-d743-4d34-93e9-eb7175c39da1`).
+The Hayes integrator's report blamed "upstream applyai.jobs," but **applyai.jobs is us** (`auwhcdpppldjlcaxzsme.supabase.co/functions/v1/organization-api`). Edge logs show their site is calling:
 
-The client portal (`useClientPortalData`) reads `user_client_assignments` for the logged-in user and only fetches applications/jobs for those client IDs. So even though Admiral apps are landing correctly in the database (verified — 2 apps in last 7 days, properly attached to Admiral job listings), the Hayes portal account literally has no permission row to see them.
-
-### Verified state
-
-| Check | Result |
-|---|---|
-| Admiral client record | ✅ exists, status `active`, org Hayes Recruiting Solutions |
-| Admiral active job listings | ✅ 421 active, not hidden |
-| Admiral applications (30d) | 2 apps (Indeed + ElevenLabs sources) — landing correctly |
-| Hayes client-portal users assigned to Admiral | ❌ **0** |
-| Hayes client-portal users assigned to other Hayes carriers | Pemberton (cody@3bi.io), Danny Herman (cody@3bi.ai) |
-
-### Fix — 1 database row
-
-Insert a `user_client_assignments` row linking the Hayes recruiter portal account to Admiral Merchants:
-
-```sql
-INSERT INTO public.user_client_assignments (user_id, client_id)
-VALUES ('c259635f-fc7c-4a4e-8a45-29bcbcbd66bc', '53d7dd20-d743-4d34-93e9-eb7175c39da1')
-ON CONFLICT DO NOTHING;
+```
+GET /organization-api/applications?job_id=<uuid>
 ```
 
-(`c259635f…` = `cody@3bi.io`, the `client`-role Hayes portal user already assigned to Pemberton.)
+…hundreds of times per minute. Every single one returns **500 `{"error":"Internal server error"}`**. Confirmed in `api_request_logs`: 829× 500s on `/applications` in the last hour vs 256× 200s.
 
-### Question before applying
+`handleApplications` in `supabase/functions/organization-api/index.ts` only accepts `client_id` and `status` — it ignores `job_id`. But there's a worse bug: when no `client_id` is passed, it loads **every job_listing for the org** (Hayes has thousands), shoves them all into a single `.in('job_listing_id', jobIds)` query → hits the 8KB PostgREST URL limit → throws → caught → 500.
 
-Two portal accounts could plausibly own Admiral visibility — please confirm which one(s) the Hayes team uses for Admiral:
+The 3 "failing job IDs" the integrator listed (`2ea2fcef…`, `a32ca96d…`, `37fc171d…`) are all Admiral jobs (`53d7dd20…`). They're not failing because of Admiral — they're failing because the per-job fetch path doesn't exist.
 
-- **`cody@3bi.io`** — `client` role, currently sees Pemberton only.
-- **`cody@3bi.ai`** — `admin` role, currently assigned to Danny Herman. (Admins typically see everything via role, but the assignment row is what scopes the client-portal view.)
-- **`truckinjimmyhayes@gmail.com`** — `admin` role, no assignments yet.
+### Fix
 
-Default plan: assign **all three** to Admiral so every Hayes operator account can see Admiral apps in the portal. If you want a different set, say which.
+Edit `supabase/functions/organization-api/index.ts`:
 
-### Secondary observation (not part of this fix, flagging only)
+1. **`handleApplications`**: read `job_id` from the query string. When present:
+   - Validate it's a UUID.
+   - Confirm the job belongs to the caller's `organization_id` (security — don't let one org's API key read another org's apps).
+   - Query applications scoped to that single `job_listing_id` only. Skip the giant `.in()`.
 
-Admiral has 421 active jobs but only 2 apps in 30 days. After visibility is fixed, if app volume is still surprisingly low we should investigate the apply-URL routing (CDL Job Cast feed UTM `utm_source=cdl_jobcast`) and whether Indeed/syndication is actually surfacing these listings. Out of scope for this ticket — handle separately if needed.
+2. **`handleJobs`**: same — accept `?job_id=<uuid>` to return one job (with `application_count`), org-scoped. Cheap addition; matches the URL pattern the integrator is already using elsewhere.
 
-### Files / artifacts
+3. **Better error logging**: the current `logger.error('Organization API error', err)` serializes to `[object Object]`. Replace with `err instanceof Error ? err.message + err.stack : JSON.stringify(err)` so future regressions are diagnosable from logs.
 
-- New migration: insert into `user_client_assignments` for the chosen user(s) × Admiral.
-- No code changes — the portal queries already work; they just have no rows to return.
+4. **Guard the unscoped path**: in `handleApplications`, if no `client_id` AND no `job_id` are provided AND the org has > 500 jobs, return `400 { error: 'client_id or job_id required for orgs with >500 jobs' }` instead of silently 500ing on the URL-length blowup.
+
+No DB migration. No frontend changes. Pure edge-function patch.
 
 ### Verification
 
-1. After insert, log in as the assigned Hayes user → `/client-portal` → Admiral Merchants should appear in the client list.
-2. Open Admiral → expect to see the 2 recent applications (Garey Ferguson SR — Indeed; Brandon Pesta — ElevenLabs).
+1. After deploy, hit:
+   ```
+   GET /organization-api/applications?job_id=2ea2fcef-67d4-47df-9232-b35092a3a6c1
+   ```
+   with the Hayes API key → expect `200 { applications: [...] }` (Admiral job — currently 0 apps, so empty array is correct).
+
+2. Hit `?job_id=a32ca96d…` → 200, empty array (Admiral, no apps).
+
+3. Hit with a job_id from a different org's API key → 404/403 (cross-org isolation).
+
+4. Watch `api_request_logs` for 30 minutes — `/applications` 500 count should drop to ~0; 200 count should climb as Hayes resumes normal sync.
+
+5. Hayes site → Admiral Merchants section → applications list should populate (currently 2 apps in last 30 days; `Garey Ferguson SR — Indeed`, `Brandon Pesta — ElevenLabs`).
+
+### Files touched
+
+- `supabase/functions/organization-api/index.ts` — add `job_id` handling on `/applications` and `/jobs`, fix error logging, guard unscoped large-org path.
+
+### What does NOT change
+
+- API key auth, rate limiting, CORS, allowed-origins logic — untouched.
+- All other endpoints (`/clients`, `/stats`) — untouched.
+- Database, RLS, frontend client portal — untouched.
 
