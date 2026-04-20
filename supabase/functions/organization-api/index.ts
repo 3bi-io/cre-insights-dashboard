@@ -295,24 +295,53 @@ async function handleApplications(supabase: any, orgId: string, url: URL, cors: 
     clientMap = Object.fromEntries((clients || []).map((c: ClientRow) => [c.id, c.name]));
   }
 
-  let appQuery = supabase
-    .from('applications')
-    .select('id, first_name, last_name, status, applied_at, source, city, state, phone, applicant_email, job_listing_id, exp, cdl', { count: 'exact' })
-    .order('applied_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+  const APP_COLS = 'id, first_name, last_name, status, applied_at, source, city, state, phone, applicant_email, job_listing_id, exp, cdl';
+  const CHUNK_SIZE = 100;
+
+  let allApps: AppRow[] = [];
+  let total = 0;
 
   if (jobId) {
-    appQuery = appQuery.eq('job_listing_id', jobId);
+    let q = supabase
+      .from('applications')
+      .select(APP_COLS, { count: 'exact' })
+      .eq('job_listing_id', jobId)
+      .order('applied_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (status) q = q.eq('status', status);
+    const { data, count, error } = await q;
+    if (error) throw error;
+    allApps = data || [];
+    total = count || 0;
   } else {
-    appQuery = appQuery.in('job_listing_id', jobIds);
+    // Chunk job_listing_id .in() to avoid PostgREST URL overflow on large clients (e.g. Admiral ~420 jobs)
+    const chunks: string[][] = [];
+    for (let i = 0; i < jobIds.length; i += CHUNK_SIZE) {
+      chunks.push(jobIds.slice(i, i + CHUNK_SIZE));
+    }
+    logger.info(`handleApplications chunked query`, { jobCount: jobIds.length, chunks: chunks.length });
+
+    const results = await Promise.all(chunks.map(async (chunk) => {
+      let q = supabase
+        .from('applications')
+        .select(APP_COLS, { count: 'exact' })
+        .in('job_listing_id', chunk)
+        .order('applied_at', { ascending: false });
+      if (status) q = q.eq('status', status);
+      // Fetch enough from each chunk to satisfy offset+limit after merge
+      q = q.limit(offset + limit);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { data: data || [], count: count || 0 };
+    }));
+
+    total = results.reduce((s, r) => s + r.count, 0);
+    const merged = results.flatMap(r => r.data) as AppRow[];
+    merged.sort((a, b) => (b.applied_at || '').localeCompare(a.applied_at || ''));
+    allApps = merged.slice(offset, offset + limit);
   }
 
-  if (status) appQuery = appQuery.eq('status', status);
-
-  const { data: apps, count, error } = await appQuery;
-  if (error) throw error;
-
-  const enriched = (apps || []).map((app: AppRow) => {
+  const enriched = allApps.map((app: AppRow) => {
     const job = jobMap[app.job_listing_id!];
     return {
       id: app.id, first_name: app.first_name, last_name: app.last_name,
