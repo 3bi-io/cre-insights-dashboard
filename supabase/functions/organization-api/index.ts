@@ -353,7 +353,7 @@ async function handleApplications(supabase: any, orgId: string, url: URL, cors: 
     };
   });
 
-  return jsonResponse({ applications: enriched, total: count || 0 }, 200, cors);
+  return jsonResponse({ applications: enriched, total }, 200, cors);
 }
 
 // deno-lint-ignore no-explicit-any
