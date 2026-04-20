@@ -9061,6 +9061,10 @@ export type Database = {
           mode: string
         }[]
       }
+      get_admiral_after_hours_start: {
+        Args: { p_client_id: string; p_org_id: string }
+        Returns: string
+      }
       get_application_basic_data: {
         Args: { application_id: string }
         Returns: {

@@ -632,9 +632,21 @@ if (import.meta.main) {
         .limit(1)
         .maybeSingle();
 
+      // Admiral Merchants is allowed to call on holidays — skip the global-holiday short-circuit if any
+      // queued calls belong to Admiral. Per-call holiday check below also bypasses Admiral.
+      const ADMIRAL_CLIENT_ID = '53d7dd20-d743-4d34-93e9-eb7175c39da1';
       if (globalHoliday) {
-        logger.info(`Global holiday detected: "${globalHoliday.name}" (${todayDateStr}) — skipping queue processing`);
-        return successResponse({ message: `Skipped: holiday "${globalHoliday.name}"`, processed: 0 }, undefined, undefined, origin);
+        const { data: admiralQueued } = await supabase
+          .from('outbound_calls')
+          .select('id')
+          .eq('status', 'queued')
+          .contains('metadata', { client_id: ADMIRAL_CLIENT_ID })
+          .limit(1);
+        if (!admiralQueued || admiralQueued.length === 0) {
+          logger.info(`Global holiday detected: "${globalHoliday.name}" (${todayDateStr}) — skipping queue processing`);
+          return successResponse({ message: `Skipped: holiday "${globalHoliday.name}"`, processed: 0 }, undefined, undefined, origin);
+        }
+        logger.info(`Global holiday "${globalHoliday.name}" — proceeding to process Admiral calls only`);
       }
 
       // ── Business hours gate: check if current time is within business hours ──
@@ -741,6 +753,7 @@ if (import.meta.main) {
           if (callMeta?.organization_id) {
             const orgId = callMeta.organization_id;
             const clientId = (callMeta.metadata as Record<string, unknown>)?.client_id as string | null;
+            const isAdmiral = clientId === ADMIRAL_CLIENT_ID;
             
             // Fetch org timezone for accurate date calculation
             const { data: orgCallSettings } = await supabase
@@ -761,10 +774,13 @@ if (import.meta.main) {
               .limit(1)
               .maybeSingle();
             
-            if (orgHoliday) {
+            if (orgHoliday && !isAdmiral) {
               logger.info(`Holiday "${orgHoliday.name}" for org ${orgId} on ${orgTodayStr} — skipping call ${call.id}`);
               results.results.push({ call_id: call.id, status: 'skipped', error: `Holiday: ${orgHoliday.name}` });
               continue;
+            }
+            if (orgHoliday && isAdmiral) {
+              logger.info(`Holiday "${orgHoliday.name}" — Admiral bypass, proceeding with call ${call.id}`);
             }
             
             // Check business hours — but SKIP the gate for first-attempt calls (retry_count = 0)
@@ -772,6 +788,32 @@ if (import.meta.main) {
             // Only follow-up/retry calls are gated by business hours.
             const retryCount = ((callMeta as Record<string, unknown>)?.retry_count as number) || 0;
             const isFirstAttempt = retryCount === 0;
+            
+            // ADMIRAL: reverse gate — first attempts MUST be after-hours.
+            // If a first-attempt Admiral call somehow reached the queue during business hours
+            // (e.g., manual requeue), reschedule it to today's after-hours window.
+            if (isFirstAttempt && isAdmiral) {
+              const { data: withinHours } = await supabase.rpc('is_within_business_hours', {
+                p_org_id: orgId,
+                p_client_id: clientId || null,
+              });
+              if (withinHours === true) {
+                const { data: deferUntil } = await supabase.rpc('get_admiral_after_hours_start', {
+                  p_org_id: orgId,
+                  p_client_id: clientId,
+                });
+                await supabase.from('outbound_calls')
+                  .update({
+                    status: 'scheduled',
+                    scheduled_at: deferUntil ?? new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('id', call.id);
+                logger.info(`Admiral first-attempt during business hours — deferred call ${call.id} to ${deferUntil}`);
+                results.results.push({ call_id: call.id, status: 'skipped', error: 'Admiral: deferred to after-hours' });
+                continue;
+              }
+            }
             
             if (!isFirstAttempt) {
               // is_within_business_hours now also checks holidays (Bug 3 fix),
