@@ -373,10 +373,26 @@ async function handleStats(supabase: any, orgId: string, cors: Record<string, st
   let appsThisWeek = 0;
 
   if (allJobIds.length > 0) {
-    const { count } = await supabase.from('applications').select('*', { count: 'exact', head: true }).in('job_listing_id', allJobIds);
-    totalApps = count || 0;
+    const CHUNK_SIZE = 100;
+    const chunks: string[][] = [];
+    for (let i = 0; i < allJobIds.length; i += CHUNK_SIZE) {
+      chunks.push(allJobIds.slice(i, i + CHUNK_SIZE));
+    }
 
-    const { data: apps } = await supabase.from('applications').select('status, job_listing_id').in('job_listing_id', allJobIds);
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const chunkResults = await Promise.all(chunks.map(async (chunk) => {
+      const [totalRes, appsRes, weekRes] = await Promise.all([
+        supabase.from('applications').select('*', { count: 'exact', head: true }).in('job_listing_id', chunk),
+        supabase.from('applications').select('status, job_listing_id').in('job_listing_id', chunk),
+        supabase.from('applications').select('*', { count: 'exact', head: true }).in('job_listing_id', chunk).gte('applied_at', weekAgo),
+      ]);
+      return {
+        totalCount: totalRes.count || 0,
+        apps: (appsRes.data || []) as AppRow[],
+        weekCount: weekRes.count || 0,
+      };
+    }));
 
     const clientNameMap: Record<string, string> = {};
     (clients || []).forEach((c: ClientRow) => { clientNameMap[c.id] = c.name; });
@@ -385,16 +401,16 @@ async function handleStats(supabase: any, orgId: string, cors: Record<string, st
       jobClientMap[j.id] = clientNameMap[j.client_id!] || 'Unassigned';
     });
 
-    (apps || []).forEach((a: AppRow) => {
-      const s = a.status || 'pending';
-      appsByStatus[s] = (appsByStatus[s] || 0) + 1;
-      const cn = jobClientMap[a.job_listing_id!] || 'Unassigned';
-      appsByClient[cn] = (appsByClient[cn] || 0) + 1;
-    });
-
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const { count: weekCount } = await supabase.from('applications').select('*', { count: 'exact', head: true }).in('job_listing_id', allJobIds).gte('applied_at', weekAgo);
-    appsThisWeek = weekCount || 0;
+    for (const r of chunkResults) {
+      totalApps += r.totalCount;
+      appsThisWeek += r.weekCount;
+      r.apps.forEach((a: AppRow) => {
+        const s = a.status || 'pending';
+        appsByStatus[s] = (appsByStatus[s] || 0) + 1;
+        const cn = jobClientMap[a.job_listing_id!] || 'Unassigned';
+        appsByClient[cn] = (appsByClient[cn] || 0) + 1;
+      });
+    }
   }
 
   return jsonResponse({
