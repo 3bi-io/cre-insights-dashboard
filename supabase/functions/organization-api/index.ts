@@ -295,24 +295,53 @@ async function handleApplications(supabase: any, orgId: string, url: URL, cors: 
     clientMap = Object.fromEntries((clients || []).map((c: ClientRow) => [c.id, c.name]));
   }
 
-  let appQuery = supabase
-    .from('applications')
-    .select('id, first_name, last_name, status, applied_at, source, city, state, phone, applicant_email, job_listing_id, exp, cdl', { count: 'exact' })
-    .order('applied_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+  const APP_COLS = 'id, first_name, last_name, status, applied_at, source, city, state, phone, applicant_email, job_listing_id, exp, cdl';
+  const CHUNK_SIZE = 100;
+
+  let allApps: AppRow[] = [];
+  let total = 0;
 
   if (jobId) {
-    appQuery = appQuery.eq('job_listing_id', jobId);
+    let q = supabase
+      .from('applications')
+      .select(APP_COLS, { count: 'exact' })
+      .eq('job_listing_id', jobId)
+      .order('applied_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (status) q = q.eq('status', status);
+    const { data, count, error } = await q;
+    if (error) throw error;
+    allApps = data || [];
+    total = count || 0;
   } else {
-    appQuery = appQuery.in('job_listing_id', jobIds);
+    // Chunk job_listing_id .in() to avoid PostgREST URL overflow on large clients (e.g. Admiral ~420 jobs)
+    const chunks: string[][] = [];
+    for (let i = 0; i < jobIds.length; i += CHUNK_SIZE) {
+      chunks.push(jobIds.slice(i, i + CHUNK_SIZE));
+    }
+    logger.info(`handleApplications chunked query`, { jobCount: jobIds.length, chunks: chunks.length });
+
+    const results = await Promise.all(chunks.map(async (chunk) => {
+      let q = supabase
+        .from('applications')
+        .select(APP_COLS, { count: 'exact' })
+        .in('job_listing_id', chunk)
+        .order('applied_at', { ascending: false });
+      if (status) q = q.eq('status', status);
+      // Fetch enough from each chunk to satisfy offset+limit after merge
+      q = q.limit(offset + limit);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { data: data || [], count: count || 0 };
+    }));
+
+    total = results.reduce((s, r) => s + r.count, 0);
+    const merged = results.flatMap(r => r.data) as AppRow[];
+    merged.sort((a, b) => (b.applied_at || '').localeCompare(a.applied_at || ''));
+    allApps = merged.slice(offset, offset + limit);
   }
 
-  if (status) appQuery = appQuery.eq('status', status);
-
-  const { data: apps, count, error } = await appQuery;
-  if (error) throw error;
-
-  const enriched = (apps || []).map((app: AppRow) => {
+  const enriched = allApps.map((app: AppRow) => {
     const job = jobMap[app.job_listing_id!];
     return {
       id: app.id, first_name: app.first_name, last_name: app.last_name,
@@ -324,7 +353,7 @@ async function handleApplications(supabase: any, orgId: string, url: URL, cors: 
     };
   });
 
-  return jsonResponse({ applications: enriched, total: count || 0 }, 200, cors);
+  return jsonResponse({ applications: enriched, total }, 200, cors);
 }
 
 // deno-lint-ignore no-explicit-any
@@ -344,10 +373,26 @@ async function handleStats(supabase: any, orgId: string, cors: Record<string, st
   let appsThisWeek = 0;
 
   if (allJobIds.length > 0) {
-    const { count } = await supabase.from('applications').select('*', { count: 'exact', head: true }).in('job_listing_id', allJobIds);
-    totalApps = count || 0;
+    const CHUNK_SIZE = 100;
+    const chunks: string[][] = [];
+    for (let i = 0; i < allJobIds.length; i += CHUNK_SIZE) {
+      chunks.push(allJobIds.slice(i, i + CHUNK_SIZE));
+    }
 
-    const { data: apps } = await supabase.from('applications').select('status, job_listing_id').in('job_listing_id', allJobIds);
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const chunkResults = await Promise.all(chunks.map(async (chunk) => {
+      const [totalRes, appsRes, weekRes] = await Promise.all([
+        supabase.from('applications').select('*', { count: 'exact', head: true }).in('job_listing_id', chunk),
+        supabase.from('applications').select('status, job_listing_id').in('job_listing_id', chunk),
+        supabase.from('applications').select('*', { count: 'exact', head: true }).in('job_listing_id', chunk).gte('applied_at', weekAgo),
+      ]);
+      return {
+        totalCount: totalRes.count || 0,
+        apps: (appsRes.data || []) as AppRow[],
+        weekCount: weekRes.count || 0,
+      };
+    }));
 
     const clientNameMap: Record<string, string> = {};
     (clients || []).forEach((c: ClientRow) => { clientNameMap[c.id] = c.name; });
@@ -356,16 +401,16 @@ async function handleStats(supabase: any, orgId: string, cors: Record<string, st
       jobClientMap[j.id] = clientNameMap[j.client_id!] || 'Unassigned';
     });
 
-    (apps || []).forEach((a: AppRow) => {
-      const s = a.status || 'pending';
-      appsByStatus[s] = (appsByStatus[s] || 0) + 1;
-      const cn = jobClientMap[a.job_listing_id!] || 'Unassigned';
-      appsByClient[cn] = (appsByClient[cn] || 0) + 1;
-    });
-
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const { count: weekCount } = await supabase.from('applications').select('*', { count: 'exact', head: true }).in('job_listing_id', allJobIds).gte('applied_at', weekAgo);
-    appsThisWeek = weekCount || 0;
+    for (const r of chunkResults) {
+      totalApps += r.totalCount;
+      appsThisWeek += r.weekCount;
+      r.apps.forEach((a: AppRow) => {
+        const s = a.status || 'pending';
+        appsByStatus[s] = (appsByStatus[s] || 0) + 1;
+        const cn = jobClientMap[a.job_listing_id!] || 'Unassigned';
+        appsByClient[cn] = (appsByClient[cn] || 0) + 1;
+      });
+    }
   }
 
   return jsonResponse({
