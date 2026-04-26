@@ -48,20 +48,8 @@ verify_jwt = false
 [functions.inbound-applications]
 verify_jwt = false
 
-[functions.ziprecruiter-webhook]
-verify_jwt = false
-
 [functions.google-indexing-trigger]
 verify_jwt = false
-
-[functions.indeed-integration]
-verify_jwt = true
-
-[functions.adzuna-integration]
-verify_jwt = true
-
-[functions.talroo-integration]
-verify_jwt = true
 
 [functions.tenstreet-explorer]
 verify_jwt = true
@@ -122,9 +110,6 @@ verify_jwt = true
 
 [functions.elevenlabs-call-status]
 verify_jwt = false
-
-[functions.driverreach-integration]
-verify_jwt = true
 
 [functions.ats-integration]
 verify_jwt = false
@@ -249,17 +234,11 @@ verify_jwt = true
 [functions.x-platform-integration]
 verify_jwt = true
 
-[functions.ziprecruiter-integration]
-verify_jwt = true
-
 [functions.send-test-emails]
 verify_jwt = true
 
 [functions.monitor-feed-quality]
 verify_jwt = false
-
-[functions.ai-analytics-enhanced]
-verify_jwt = true
 
 [functions.resolve-embed-token]
 verify_jwt = false
