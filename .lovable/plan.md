@@ -1,143 +1,161 @@
-## Current Scheduling Capabilities — Detailed Overview
+# Codebase Audit — Non-Functional APIs, Orphaned & Unused Resources
 
-### Architecture (today)
-The voice scheduling flow is **already wired end-to-end through Nylas v3** (a third-party calendar abstraction layer that proxies to Google, Microsoft 365/Exchange, and iCloud). ElevenLabs voice agents call a webhook tool → that tool reads recruiter availability from Nylas → books the slot on the recruiter's real calendar.
-
-```text
-ElevenLabs Voice Agent
-    │  (webhook tool: check_availability / book_callback / get_next_slots)
-    ▼
-edge:agent-scheduling                   ← public, no JWT
-    │  internal HTTP
-    ▼
-edge:calendar-integration               ← Nylas v3 wrapper
-    │
-    ├─→ Nylas Hosted Auth  (Google + Microsoft + iCloud)
-    ├─→ Nylas Free/Busy + /calendars/availability
-    └─→ Nylas Events API   (creates real calendar event)
-    │
-    ▼
-DB: recruiter_calendar_connections, scheduled_callbacks,
-    recruiter_availability_preferences, calendar_invitations
-    │
-    ▼
-edge:morning-digest  → daily HTML email of today's callbacks (via Resend)
-```
-
-### What works today
-- **Nylas OAuth** for Google, Microsoft (work/school + personal), iCloud — all three providers via one integration. Secrets `NYLAS_API_KEY`, `NYLAS_CLIENT_ID`, `NYLAS_REDIRECT_URI` are configured.
-- **Calendar invites by email** — admin sends magic link via Resend; recruiter connects without needing an account first (`calendar_invitations` table, 7-day expiry).
-- **Per-recruiter preferences** — working hours, working days, timezone, buffer before/after, default call duration, max daily callbacks, min booking notice, allow same-day, auto-accept.
-- **Per-client OR per-org calendar routing** — `recruiter_calendar_connections.client_id` lets one recruiter have a different calendar per client; falls back to org-level connection.
-- **Round-robin across recruiters** — picks the recruiter with the earliest free slot.
-- **Real Nylas event creation** with title `AI Callback: {driver}`, busy=true, full description.
-- **No-calendar fallback** — if no recruiter has a calendar connected, schedules an AI callback during next business window using `next_business_datetime` RPC + creates `outbound_calls` row + records to `scheduled_callbacks`.
-- **SMS confirmation** to driver via Twilio.
-- **Cancel flow** — deletes Nylas event + marks `scheduled_callbacks.status='cancelled'`.
-- **Morning digest** — daily 6am Central email summarizes each recruiter's callbacks.
-- **Frontend** — `RecruiterCalendarPage`, `RecruiterCalendarConnect`, `CalendarInviteConnect`, `CalendarCallback`, `ScheduledCallbacksDashboard` already exist.
-
-### Gaps preventing a "complete" scheduling workflow
-There are **0 active connections** in `recruiter_calendar_connections` today. The plumbing exists but the production workflow has the following functional gaps that block real bookings:
-
-1. **No booking confirmation email to the driver** — only SMS goes out. No `.ics` invite, no email confirmation, no event invitee added on the calendar event so the driver doesn't get a Google/Outlook invite.
-2. **No invitee on the calendar event** — Nylas `events` payload omits `participants`, so the driver doesn't appear as an attendee and gets no native Google/Outlook RSVP.
-3. **No reschedule path** — only cancel exists. Voice agent can't move a slot.
-4. **No reminder sequence** — there is `digest_email_sent` flag on `scheduled_callbacks` but nothing sends a 1-hour-before reminder to driver or recruiter.
-5. **No recruiter notification on booking** — recruiter only sees booking via the calendar event itself + morning digest.
-6. **Webhook tools not documented for ElevenLabs config** — agents must be configured by hand in ElevenLabs UI. There is no central reference.
-7. **Provider selection at OAuth start** — UI passes `provider` only optionally; default flow opens Nylas's provider chooser. Fine, but we should add explicit "Connect Google" and "Connect Microsoft 365 / Exchange" buttons that pre-select the provider (cleaner UX).
-8. **Calendar event missing conferencing link** — no Google Meet / Teams meeting auto-attached, so the call has no join URL on the invite.
-9. **No `cancel_callback` and `reschedule_callback` ElevenLabs tools** — only `check_availability`, `book_callback`, `get_next_slots`.
-10. **Microsoft Exchange on-prem** — Nylas v3 supports EWS but our redirect URI / scopes need verification; not currently advertised.
-11. **No retry on Nylas event creation** — if Nylas momentarily fails, we save the callback as `pending` but never retry creation.
+This is a **read-only audit**. No files will be changed unless you approve a follow-up cleanup plan.
 
 ---
 
-## Implementation Plan — Complete the Voice → Calendar Scheduling Workflow
+## 1. Non-Functional / Broken Edge Function APIs
 
-### Scope
-Make the existing Nylas-based pipeline production-complete for both **Google Calendar** and **Microsoft Exchange / Office 365**, fully driven by ElevenLabs voice agent tool calls. No swap to a different provider — Nylas already covers both and is configured.
+These edge functions exist in the codebase but are **missing the credentials/secrets required to actually run**, or are otherwise non-functional. They will throw 500-class errors if invoked.
 
-### 1. Database (one migration)
-Add columns / table to support reschedule, reminders, driver email, and conferencing.
+### A. Job board integrations missing API credentials
+| Function | Required secret(s) | Status |
+|---|---|---|
+| `adzuna-integration` | `ADZUNA_API_KEY`, `ADZUNA_APP_ID` | NOT SET |
+| `ziprecruiter-integration` | `ZIPRECRUITER_API_KEY`, `ZIPRECRUITER_COMPANY_ID` | NOT SET |
+| `ziprecruiter-webhook` | (depends on ZipRecruiter) | NOT SET |
+| `indeed-integration` | `INDEED_CLIENT_ID`, `INDEED_CLIENT_SECRET` | NOT SET |
+| `talroo-integration` | (only generic Supabase keys; integration logic exists but no Talroo API key) | partial |
+| `driverreach-integration` | `DRIVERREACH_API_KEY` (referenced in UI) | NOT SET |
+| `tenstreet-*` (8 functions) | Tenstreet credentials are stored per-client in DB, not a global secret — these may work for clients that have credentials, but no global default | conditional |
+| `craigslist-integration` | `CRAIGSLIST_USERNAME/PASSWORD/ACCOUNT_ID` | SET (works) |
 
-- `applications` already has `email`. Add to `scheduled_callbacks`:
-  - `driver_email text` (copied at booking time so it survives application edits)
-  - `reschedule_count int default 0`
-  - `reminder_sent_at timestamptz`
-  - `conference_url text` (Google Meet / Teams join link)
-  - `previous_event_ids text[] default '{}'` (audit trail for reschedules)
-- New table `scheduling_reminders` (id, callback_id fk, fire_at timestamptz, kind text check in ('driver_1h','recruiter_15m'), status text default 'pending', sent_at timestamptz). Indexed on `(status, fire_at)` for the cron poller.
+**Recommendation:** Either configure the missing API keys (Adzuna, ZipRecruiter, Indeed, DriverReach) or remove these functions and the corresponding UI surfaces (`/admin/job-boards`, `DriverReachIntegration` page, etc.).
 
-### 2. Edge function changes
+### B. Functions in the directory but **not registered** in `supabase/config.toml`
+These deploy independently but are not declared in config (no JWT/import-map config):
+- `scheduling-reminders` *(newly created — needs config entry + cron job)*
+- `syndication-push` *(scheduled via cron weekly, but missing config entry)*
+- `update-elevenlabs-phones`
+- `verify-twilio-creds`
 
-**`calendar-integration` (extend existing actions, add new)**
-- `book_slot`: include the driver as a `participants[]` entry on the Nylas event (so they get a Google/Outlook RSVP), and request `conferencing: { provider: 'Google Meet' | 'Microsoft Teams' }` based on the recruiter's `provider_type`. Capture `conference_url` from response.
-- New action `reschedule_slot`: deletes old Nylas event, creates new one, increments counters, returns new times.
-- `book_slot`: persist `driver_email` if available from application lookup.
-- Add explicit `provider=google` and `provider=microsoft` query-param helpers in `oauth_url` action (we already pass provider through; add lightweight UI buttons — see §4).
-- Add a one-shot retry on Nylas event creation when the first attempt fails.
+### C. Function declared in config but **directory missing** (broken deploy)
+- `ai-analytics-enhanced` — listed in `supabase/config.toml` but no source folder. Will fail to deploy.
 
-**`agent-scheduling` (new ElevenLabs tools)**
-- `reschedule_callback` — takes `callback_id` + `new_slot_start` (+ optional `new_slot_end`), validates ownership, calls `calendar-integration:reschedule_slot`.
-- `cancel_callback` — takes `callback_id`, calls `calendar-integration:cancel_booking`. (Currently the voice agent has no tool for this.)
-- `get_my_callback` — driver looks up their own scheduled callback by `application_id` (so the agent can confirm "you're booked for X").
+### D. New but not yet wired
+- **`scheduling-reminders`** — implemented but **the pg_cron schedule has not been created**. Will never run until you run the SQL in `docs/VOICE_AGENT_SCHEDULING_SETUP.md` §3.
+- **`agent-scheduling`** new tools (`reschedule_callback`, `cancel_callback`, `get_my_callback`) are deployed but the corresponding ElevenLabs webhook tools are **not yet configured in the ElevenLabs dashboard**, so voice agents cannot trigger them.
 
-**New edge function `scheduling-reminders` (cron-driven, every 5 min)**
-- Polls `scheduling_reminders` where `status='pending' and fire_at <= now()`.
-- For `driver_1h`: send SMS via existing `send-sms` + branded confirmation email (via Resend) including the `conference_url` and a calendar `.ics` re-attach.
-- For `recruiter_15m`: send Resend email to recruiter w/ driver name, phone, application link, conference URL.
-- Reuse `_shared/email-config.ts` sender + `_shared/twilio-client.ts`.
-- Schedule with `pg_cron` → `net.http_post` every 5 minutes (one SQL insert via the migration tool, kept out of versioned migrations per project standard).
+---
 
-**`book_slot` post-success hook**
-- Insert two `scheduling_reminders` rows: `driver_1h` at `scheduled_start - 1h`, `recruiter_15m` at `scheduled_start - 15m`.
-- Send immediate confirmation email to driver with `.ics` attachment + Meet/Teams link.
-- Send immediate Resend email to recruiter ("New AI booking — {driver} at {time}").
+## 2. Build-Breaking Issue (Active)
 
-### 3. ElevenLabs agent tool config (documentation deliverable)
-Add `docs/ELEVENLABS_SCHEDULING_TOOLS.md` with copy-pasteable JSON for each of these webhook tools to be created in the ElevenLabs agent UI:
-- `check_availability`, `get_next_slots`, `book_callback`, `reschedule_callback`, `cancel_callback`, `get_my_callback`.
-Each entry lists: webhook URL (`https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/agent-scheduling`), method POST, body schema, expected `result` text the agent reads back, and dynamic variable mapping (`organization_id`, `client_id`, `application_id`, `driver_phone`, `driver_name` from the conversation metadata we already pass per `mem://features/voice-agent-session-attribution`).
+```
+src/features/applications/components/KanbanCard.tsx(3,21):
+  TS2307: Cannot find module '@dnd-kit/utilities'
+```
+- `package.json` includes `@dnd-kit/core` and `@dnd-kit/sortable` but **not `@dnd-kit/utilities`**.
+- Affects: `KanbanCard.tsx`, `KanbanColumn.tsx`, `KanbanBoard.tsx` (Applications Kanban view).
+- **Fix:** add `@dnd-kit/utilities` dependency, or remove the Kanban feature if unused.
 
-### 4. Frontend changes
-- `RecruiterCalendarConnect.tsx`: replace the single "Connect Calendar" button with **two explicit buttons** — "Connect Google Calendar" and "Connect Microsoft 365 / Outlook" — each calls `oauth_url` with `provider=google` or `provider=microsoft`. Keep "Other (iCloud / EWS)" as a tertiary link.
-- `ScheduledCallbacksDashboard.tsx`: add a **Reschedule** button (opens a date/time picker that calls `agent-scheduling:reschedule_callback` from the recruiter side) and surface `conference_url` as a clickable Meet/Teams link. Show reminder send status.
-- New small badge column "Provider" (Google / Microsoft / iCloud) sourced from `recruiter_calendar_connections.provider_type`.
+---
 
-### 5. Microsoft Exchange / Office 365 enablement checklist (no code, just config)
-The user (workspace admin) must do these one-time steps in Nylas dashboard. Plan output will include them in a written checklist:
-- Enable **Microsoft Graph** integration in Nylas dashboard → Provider Apps.
-- Add `https://applyai.jobs/calendar/callback` (matches `NYLAS_REDIRECT_URI`) to the Microsoft Azure App Registration.
-- Required Graph scopes: `Calendars.ReadWrite`, `OnlineMeetings.ReadWrite`, `User.Read`, `offline_access` — already what Nylas requests, but verify in Nylas dashboard.
-- For on-prem **Exchange (EWS)**: enable EWS provider in Nylas, no extra app registration needed.
-- For Google: enable Google provider in Nylas; Google Cloud OAuth consent must list `applyai.jobs` as authorized domain.
+## 3. Orphaned Pages
 
-### 6. Testing
-- Unit tests in `supabase/functions/agent-scheduling/index.test.ts` for the three new tool actions (mock the calendar-integration call).
-- One real-world manual test plan in the deliverables section.
+Pages that exist in `src/pages/` but are **not referenced** by `AppRoutes.tsx` or any other component:
 
-### Files touched (high level)
-- `supabase/functions/calendar-integration/index.ts` — extend `book_slot`, `cancel_booking`, add `reschedule_slot`.
-- `supabase/functions/agent-scheduling/index.ts` — add `reschedule_callback`, `cancel_callback`, `get_my_callback`.
-- `supabase/functions/scheduling-reminders/index.ts` — new file.
-- `supabase/functions/_shared/ics.ts` — new tiny helper to build `.ics` attachment for confirmations.
-- `supabase/config.toml` — register `scheduling-reminders` with `verify_jwt = false` (cron-callable).
-- `src/components/voice/RecruiterCalendarConnect.tsx` — two-button provider selector.
-- `src/components/voice/ScheduledCallbacksDashboard.tsx` — reschedule + conferencing link.
-- `docs/ELEVENLABS_SCHEDULING_TOOLS.md` — new reference doc.
-- DB migration (one) for the columns/table above.
-- One pg_cron insert (run through the supabase insert tool, not as a versioned migration, per platform standards).
+| Page | Notes |
+|---|---|
+| `src/pages/Campaigns.tsx` | Replaced by `features/campaigns/pages/CampaignsPage`. Old page still on disk. |
+| `src/features/analytics/pages/AIImpactDashboardPage.tsx` | Duplicate of `src/pages/AIImpactDashboard.tsx`; only one is routed. |
+| `src/features/applications/pages/AdminApplicationsPage.tsx` | Never imported. |
+| `src/features/dashboard/pages/IndexPage.tsx` | Never imported. |
 
-### Out of scope
-- Replacing Nylas with raw Google/Microsoft Graph SDKs (Nylas already abstracts both correctly and is the documented architecture per `mem://scheduling/calendar-integration-architecture-v2`).
-- Two-way sync of recruiter-created events back into `scheduled_callbacks` (we only manage AI-booked events).
-- Group/round-robin pool changes — current per-client + per-org routing stays as-is.
+---
 
-### Acceptance criteria
-1. A recruiter can click "Connect Google Calendar" or "Connect Microsoft 365" and complete OAuth in under 60 seconds.
-2. An ElevenLabs voice agent call to `book_callback` produces: a real event on the recruiter's Google or Outlook calendar, the driver as an invitee, a Google Meet or Teams join URL on the event, an SMS to the driver, an email confirmation to the driver with `.ics`, and an email to the recruiter.
-3. The driver receives a 1-hour-before SMS + email reminder; the recruiter receives a 15-min-before email reminder.
-4. The voice agent can reschedule and cancel via `reschedule_callback` / `cancel_callback`, and the calendar event updates accordingly.
-5. The morning digest continues to list everything correctly.
+## 4. Orphaned Components (45 total)
+
+Components that exist but are **never imported anywhere outside themselves**. Top items:
+
+**Admin/Dashboard (likely safe to delete):**
+- `BudgetOverview.tsx`
+- `PlatformBreakdown.tsx`
+- `admin/AdminQuickActions.tsx`
+- `admin/OrganizationGrowthChart.tsx`
+- `admin/QuickActionsPanel.tsx`
+- `admin/RecentActivityFeed.tsx`
+- `admin/SystemHealthMonitor.tsx`
+- `dashboard/DashboardOverview.tsx`
+- `dashboard/organization/OrganizationJobManagement.tsx`
+
+**Analytics & AI:**
+- `ai/TruthContractMonitor.tsx`
+- `analytics/AIAnalyticsDashboard.tsx`
+- `analytics/FeedAnalyticsSection.tsx`
+
+**Applications/CSV:**
+- `applications/SecureApplicationView.tsx`
+- `applications/SecurityDemoCard.tsx`
+- `csv/CsvApplicationTransformer.tsx`
+
+**Tenstreet (entire group unreferenced):**
+- `tenstreet/BulkExport.tsx`, `BulkImport.tsx`, `BulkStatusUpdate.tsx`
+- `tenstreet/CredentialsManagementTable.tsx`, `CredentialsStatsCards.tsx`
+- `tenstreet/ExportDataDialog.tsx`, `SyncOperations.tsx`
+- `tenstreet/TenstreetErrorBoundary.tsx`, `XchangeStatusWidget.tsx`
+
+**Landing/Marketing:**
+- `landing/TestimonialsSection.tsx`
+- `landing/VoiceWorkflowIllustration.tsx`
+- `features/landing/components/IndustryShowcaseModal.tsx`
+
+**Settings/Misc:**
+- `settings/AdministratorsSettingsTab.tsx`
+- `settings/LanguageSelector.tsx`
+- `optimized/MemoizedComponents.tsx`
+- `shared/EmptyStateIllustration.tsx`
+- `common/LoadingScreen.tsx`
+- `charts/PieChart.tsx`
+- `design-system/ResponseiveHelpers.tsx` *(also has typo in filename: "Responseive")*
+- `platforms/EveryTruckJobPlatformActions.tsx`
+- `features/admin/components/ATSReadinessIndicator.tsx`
+
+**Unused shadcn/ui primitives (safe to remove if not planned):**
+- `ui/aspect-ratio.tsx`
+- `ui/carousel.tsx`
+- `ui/hover-card.tsx`
+- `ui/input-otp.tsx`
+- `ui/mobile-scrollable-tabs.tsx`
+- `ui/navigation-menu.tsx`
+- `ui/radio-group.tsx`
+- `ui/resizable.tsx`
+- `ui/responsive-text.tsx`
+- `ui/shimmer.tsx`
+
+**Test stub:** `ui/__tests__/button.test.tsx` (no test runner configured in build).
+
+---
+
+## 5. Edge Functions With No Frontend or Cron Caller
+
+These deploy fine, but **nothing in the project actively invokes them** (no `supabase.functions.invoke` calls, no cron jobs, no webhook configurations found in code):
+
+- `update-elevenlabs-phones` — admin-only utility script; presumably manually invoked
+- `verify-twilio-creds` — debug/setup utility
+- `send-test-emails` — debug-only
+- `test-sms` — debug-only
+- `auth-email-templates` — replaced by Supabase native templates
+- `generate-founders-pass-creative` — one-off marketing asset
+- `backfill-webhook` — one-off backfill script
+
+**Note:** Several apparent "orphans" (e.g. `hayes-*-inbound`, `tenstreet-webhook`, `whatsapp-webhook`, `meta-engagement-webhook`, `sms-webhook`, `cdl-jobcast-inbound`) are actually **valid external webhook receivers** — their URLs are configured in third-party dashboards (Tenstreet, Twilio, Meta, etc.), not in this codebase. They are functional, not orphans.
+
+---
+
+## 6. Documentation / Setup Gaps
+
+- `docs/VOICE_AGENT_SCHEDULING_SETUP.md` instructs you to manually run a `cron.schedule(...)` SQL block to enable the new reminders system — **this has not been done**, so reminders won't fire.
+- ElevenLabs voice agents need 3 new webhook tools registered (`reschedule_callback`, `cancel_callback`, `get_my_callback`) — not yet done in ElevenLabs UI.
+
+---
+
+## Suggested Next Step
+
+If you'd like, I can prepare a follow-up cleanup plan that:
+1. Fixes the build error (`@dnd-kit/utilities`) — or removes the Kanban feature entirely.
+2. Deletes the orphaned page and component files (with your approval per group).
+3. Removes broken integration functions (Adzuna/ZipRecruiter/Indeed/DriverReach) **or** wires up their secrets.
+4. Removes `ai-analytics-enhanced` from `config.toml` and adds entries for `scheduling-reminders`, `syndication-push`, `update-elevenlabs-phones`, `verify-twilio-creds`.
+5. Activates the `scheduling-reminders` cron job and provides ElevenLabs tool JSON to register the 3 new scheduling tools.
+
+Just tell me which sections to act on and I'll generate the cleanup plan.
