@@ -212,9 +212,10 @@ export function safeValidateRequest<T>(
   data: unknown
 ): { success: true; data: T } | { success: false; error: z.ZodError } {
   const result = schema.safeParse(data);
-  return result.success
-    ? { success: true, data: result.data }
-    : { success: false, error: result.error };
+  if (result.success) {
+    return { success: true, data: result.data };
+  }
+  return { success: false, error: (result as z.SafeParseError<T>).error };
 }
 
 /**

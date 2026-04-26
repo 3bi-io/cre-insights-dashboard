@@ -24,7 +24,7 @@ const corsHeaders = {
  * Matches by email or normalized phone within the same job listing (or org if no job listing)
  */
 async function isDuplicate(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof getServiceClient>,
   email: string | undefined,
   phone: string | null,
   jobListingId: string | null,

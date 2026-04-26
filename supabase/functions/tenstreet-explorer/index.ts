@@ -57,10 +57,10 @@ serve(async (req) => {
 
     const validationResult = requestSchema.safeParse(await req.json())
     if (!validationResult.success) {
-      return validationErrorResponse(validationResult.error)
+      return validationErrorResponse((validationResult as z.SafeParseError<unknown>).error)
     }
 
-    const { company_id, action, ...params } = validationResult.data
+    const { company_id, action, ...params } = validationResult.data as Record<string, any>;
 
     // Create authenticated Supabase client for this user
     const supabaseClient = createAuthenticatedClient(req)
