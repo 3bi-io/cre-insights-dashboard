@@ -116,6 +116,38 @@ export function ScheduledCallbacksDashboard() {
     }
   };
 
+  const handleReschedule = async (cb: ScheduledCallback) => {
+    const current = format(new Date(cb.scheduled_start), "yyyy-MM-dd'T'HH:mm");
+    const input = window.prompt(
+      `Reschedule callback for ${cb.driver_name || 'Driver'}.\nEnter new start time (YYYY-MM-DDTHH:mm, local time):`,
+      current
+    );
+    if (!input) return;
+
+    const newStart = new Date(input);
+    if (isNaN(newStart.getTime()) || newStart <= new Date()) {
+      toast({ title: 'Invalid time', description: 'Please pick a future date/time.', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('calendar-integration', {
+        body: {
+          action: 'reschedule_slot',
+          callbackId: cb.id,
+          newStartTime: newStart.toISOString(),
+        },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Reschedule failed');
+
+      toast({ title: 'Callback rescheduled', description: format(newStart, 'PPpp') });
+      fetchCallbacks();
+    } catch (err: any) {
+      toast({ title: 'Reschedule failed', description: err.message, variant: 'destructive' });
+    }
+  };
+
   const upcoming = callbacks.filter(cb => 
     !isPast(new Date(cb.scheduled_start)) && !['cancelled', 'completed', 'no_show'].includes(cb.status)
   );
