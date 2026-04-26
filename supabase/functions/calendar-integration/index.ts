@@ -84,6 +84,9 @@ Deno.serve(async (req) => {
       case 'cancel_booking':
         return handleCancelBooking(req, params, jsonHeaders);
 
+      case 'reschedule_slot':
+        return handleRescheduleSlot(req, params, jsonHeaders);
+
       case 'list_connections':
         return handleListConnections(req, params, jsonHeaders);
 
