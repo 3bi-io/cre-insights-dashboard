@@ -6471,8 +6471,10 @@ export type Database = {
           application_id: string | null
           booking_source: string | null
           calendar_connection_id: string | null
+          conference_url: string | null
           created_at: string
           digest_email_sent: boolean | null
+          driver_email: string | null
           driver_name: string | null
           driver_phone: string | null
           duration_minutes: number
@@ -6481,7 +6483,10 @@ export type Database = {
           notes: string | null
           nylas_event_id: string | null
           organization_id: string | null
+          previous_event_ids: string[]
           recruiter_user_id: string | null
+          reminder_sent_at: string | null
+          reschedule_count: number
           scheduled_end: string
           scheduled_start: string
           sms_confirmation_sent: boolean | null
@@ -6492,8 +6497,10 @@ export type Database = {
           application_id?: string | null
           booking_source?: string | null
           calendar_connection_id?: string | null
+          conference_url?: string | null
           created_at?: string
           digest_email_sent?: boolean | null
+          driver_email?: string | null
           driver_name?: string | null
           driver_phone?: string | null
           duration_minutes?: number
@@ -6502,7 +6509,10 @@ export type Database = {
           notes?: string | null
           nylas_event_id?: string | null
           organization_id?: string | null
+          previous_event_ids?: string[]
           recruiter_user_id?: string | null
+          reminder_sent_at?: string | null
+          reschedule_count?: number
           scheduled_end: string
           scheduled_start: string
           sms_confirmation_sent?: boolean | null
@@ -6513,8 +6523,10 @@ export type Database = {
           application_id?: string | null
           booking_source?: string | null
           calendar_connection_id?: string | null
+          conference_url?: string | null
           created_at?: string
           digest_email_sent?: boolean | null
+          driver_email?: string | null
           driver_name?: string | null
           driver_phone?: string | null
           duration_minutes?: number
@@ -6523,7 +6535,10 @@ export type Database = {
           notes?: string | null
           nylas_event_id?: string | null
           organization_id?: string | null
+          previous_event_ids?: string[]
           recruiter_user_id?: string | null
+          reminder_sent_at?: string | null
+          reschedule_count?: number
           scheduled_end?: string
           scheduled_start?: string
           sms_confirmation_sent?: boolean | null
@@ -6578,6 +6593,47 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduling_reminders: {
+        Row: {
+          callback_id: string
+          created_at: string
+          error: string | null
+          fire_at: string
+          id: string
+          kind: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          callback_id: string
+          created_at?: string
+          error?: string | null
+          fire_at: string
+          id?: string
+          kind: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          callback_id?: string
+          created_at?: string
+          error?: string | null
+          fire_at?: string
+          id?: string
+          kind?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduling_reminders_callback_id_fkey"
+            columns: ["callback_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_callbacks"
             referencedColumns: ["id"]
           },
         ]
