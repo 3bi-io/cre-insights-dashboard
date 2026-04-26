@@ -57,7 +57,7 @@ async function getOrganizationCallSettings(
       .eq('client_id', clientId)
       .maybeSingle();
 
-    if (clientSettings) return clientSettings as Record<string, unknown>;
+    if (clientSettings) return clientSettings as unknown as Record<string, unknown>;
   }
 
   const { data: orgSettings } = await supabase
@@ -67,7 +67,7 @@ async function getOrganizationCallSettings(
     .is('client_id', null)
     .maybeSingle();
 
-  return (orgSettings as Record<string, unknown> | null) || null;
+  return (orgSettings as unknown as Record<string, unknown> | null) || null;
 }
 
 async function hasActiveCalendarConnections(
@@ -207,8 +207,9 @@ if (import.meta.main) {
     // Validate request body
     const parseResult = OutboundCallRequestSchema.safeParse(rawBody);
     if (!parseResult.success) {
-      logger.warn('Invalid request body', { errors: parseResult.error.errors });
-      return errorResponse('Invalid request body', 400, { errors: parseResult.error.errors }, origin);
+      const zodError = (parseResult as z.SafeParseError<unknown>).error;
+      logger.warn('Invalid request body', { errors: zodError.errors });
+      return errorResponse('Invalid request body', 400, { errors: zodError.errors }, origin);
     }
     
     const body = parseResult.data;
@@ -580,19 +581,19 @@ if (import.meta.main) {
             }
 
             // === SMS VERIFICATION FOLLOW-UP (shared utility) ===
-            if ((mappedStatus === 'no_answer' || voicemailDetected) && ((fullCall.retry_count as number) || 0) === 0) {
+            if (mappedStatus === 'no_answer' || voicemailDetected) {
               try {
-                const { data: callRecord } = await supabase
+                const { data: smsCall } = await supabase
                   .from('outbound_calls')
-                  .select('sms_followup_sent')
+                  .select('sms_followup_sent, retry_count, application_id, organization_id')
                   .eq('id', call.id)
                   .single();
 
-                if (callRecord && !callRecord.sms_followup_sent && fullCall.application_id) {
+                if (smsCall && !smsCall.sms_followup_sent && ((smsCall.retry_count as number) || 0) === 0 && smsCall.application_id) {
                   const sent = await sendVoicemailVerificationSms(supabase, {
                     callId: call.id,
-                    applicationId: fullCall.application_id,
-                    organizationId: fullCall.organization_id || null,
+                    applicationId: smsCall.application_id,
+                    organizationId: smsCall.organization_id || null,
                   });
                   if (sent) {
                     syncResults.push({ call_id: call.id, status: 'sms_verification_sent' });
@@ -883,7 +884,7 @@ if (import.meta.main) {
 
 // Process a single outbound call
 async function processOutboundCall(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof getServiceClient>,
   elevenLabsApiKey: string,
   body: OutboundCallRequest
 ): Promise<{ success: boolean; data?: unknown; error?: string; details?: string; status?: number }> {
