@@ -122,12 +122,15 @@ export function RecruiterCalendarConnect() {
     }
   };
 
-  const handleConnect = async (clientId?: string) => {
+  const handleConnect = async (clientId?: string, provider?: 'google' | 'microsoft' | 'icloud') => {
     setIsConnecting(true);
     try {
       const body: Record<string, any> = { action: 'oauth_url' };
       if (clientId && clientId !== 'all' && clientId !== 'org-level') {
         body.client_id = clientId;
+      }
+      if (provider) {
+        body.provider = provider;
       }
 
       const { data, error } = await supabase.functions.invoke('calendar-integration', { body });
