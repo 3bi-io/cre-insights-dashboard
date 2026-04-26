@@ -828,7 +828,8 @@ Deno.serve(async (req) => {
     const validationResult = ApplicationSubmissionSchema.safeParse(rawData);
     
     if (!validationResult.success) {
-      const errors = validationResult.error.issues.map(i => ({
+      const zodError = (validationResult as z.SafeParseError<unknown>).error;
+      const errors = zodError.issues.map(i => ({
         field: i.path.join('.'),
         message: i.message
       }));
