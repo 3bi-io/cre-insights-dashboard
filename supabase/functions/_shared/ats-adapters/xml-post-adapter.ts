@@ -310,7 +310,7 @@ export class XMLPostAdapter extends BaseATSAdapter {
 
     // Add Licenses section per Tenstreet spec
     if (application.cdl_class || application.cdl_endorsements || application.cdl) {
-      const hasCDL = application.cdl === 'yes' || application.cdl === 'true' || application.cdl === true || !!application.cdl_class;
+      const hasCDL = application.cdl === 'yes' || application.cdl === 'true' || (application.cdl as unknown) === true || !!application.cdl_class;
       xml += `
   <Licenses>
     <License>
@@ -533,7 +533,9 @@ export class XMLPostAdapter extends BaseATSAdapter {
   /**
    * Extract clean brand name from referral_source URL
    */
-  protected extractBrandName(referralSource?: string, fallbackSource?: string): string {
+  protected extractBrandName(referralSource?: unknown, fallbackSource?: unknown): string {
+    const referral = referralSource ? String(referralSource) : undefined;
+    const fallback = fallbackSource ? String(fallbackSource) : undefined;
     const brandMap: Record<string, string> = {
       'ziprecruiter.com': 'ZipRecruiter',
       'indeed.com': 'Indeed',
@@ -543,9 +545,9 @@ export class XMLPostAdapter extends BaseATSAdapter {
       'google.com': 'Google',
     };
 
-    if (referralSource) {
+    if (referral) {
       try {
-        const url = new URL(referralSource);
+        const url = new URL(referral);
         const hostname = url.hostname.replace(/^www\./, '');
         if (brandMap[hostname]) return brandMap[hostname];
         // Capitalize first part of domain
@@ -553,19 +555,19 @@ export class XMLPostAdapter extends BaseATSAdapter {
         return domainName.charAt(0).toUpperCase() + domainName.slice(1);
       } catch {
         // Not a valid URL, use as-is
-        return referralSource;
+        return referral;
       }
     }
 
-    return fallbackSource || 'Apply AI';
+    return fallback || 'Apply AI';
   }
 
   /**
    * Escape XML special characters
    */
-  protected escapeXml(str: string): string {
-    if (!str) return '';
-    return str
+  protected escapeXml(str: unknown): string {
+    if (str === null || str === undefined || str === '') return '';
+    return String(str)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')

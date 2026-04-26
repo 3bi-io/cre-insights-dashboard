@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "noImplicitOverride": false,
+    "useUnknownInCatchVariables": false,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "lib": ["deno.ns", "deno.unstable", "dom", "dom.iterable", "esnext"]
+  },
+  "imports": {}
+}
