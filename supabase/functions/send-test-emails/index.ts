@@ -276,7 +276,7 @@ serve(async (req: Request): Promise<Response> => {
           from: getSender('default'),
           to: [to],
           bcc: getReviewBcc(),
-          replyTo: getReplyTo('support'),
+          reply_to: getReplyTo('support'),
           subject: email.subject,
           html: email.html
         });

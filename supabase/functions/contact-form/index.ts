@@ -138,7 +138,7 @@ const handler = wrapHandler(async (req: Request) => {
         bcc: getReviewBcc(),
         subject: `New Contact Form: ${body.subject}`,
         html: generateAdminNotificationEmail(body),
-        replyTo: body.email
+        reply_to: body.email
       });
 
       if (emailResponse.error) {

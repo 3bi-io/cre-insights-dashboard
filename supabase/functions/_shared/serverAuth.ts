@@ -160,15 +160,16 @@ export async function enforceAuth(
   requiredRole?: UserRole | UserRole[]
 ): Promise<AuthContext | Response> {
   const authResult = await verifyAuth(request);
-  
+
   if (!authResult.success) {
+    const { error, status } = authResult;
     return new Response(
       JSON.stringify({
         success: false,
-        error: authResult.error,
+        error,
       }),
       {
-        status: authResult.status,
+        status,
         headers: { 'Content-Type': 'application/json' },
       }
     );

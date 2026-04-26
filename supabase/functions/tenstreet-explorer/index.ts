@@ -28,22 +28,6 @@ import { sanitizeForLogging } from '../_shared/tenstreet-pii-utils.ts'
 const logger = createLogger('tenstreet-explorer')
 
 // Helper removed - now using shared utilities
-import { getTenstreetAPIClient } from '../_shared/tenstreet-api-client.ts'
-import { 
-  escapeXML,
-  getCompanyId,
-  buildTenstreetXML,
-  parseXMLResponse,
-  parseApplicantFromXML,
-  buildPersonalDataXML
-} from '../_shared/tenstreet-xml-utils.ts'
-import { 
-  fetchTenstreetCredentials,
-  validateCredentials
-} from '../_shared/tenstreet-credentials.ts'
-import { sanitizeForLogging } from '../_shared/tenstreet-pii-utils.ts'
-
-// Helper removed - now using shared utilities
 
 serve(async (req) => {
   const origin = req.headers.get('origin');

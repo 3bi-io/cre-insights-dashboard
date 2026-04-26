@@ -102,7 +102,7 @@ const handler = wrapHandler(async (req: Request) => {
         from: getSender('notifications'),
         to: [email],
         bcc: getReviewBcc(),
-        replyTo: getReplyTo('support'),
+        reply_to: getReplyTo('support'),
         subject: 'Welcome to the Apply AI Newsletter! 📬',
         html: generateWelcomeEmail(),
       });

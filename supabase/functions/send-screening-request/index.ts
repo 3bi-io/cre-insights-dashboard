@@ -327,7 +327,7 @@ const handler = async (req: Request): Promise<Response> => {
       from: getSender('screening'),
       to: [emailTo],
       bcc: getReviewBcc(),
-      replyTo: getReplyTo('support'),
+      reply_to: getReplyTo('support'),
       subject: emailContent.subject,
       html: emailContent.html
     });

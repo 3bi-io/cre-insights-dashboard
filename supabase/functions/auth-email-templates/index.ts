@@ -1,11 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
-import { createHmac } from "https://deno.land/std@0.190.0/crypto/mod.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { 
   EMAIL_CONFIG,
   getSender,
   getReviewBcc,
+  getReplyTo,
   getPreheaderText,
   getEmailHeader,
   getEmailFooter,
