@@ -596,11 +596,6 @@ async function handleBookCallback(
   );
 }
 
-/**
- * Intentional alias for handleCheckAvailability.
- * ElevenLabs agent tools are configured with separate "get_next_slots" and
- * "check_availability" actions; both resolve to the same availability logic.
- */
 async function handleGetNextSlots(
   params: SchedulingParams,
   headers: Record<string, string>
@@ -609,5 +604,229 @@ async function handleGetNextSlots(
   return handleCheckAvailability(
     { organization_id, driver_timezone, client_id, application_id },
     headers
+  );
+}
+
+/**
+ * Look up the most recent active callback for a driver, by application_id or phone.
+ * Used by reschedule/cancel/get_my_callback when the agent doesn't have callback_id.
+ */
+async function lookupActiveCallback(
+  params: SchedulingParams,
+  // deno-lint-ignore no-explicit-any
+  supabase: any
+) {
+  if (params.callback_id && isValidUUID(params.callback_id)) {
+    const { data } = await supabase
+      .from('scheduled_callbacks')
+      .select('*')
+      .eq('id', params.callback_id)
+      .maybeSingle();
+    return data;
+  }
+
+  let query = supabase
+    .from('scheduled_callbacks')
+    .select('*')
+    .neq('status', 'cancelled')
+    .gte('scheduled_start', new Date().toISOString())
+    .order('scheduled_start', { ascending: true })
+    .limit(1);
+
+  if (params.application_id && isValidUUID(params.application_id)) {
+    query = query.eq('application_id', params.application_id);
+  } else if (params.driver_phone) {
+    const phone = sanitizePhone(params.driver_phone);
+    if (phone) query = query.eq('driver_phone', phone);
+    else return null;
+  } else {
+    return null;
+  }
+
+  const { data } = await query.maybeSingle();
+  return data;
+}
+
+async function handleGetMyCallback(
+  params: SchedulingParams,
+  headers: Record<string, string>
+) {
+  const supabase = getServiceClient();
+  const cb = await lookupActiveCallback(params, supabase);
+
+  if (!cb) {
+    return new Response(
+      JSON.stringify({ result: 'I don\'t see any upcoming callback on file for you. Would you like to schedule one?' }),
+      { status: 200, headers }
+    );
+  }
+
+  const tz = params.driver_timezone || DEFAULT_TIMEZONE;
+  const when = new Date(cb.scheduled_start).toLocaleString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', timeZone: tz,
+  });
+
+  return new Response(
+    JSON.stringify({
+      result: `You have a callback scheduled for ${when}. Would you like to reschedule or cancel it?`,
+      callback_id: cb.id,
+      scheduled_start: cb.scheduled_start,
+      status: cb.status,
+      conference_url: cb.conference_url || null,
+    }),
+    { status: 200, headers }
+  );
+}
+
+async function handleRescheduleCallback(
+  params: SchedulingParams,
+  headers: Record<string, string>
+) {
+  const supabase = getServiceClient();
+  const cb = await lookupActiveCallback(params, supabase);
+
+  if (!cb) {
+    return new Response(
+      JSON.stringify({ result: 'I couldn\'t find an active callback to reschedule. Would you like to book a new one?' }),
+      { status: 200, headers }
+    );
+  }
+
+  if (!params.new_slot_start) {
+    return new Response(
+      JSON.stringify({ result: 'What date and time would you like to move it to?' }),
+      { status: 200, headers }
+    );
+  }
+
+  const newStart = new Date(params.new_slot_start);
+  if (isNaN(newStart.getTime()) || newStart < new Date()) {
+    return new Response(
+      JSON.stringify({ result: 'That time doesn\'t look valid. Could you give me another time?' }),
+      { status: 200, headers }
+    );
+  }
+
+  // deno-lint-ignore no-explicit-any
+  let result: any = {};
+  try {
+    const resp = await fetchWithTimeout(`${SUPABASE_URL}/functions/v1/calendar-integration`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({
+        action: 'reschedule_slot',
+        callbackId: cb.id,
+        newStartTime: params.new_slot_start,
+        newEndTime: params.new_slot_end || null,
+      }),
+    });
+    result = await resp.json();
+  } catch (e: unknown) {
+    logger.error('Reschedule call failed', e);
+    return new Response(
+      JSON.stringify({ result: 'I couldn\'t reschedule right now. A recruiter will follow up with you.' }),
+      { status: 200, headers }
+    );
+  }
+
+  if (!result.success) {
+    return new Response(
+      JSON.stringify({ result: result.error || 'I wasn\'t able to move that callback. Would you like me to check other times?' }),
+      { status: 200, headers }
+    );
+  }
+
+  const tz = params.driver_timezone || DEFAULT_TIMEZONE;
+  const when = newStart.toLocaleString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', timeZone: tz,
+  });
+
+  return new Response(
+    JSON.stringify({
+      result: `Done — I've moved your callback to ${when}. You'll get an updated confirmation shortly.`,
+      callback_id: cb.id,
+    }),
+    { status: 200, headers }
+  );
+}
+
+async function handleCancelCallback(
+  params: SchedulingParams,
+  headers: Record<string, string>
+) {
+  const supabase = getServiceClient();
+  const cb = await lookupActiveCallback(params, supabase);
+
+  if (!cb) {
+    return new Response(
+      JSON.stringify({ result: 'I don\'t see an active callback to cancel.' }),
+      { status: 200, headers }
+    );
+  }
+
+  // deno-lint-ignore no-explicit-any
+  let result: any = {};
+  try {
+    const resp = await fetchWithTimeout(`${SUPABASE_URL}/functions/v1/calendar-integration`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({
+        action: 'cancel_booking',
+        callbackId: cb.id,
+      }),
+    });
+    result = await resp.json();
+  } catch (e: unknown) {
+    logger.error('Cancel call failed', e);
+    return new Response(
+      JSON.stringify({ result: 'I couldn\'t cancel it right now. A recruiter will reach out to confirm.' }),
+      { status: 200, headers }
+    );
+  }
+
+  if (!result.success) {
+    return new Response(
+      JSON.stringify({ result: 'I wasn\'t able to cancel that callback. A recruiter will follow up.' }),
+      { status: 200, headers }
+    );
+  }
+
+  // Also cancel any pending outbound_calls tied to this callback
+  if (cb.application_id) {
+    try {
+      await supabase
+        .from('outbound_calls')
+        .update({ status: 'cancelled' })
+        .eq('application_id', cb.application_id)
+        .eq('status', 'scheduled');
+    } catch (e) {
+      logger.warn('Failed to cancel related outbound_calls', { error: e instanceof Error ? e.message : String(e) });
+    }
+  }
+
+  const reason = sanitizeText(params.reason, 500);
+  if (reason) {
+    try {
+      await supabase
+        .from('scheduled_callbacks')
+        .update({ notes: `${cb.notes || ''}\nCancellation reason: ${reason}`.trim() })
+        .eq('id', cb.id);
+    } catch { /* best effort */ }
+  }
+
+  return new Response(
+    JSON.stringify({
+      result: 'Your callback has been cancelled. Let me know if you\'d like to reschedule for another time.',
+      callback_id: cb.id,
+    }),
+    { status: 200, headers }
   );
 }
