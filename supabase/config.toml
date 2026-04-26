@@ -344,3 +344,15 @@ verify_jwt = false
 
 [functions.enrich-application]
 verify_jwt = true
+
+[functions.scheduling-reminders]
+verify_jwt = false
+
+[functions.syndication-push]
+verify_jwt = false
+
+[functions.update-elevenlabs-phones]
+verify_jwt = true
+
+[functions.verify-twilio-creds]
+verify_jwt = true
