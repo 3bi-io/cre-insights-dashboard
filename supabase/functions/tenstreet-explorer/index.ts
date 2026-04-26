@@ -15,7 +15,6 @@ import {
   escapeXML,
   getCompanyId,
   buildTenstreetXML,
-  parseXMLResponse,
   parseApplicantFromXML,
   buildPersonalDataXML
 } from '../_shared/tenstreet-xml-utils.ts'
@@ -107,8 +106,7 @@ serve(async (req) => {
       sensitiveFields: ['applicant_data', 'personal_information'],
       ipAddress,
       userAgent,
-      details: sanitizeForLogging(params)
-    })
+    } as any)
 
     switch (action) {
       case 'explore_services':

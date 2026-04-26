@@ -102,7 +102,7 @@ async function checkPlatformConnection(platform: string) {
   )
 }
 
-async function postJobToPlatform(platform: string, _supabaseClient: ReturnType<typeof createClient>) {
+async function postJobToPlatform(platform: string, _supabaseClient: ReturnType<typeof getServiceClient>) {
   logger.info('Posting job to platform', { platform })
   
   // For free platforms, we primarily use XML feeds
@@ -122,7 +122,7 @@ async function postJobToPlatform(platform: string, _supabaseClient: ReturnType<t
   )
 }
 
-async function getPlatformStats(platform: string, _supabaseClient: ReturnType<typeof createClient>) {
+async function getPlatformStats(platform: string, _supabaseClient: ReturnType<typeof getServiceClient>) {
   logger.info('Getting stats for platform', { platform })
   
   // Simulate platform statistics
