@@ -17,6 +17,7 @@ interface ScheduledCallback {
   id: string;
   driver_name: string | null;
   driver_phone: string | null;
+  driver_email: string | null;
   scheduled_start: string;
   scheduled_end: string;
   duration_minutes: number;
@@ -27,6 +28,8 @@ interface ScheduledCallback {
   created_at: string;
   application_id: string | null;
   client_name?: string | null;
+  conference_url: string | null;
+  reschedule_count: number;
 }
 
 const STATUS_COLORS: Record<string, string> = {
