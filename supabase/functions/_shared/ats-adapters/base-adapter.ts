@@ -380,16 +380,19 @@ export abstract class BaseATSAdapter {
    * Log with adapter context
    */
   protected log(
-    level: 'info' | 'warn' | 'error', 
-    message: string, 
+    level: 'debug' | 'info' | 'warn' | 'error',
+    message: string,
     data?: Record<string, unknown>
   ): void {
     const logData = {
       adapter: this.adapterName,
       ...data
     };
-    
+
     switch (level) {
+      case 'debug':
+        this.logger.debug(message, logData);
+        break;
       case 'info':
         this.logger.info(message, logData);
         break;

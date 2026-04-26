@@ -533,7 +533,9 @@ export class XMLPostAdapter extends BaseATSAdapter {
   /**
    * Extract clean brand name from referral_source URL
    */
-  protected extractBrandName(referralSource?: string, fallbackSource?: string): string {
+  protected extractBrandName(referralSource?: unknown, fallbackSource?: unknown): string {
+    const referral = referralSource ? String(referralSource) : undefined;
+    const fallback = fallbackSource ? String(fallbackSource) : undefined;
     const brandMap: Record<string, string> = {
       'ziprecruiter.com': 'ZipRecruiter',
       'indeed.com': 'Indeed',
@@ -563,9 +565,9 @@ export class XMLPostAdapter extends BaseATSAdapter {
   /**
    * Escape XML special characters
    */
-  protected escapeXml(str: string): string {
-    if (!str) return '';
-    return str
+  protected escapeXml(str: unknown): string {
+    if (str === null || str === undefined || str === '') return '';
+    return String(str)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
