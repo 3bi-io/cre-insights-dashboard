@@ -317,8 +317,6 @@ const AppRoutes: React.FC = () => {
         <Route path="webhook-management" element={<AdminRouteWrapper><WebhookManagement /></AdminRouteWrapper>} />
         <Route path="active-job-ids" element={<AdminRouteWrapper><ActiveJobIds /></AdminRouteWrapper>} />
         <Route path="tenstreet-sync" element={<AdminRouteWrapper><TenstreetSyncDashboard /></AdminRouteWrapper>} />
-        <Route path="driverreach-integration" element={<AdminRouteWrapper><DriverReachIntegration /></AdminRouteWrapper>} />
-        <Route path="driverreach-sync" element={<AdminRouteWrapper><DriverReachSyncDashboard /></AdminRouteWrapper>} />
         <Route path="data-population" element={<AdminRouteWrapper><DataPopulation /></AdminRouteWrapper>} />
         <Route path="visitor-analytics" element={<AdminRouteWrapper><VisitorAnalytics /></AdminRouteWrapper>} />
         <Route path="edge-functions-test" element={<AdminRouteWrapper><EdgeFunctionsTest /></AdminRouteWrapper>} />

@@ -4,7 +4,7 @@ import CraigslistPlatformActions from '@/components/platforms/CraigslistPlatform
 import SimplyHiredPlatformActions from '@/components/platforms/SimplyHiredPlatformActions';
 import GlassdoorPlatformActions from '@/components/platforms/GlassdoorPlatformActions';
 import TruckDriverJobs411PlatformActions from '@/components/platforms/TruckDriverJobs411PlatformActions';
-import AdzunaPlatformActions from '@/components/platforms/AdzunaPlatformActions';
+
 import { PlatformAccessGuard } from '@/components/admin';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Rss, FileText, DollarSign, Building2, TrendingUp, Truck } from 'lucide-react';
@@ -30,14 +30,10 @@ const JobBoards = () => {
         </div>
 
         <Tabs defaultValue="google-jobs" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5">
             <TabsTrigger value="google-jobs" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Google Jobs
-            </TabsTrigger>
-            <TabsTrigger value="adzuna" className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Adzuna
             </TabsTrigger>
             <TabsTrigger value="simplyhired" className="flex items-center gap-2">
               <Rss className="w-4 h-4" />
@@ -63,11 +59,6 @@ const JobBoards = () => {
             </PlatformAccessGuard>
           </TabsContent>
 
-          <TabsContent value="adzuna" className="space-y-6 mt-6">
-            <PlatformAccessGuard platformName="adzuna">
-              <AdzunaPlatformActions />
-            </PlatformAccessGuard>
-          </TabsContent>
 
           <TabsContent value="simplyhired" className="space-y-6 mt-6">
             <PlatformAccessGuard platformName="simplyhired">

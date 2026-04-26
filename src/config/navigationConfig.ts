@@ -299,8 +299,6 @@ export const routeTitles: Record<string, string> = {
   '/admin/active-job-ids': 'Active Job IDs',
   '/admin/data-population': 'Data Population',
   '/admin/tenstreet-sync': 'Tenstreet Sync Dashboard',
-  '/admin/driverreach-integration': 'DriverReach Integration',
-  '/admin/driverreach-sync': 'DriverReach Sync Dashboard',
   '/admin/talent': 'Candidate Search',
   '/admin/talent/pools': 'Talent Pools',
   '/admin/social-beacons': 'Social Beacons',
