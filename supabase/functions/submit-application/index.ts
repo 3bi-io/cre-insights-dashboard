@@ -1,3 +1,4 @@
+/// <reference path="../_shared/runtime.d.ts" />
 import { createClient } from 'npm:@supabase/supabase-js@2.50.0'
 import { getServiceClient } from '../_shared/supabase-client.ts'
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'

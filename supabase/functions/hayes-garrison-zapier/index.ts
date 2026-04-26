@@ -1,3 +1,4 @@
+/// <reference path="../_shared/runtime.d.ts" />
 /**
  * Hayes R.E. Garrison — Zapier Inbound Webhook
  *
