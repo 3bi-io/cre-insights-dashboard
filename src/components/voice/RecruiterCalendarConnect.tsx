@@ -122,12 +122,15 @@ export function RecruiterCalendarConnect() {
     }
   };
 
-  const handleConnect = async (clientId?: string) => {
+  const handleConnect = async (clientId?: string, provider?: 'google' | 'microsoft' | 'icloud') => {
     setIsConnecting(true);
     try {
       const body: Record<string, any> = { action: 'oauth_url' };
       if (clientId && clientId !== 'all' && clientId !== 'org-level') {
         body.client_id = clientId;
+      }
+      if (provider) {
+        body.provider = provider;
       }
 
       const { data, error } = await supabase.functions.invoke('calendar-integration', { body });
@@ -412,28 +415,55 @@ export function RecruiterCalendarConnect() {
 
           {/* Action Buttons */}
           <div className="flex flex-col gap-2">
-            <div className="flex gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <Button
-                onClick={() => handleConnect(selectedClientId !== 'all' && selectedClientId !== 'org-level' ? selectedClientId : undefined)}
+                onClick={() => handleConnect(
+                  selectedClientId !== 'all' && selectedClientId !== 'org-level' ? selectedClientId : undefined,
+                  'google'
+                )}
                 disabled={isConnecting}
-                variant={activeConnections.length > 0 ? 'outline' : 'default'}
-                className="flex-1"
+                variant="outline"
               >
                 {isConnecting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Connecting...
-                  </>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
-                  <>
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    {activeConnections.length > 0 ? 'Add Calendar' : 'Connect Calendar'}
-                  </>
+                  <ExternalLink className="h-4 w-4 mr-2" />
                 )}
+                Connect Google Calendar
+              </Button>
+
+              <Button
+                onClick={() => handleConnect(
+                  selectedClientId !== 'all' && selectedClientId !== 'org-level' ? selectedClientId : undefined,
+                  'microsoft'
+                )}
+                disabled={isConnecting}
+                variant="outline"
+              >
+                {isConnecting ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                )}
+                Connect Microsoft 365
+              </Button>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleConnect(selectedClientId !== 'all' && selectedClientId !== 'org-level' ? selectedClientId : undefined)}
+                disabled={isConnecting}
+                className="flex-1"
+              >
+                <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                Other provider
               </Button>
 
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setShowInviteDialog(true)}
                 className="flex-1"
               >

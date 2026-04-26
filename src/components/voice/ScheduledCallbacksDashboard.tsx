@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Phone, Clock, User, CalendarCheck, Loader2, XCircle, Building2 } from 'lucide-react';
+import { Phone, Clock, User, CalendarCheck, Loader2, XCircle, Building2, Mail, Video, CalendarClock, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format, isToday, isTomorrow, isPast } from 'date-fns';
@@ -17,6 +17,7 @@ interface ScheduledCallback {
   id: string;
   driver_name: string | null;
   driver_phone: string | null;
+  driver_email: string | null;
   scheduled_start: string;
   scheduled_end: string;
   duration_minutes: number;
@@ -27,6 +28,8 @@ interface ScheduledCallback {
   created_at: string;
   application_id: string | null;
   client_name?: string | null;
+  conference_url: string | null;
+  reschedule_count: number;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -113,6 +116,38 @@ export function ScheduledCallbacksDashboard() {
     }
   };
 
+  const handleReschedule = async (cb: ScheduledCallback) => {
+    const current = format(new Date(cb.scheduled_start), "yyyy-MM-dd'T'HH:mm");
+    const input = window.prompt(
+      `Reschedule callback for ${cb.driver_name || 'Driver'}.\nEnter new start time (YYYY-MM-DDTHH:mm, local time):`,
+      current
+    );
+    if (!input) return;
+
+    const newStart = new Date(input);
+    if (isNaN(newStart.getTime()) || newStart <= new Date()) {
+      toast({ title: 'Invalid time', description: 'Please pick a future date/time.', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('calendar-integration', {
+        body: {
+          action: 'reschedule_slot',
+          callbackId: cb.id,
+          newStartTime: newStart.toISOString(),
+        },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Reschedule failed');
+
+      toast({ title: 'Callback rescheduled', description: format(newStart, 'PPpp') });
+      fetchCallbacks();
+    } catch (err: any) {
+      toast({ title: 'Reschedule failed', description: err.message, variant: 'destructive' });
+    }
+  };
+
   const upcoming = callbacks.filter(cb => 
     !isPast(new Date(cb.scheduled_start)) && !['cancelled', 'completed', 'no_show'].includes(cb.status)
   );
@@ -149,8 +184,14 @@ export function ScheduledCallbacksDashboard() {
           <div className="flex items-center gap-2 mt-1">
             <Phone className="h-3 w-3 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">{cb.driver_phone || 'N/A'}</span>
+            {cb.driver_email && (
+              <>
+                <Mail className="h-3 w-3 text-muted-foreground ml-2" />
+                <span className="text-xs text-muted-foreground truncate max-w-[180px]">{cb.driver_email}</span>
+              </>
+            )}
           </div>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             <Clock className="h-3 w-3 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">{cb.duration_minutes} min · {cb.booking_source}</span>
             {cb.client_name && (
@@ -162,6 +203,23 @@ export function ScheduledCallbacksDashboard() {
             {cb.sms_confirmation_sent && (
               <Badge variant="outline" className="text-xs">SMS Sent</Badge>
             )}
+            {cb.reschedule_count > 0 && (
+              <Badge variant="outline" className="text-xs gap-1">
+                <RotateCcw className="h-3 w-3" />
+                Rescheduled {cb.reschedule_count}×
+              </Badge>
+            )}
+            {cb.conference_url && (
+              <a
+                href={cb.conference_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+              >
+                <Video className="h-3 w-3" />
+                Join meeting
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -170,9 +228,14 @@ export function ScheduledCallbacksDashboard() {
           {cb.status}
         </Badge>
         {['pending', 'confirmed'].includes(cb.status) && !isPast(new Date(cb.scheduled_start)) && (
-          <Button variant="ghost" size="sm" onClick={() => handleCancel(cb.id)}>
-            <XCircle className="h-4 w-4" />
-          </Button>
+          <>
+            <Button variant="ghost" size="sm" onClick={() => handleReschedule(cb)} title="Reschedule">
+              <CalendarClock className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => handleCancel(cb.id)} title="Cancel">
+              <XCircle className="h-4 w-4" />
+            </Button>
+          </>
         )}
         {isPast(new Date(cb.scheduled_start)) && ['pending', 'confirmed'].includes(cb.status) && (
           <div className="flex gap-1">
