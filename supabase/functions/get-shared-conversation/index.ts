@@ -84,6 +84,7 @@ serve(async (req: Request) => {
 
     // Build audio URL - either proxy through edge function or return direct URL
     let audioUrl = null;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     if (audioData?.audio_url && elevenLabsApiKey) {
       // Create a signed URL for audio streaming via the audio endpoint
       audioUrl = `${supabaseUrl}/functions/v1/get-shared-conversation/audio?code=${shareCode}`;
