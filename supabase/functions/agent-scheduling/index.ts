@@ -87,9 +87,15 @@ Deno.serve(async (req) => {
         return await handleBookCallback(params, headers);
       case 'get_next_slots':
         return await handleGetNextSlots(params, headers);
+      case 'reschedule_callback':
+        return await handleRescheduleCallback(params, headers);
+      case 'cancel_callback':
+        return await handleCancelCallback(params, headers);
+      case 'get_my_callback':
+        return await handleGetMyCallback(params, headers);
       default:
         return new Response(
-          JSON.stringify({ result: `Unknown tool: ${toolName}. Available tools: check_availability, book_callback, get_next_slots` }),
+          JSON.stringify({ result: `Unknown tool: ${toolName}. Available tools: check_availability, book_callback, get_next_slots, reschedule_callback, cancel_callback, get_my_callback` }),
           { status: 200, headers }
         );
     }
