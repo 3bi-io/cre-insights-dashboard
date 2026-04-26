@@ -798,6 +798,7 @@ async function handleBookSlot(req: Request, params: any, headers: Record<string,
     organizationId,
     driverName,
     driverPhone,
+    driverEmail: driverEmailParam,
     startTime,
     endTime,
     durationMinutes = 15,
@@ -811,7 +812,6 @@ async function handleBookSlot(req: Request, params: any, headers: Record<string,
     throw new Error('Missing required booking parameters (startTime, endTime)');
   }
 
-  // Validate dates
   const start = new Date(startTime);
   const end = new Date(endTime);
   if (isNaN(start.getTime()) || isNaN(end.getTime())) {
@@ -821,7 +821,6 @@ async function handleBookSlot(req: Request, params: any, headers: Record<string,
     throw new Error('Cannot book a slot in the past');
   }
 
-  // Sanitize text inputs
   const safeName = (driverName || 'Driver').replace(/[\x00-\x1F\x7F]/g, '').slice(0, 200);
   const safeNotes = notes ? notes.replace(/[\x00-\x1F\x7F]/g, '').slice(0, 1000) : 'Scheduled by AI Voice Agent';
 
@@ -829,7 +828,7 @@ async function handleBookSlot(req: Request, params: any, headers: Record<string,
 
   const { data: connection } = await supabase
     .from('recruiter_calendar_connections')
-    .select('id, nylas_grant_id, calendar_id, email')
+    .select('id, nylas_grant_id, calendar_id, email, provider_type')
     .eq('user_id', recruiterUserId)
     .eq('status', 'active')
     .single();
@@ -838,12 +837,28 @@ async function handleBookSlot(req: Request, params: any, headers: Record<string,
     throw new Error('Recruiter has no active calendar connection');
   }
 
-  // Create event on Nylas calendar
-  const eventPayload = {
+  // Resolve driver email (param wins, otherwise pull from application)
+  let driverEmail: string | null = driverEmailParam || null;
+  if (!driverEmail && applicationId && isValidUUID(applicationId)) {
+    const { data: app } = await supabase
+      .from('applications').select('email').eq('id', applicationId).maybeSingle();
+    if (app?.email) driverEmail = app.email;
+  }
+
+  // Pick conferencing based on provider_type (Google Meet for Google, Teams for Microsoft)
+  const provider = (connection.provider_type || '').toLowerCase();
+  const conferencingProvider = provider.includes('google')
+    ? 'Google Meet'
+    : provider.includes('microsoft') || provider.includes('outlook') || provider.includes('exchange')
+      ? 'Microsoft Teams'
+      : null;
+
+  const eventPayload: Record<string, any> = {
     title: `AI Callback: ${safeName}`,
     description: [
       `Driver: ${safeName}`,
       `Phone: ${driverPhone || 'N/A'}`,
+      driverEmail ? `Email: ${driverEmail}` : '',
       safeNotes !== 'Scheduled by AI Voice Agent' ? `Notes: ${safeNotes}` : '',
       'Scheduled by AI Voice Agent',
     ].filter(Boolean).join('\n'),
@@ -855,29 +870,46 @@ async function handleBookSlot(req: Request, params: any, headers: Record<string,
     status: 'confirmed',
   };
 
-  let nylasEventId = null;
-  try {
-    const eventResponse = await fetchWithTimeout(
-      `${NYLAS_API_BASE}/v3/grants/${connection.nylas_grant_id}/events?calendar_id=${connection.calendar_id}`,
-      {
+  if (driverEmail) {
+    eventPayload.participants = [{ email: driverEmail, name: safeName, status: 'noreply' }];
+  }
+  if (conferencingProvider) {
+    eventPayload.conferencing = {
+      provider: conferencingProvider,
+      autocreate: {},
+    };
+  }
+
+  // Create event with one retry on transient failure
+  let nylasEventId: string | null = null;
+  let conferenceUrl: string | null = null;
+  const eventUrl = `${NYLAS_API_BASE}/v3/grants/${connection.nylas_grant_id}/events?calendar_id=${connection.calendar_id}&notify_participants=true`;
+
+  for (let attempt = 0; attempt < 2 && !nylasEventId; attempt++) {
+    try {
+      const eventResponse = await fetchWithTimeout(eventUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${NYLAS_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(eventPayload),
-      }
-    );
+      });
 
-    if (eventResponse.ok) {
-      const eventData = await eventResponse.json();
-      nylasEventId = eventData.data?.id;
-    } else {
-      const errText = await eventResponse.text();
-      console.error('Failed to create Nylas event:', errText);
+      if (eventResponse.ok) {
+        const eventData = await eventResponse.json();
+        nylasEventId = eventData.data?.id || null;
+        const conf = eventData.data?.conferencing;
+        conferenceUrl = conf?.details?.url || conf?.details?.meeting_code || null;
+      } else {
+        const errText = await eventResponse.text();
+        console.error(`Nylas event create attempt ${attempt + 1} failed:`, errText);
+        if (attempt === 0) await new Promise((r) => setTimeout(r, 500));
+      }
+    } catch (e: any) {
+      console.error(`Nylas event create attempt ${attempt + 1} error:`, e.message);
+      if (attempt === 0) await new Promise((r) => setTimeout(r, 500));
     }
-  } catch (e: any) {
-    console.error('Nylas event creation timed out or failed:', e.message);
   }
 
   // Store scheduled callback
@@ -891,6 +923,8 @@ async function handleBookSlot(req: Request, params: any, headers: Record<string,
       nylas_event_id: nylasEventId,
       driver_name: safeName,
       driver_phone: driverPhone,
+      driver_email: driverEmail,
+      conference_url: conferenceUrl,
       scheduled_start: startTime,
       scheduled_end: endTime,
       duration_minutes: Math.min(Math.max(durationMinutes, 5), 120),
@@ -906,14 +940,250 @@ async function handleBookSlot(req: Request, params: any, headers: Record<string,
     throw new Error('Failed to record scheduled callback');
   }
 
+  // Queue reminders (1h driver, 15m recruiter)
+  try {
+    const reminders = [
+      { callback_id: callback.id, kind: 'driver_1h', fire_at: new Date(start.getTime() - 60 * 60 * 1000).toISOString() },
+      { callback_id: callback.id, kind: 'recruiter_15m', fire_at: new Date(start.getTime() - 15 * 60 * 1000).toISOString() },
+    ];
+    await supabase.from('scheduling_reminders').insert(reminders);
+  } catch (e) {
+    console.warn('Failed to queue reminders (non-fatal):', e);
+  }
+
+  // Send confirmation emails (driver w/ .ics, recruiter notification)
+  if (RESEND_API_KEY) {
+    sendBookingConfirmationEmails({
+      driverName: safeName,
+      driverEmail,
+      driverPhone,
+      recruiterEmail: connection.email,
+      start,
+      end,
+      conferenceUrl,
+      callbackId: callback.id,
+      notes: safeNotes,
+    }).catch((e) => console.warn('Confirmation email send failed:', e));
+  }
+
   return new Response(
     JSON.stringify({
       success: true,
       callback,
       calendarEventCreated: !!nylasEventId,
+      conferenceUrl,
     }),
     { headers }
   );
+}
+
+// ============= Reschedule =============
+
+async function handleRescheduleSlot(_req: Request, params: any, headers: Record<string, string>) {
+  const { callbackId, newStartTime, newEndTime } = params;
+  if (!callbackId || !isValidUUID(callbackId)) throw new Error('Missing or invalid callbackId');
+  if (!newStartTime) throw new Error('Missing newStartTime');
+
+  const newStart = new Date(newStartTime);
+  if (isNaN(newStart.getTime())) throw new Error('Invalid newStartTime');
+  if (newStart < new Date()) throw new Error('Cannot reschedule into the past');
+
+  const supabase = getServiceClient();
+  const { data: cb } = await supabase
+    .from('scheduled_callbacks')
+    .select('*, recruiter_calendar_connections!calendar_connection_id(nylas_grant_id, calendar_id, email, provider_type)')
+    .eq('id', callbackId)
+    .single();
+  if (!cb) throw new Error('Callback not found');
+  if (cb.status === 'cancelled') throw new Error('Cannot reschedule a cancelled callback');
+
+  const conn = cb.recruiter_calendar_connections as any;
+  const duration = cb.duration_minutes || 15;
+  const newEnd = newEndTime ? new Date(newEndTime) : new Date(newStart.getTime() + duration * 60 * 1000);
+
+  // Delete old Nylas event (if any)
+  const previousEventIds = Array.isArray(cb.previous_event_ids) ? [...cb.previous_event_ids] : [];
+  if (cb.nylas_event_id && conn) {
+    previousEventIds.push(cb.nylas_event_id);
+    try {
+      await fetchWithTimeout(
+        `${NYLAS_API_BASE}/v3/grants/${conn.nylas_grant_id}/events/${cb.nylas_event_id}?calendar_id=${conn.calendar_id}&notify_participants=true`,
+        { method: 'DELETE', headers: { 'Authorization': `Bearer ${NYLAS_API_KEY}` } }
+      );
+    } catch (e) { console.warn('Old event delete failed:', e); }
+  }
+
+  // Create new event
+  const provider = (conn?.provider_type || '').toLowerCase();
+  const conferencingProvider = provider.includes('google')
+    ? 'Google Meet'
+    : provider.includes('microsoft') || provider.includes('outlook') || provider.includes('exchange')
+      ? 'Microsoft Teams' : null;
+
+  const eventPayload: Record<string, any> = {
+    title: `AI Callback: ${cb.driver_name || 'Driver'}`,
+    description: `Rescheduled by AI Voice Agent\nDriver: ${cb.driver_name || ''}\nPhone: ${cb.driver_phone || 'N/A'}`,
+    when: { start_time: Math.floor(newStart.getTime() / 1000), end_time: Math.floor(newEnd.getTime() / 1000) },
+    busy: true,
+    status: 'confirmed',
+  };
+  if (cb.driver_email) eventPayload.participants = [{ email: cb.driver_email, name: cb.driver_name, status: 'noreply' }];
+  if (conferencingProvider) eventPayload.conferencing = { provider: conferencingProvider, autocreate: {} };
+
+  let newEventId: string | null = null;
+  let newConfUrl: string | null = null;
+  try {
+    const r = await fetchWithTimeout(
+      `${NYLAS_API_BASE}/v3/grants/${conn.nylas_grant_id}/events?calendar_id=${conn.calendar_id}&notify_participants=true`,
+      {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${NYLAS_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(eventPayload),
+      }
+    );
+    if (r.ok) {
+      const data = await r.json();
+      newEventId = data.data?.id || null;
+      newConfUrl = data.data?.conferencing?.details?.url || null;
+    } else {
+      console.error('Reschedule event create failed:', await r.text());
+    }
+  } catch (e: any) {
+    console.error('Reschedule event create error:', e.message);
+  }
+
+  // Update callback row
+  const { error: updErr } = await supabase
+    .from('scheduled_callbacks')
+    .update({
+      scheduled_start: newStart.toISOString(),
+      scheduled_end: newEnd.toISOString(),
+      nylas_event_id: newEventId,
+      conference_url: newConfUrl,
+      previous_event_ids: previousEventIds,
+      reschedule_count: (cb.reschedule_count || 0) + 1,
+      status: newEventId ? 'confirmed' : 'pending',
+    })
+    .eq('id', callbackId);
+  if (updErr) throw new Error('Failed to update callback for reschedule');
+
+  // Reschedule pending reminders to new times
+  await supabase.from('scheduling_reminders').delete().eq('callback_id', callbackId).eq('status', 'pending');
+  await supabase.from('scheduling_reminders').insert([
+    { callback_id: callbackId, kind: 'driver_1h', fire_at: new Date(newStart.getTime() - 60 * 60 * 1000).toISOString() },
+    { callback_id: callbackId, kind: 'recruiter_15m', fire_at: new Date(newStart.getTime() - 15 * 60 * 1000).toISOString() },
+  ]);
+
+  if (RESEND_API_KEY) {
+    sendBookingConfirmationEmails({
+      driverName: cb.driver_name || 'Driver',
+      driverEmail: cb.driver_email,
+      driverPhone: cb.driver_phone,
+      recruiterEmail: conn?.email,
+      start: newStart,
+      end: newEnd,
+      conferenceUrl: newConfUrl,
+      callbackId,
+      notes: 'Rescheduled by AI Voice Agent',
+      isReschedule: true,
+    }).catch((e) => console.warn('Reschedule email failed:', e));
+  }
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      callbackId,
+      newStart: newStart.toISOString(),
+      newEnd: newEnd.toISOString(),
+      conferenceUrl: newConfUrl,
+      calendarEventCreated: !!newEventId,
+    }),
+    { headers }
+  );
+}
+
+// ============= Confirmation emails =============
+
+interface ConfirmationParams {
+  driverName: string;
+  driverEmail: string | null;
+  driverPhone: string | null;
+  recruiterEmail: string | null;
+  start: Date;
+  end: Date;
+  conferenceUrl: string | null;
+  callbackId: string;
+  notes: string;
+  isReschedule?: boolean;
+}
+
+async function sendBookingConfirmationEmails(p: ConfirmationParams) {
+  const fmtTime = p.start.toLocaleString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+  });
+  const verb = p.isReschedule ? 'rescheduled' : 'scheduled';
+
+  const ics = buildIcs({
+    uid: `${p.callbackId}@applyai.jobs`,
+    start: p.start,
+    end: p.end,
+    summary: `AI Recruiter Callback: ${p.driverName}`,
+    description: `Recruiter callback ${verb} by AI Voice Agent.\nDriver: ${p.driverName}\nPhone: ${p.driverPhone || 'N/A'}`,
+    organizerEmail: p.recruiterEmail || undefined,
+    attendeeEmail: p.driverEmail || undefined,
+    attendeeName: p.driverName,
+    conferenceUrl: p.conferenceUrl || undefined,
+    method: 'REQUEST',
+  });
+  const icsB64 = icsToBase64(ics);
+
+  // Driver email
+  if (p.driverEmail) {
+    const driverHtml = `
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111827;">
+        <h2 style="margin:0 0 12px;">Your callback is ${verb}</h2>
+        <p>Hi ${p.driverName.split(' ')[0] || 'there'}, your recruiter callback is set for:</p>
+        <p style="font-size:18px;font-weight:600;background:#f3f4f6;padding:12px 16px;border-radius:8px;">${fmtTime}</p>
+        ${p.conferenceUrl ? `<p>Join link: <a href="${p.conferenceUrl}">${p.conferenceUrl}</a></p>` : ''}
+        <p>The invite is attached — add it to your calendar in one click. We'll text you a reminder 1 hour before.</p>
+        <p style="color:#6b7280;font-size:13px;margin-top:24px;">Need to reschedule? Reply to this email or call us back.</p>
+      </div>`;
+    await fetchWithTimeout('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: getSender('notifications'),
+        to: [p.driverEmail],
+        subject: `Your recruiter callback is ${verb} — ${fmtTime}`,
+        html: driverHtml,
+        attachments: [{ filename: 'callback.ics', content: icsB64, content_type: 'text/calendar; method=REQUEST' }],
+      }),
+    }).catch(() => {});
+  }
+
+  // Recruiter email
+  if (p.recruiterEmail) {
+    const recruiterHtml = `
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111827;">
+        <h2 style="margin:0 0 12px;">New AI booking ${p.isReschedule ? '(rescheduled)' : ''}</h2>
+        <p><strong>${p.driverName}</strong> — ${p.driverPhone || 'no phone'}</p>
+        <p style="font-size:18px;font-weight:600;background:#f3f4f6;padding:12px 16px;border-radius:8px;">${fmtTime}</p>
+        ${p.conferenceUrl ? `<p>Join: <a href="${p.conferenceUrl}">${p.conferenceUrl}</a></p>` : ''}
+        ${p.driverEmail ? `<p>Driver email: ${p.driverEmail}</p>` : ''}
+        <p style="color:#6b7280;font-size:13px;">${p.notes}</p>
+      </div>`;
+    await fetchWithTimeout('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: getSender('notifications'),
+        to: [p.recruiterEmail],
+        subject: `AI booking: ${p.driverName} — ${fmtTime}`,
+        html: recruiterHtml,
+        attachments: [{ filename: 'callback.ics', content: icsB64, content_type: 'text/calendar; method=REQUEST' }],
+      }),
+    }).catch(() => {});
+  }
 }
 
 // ============= Cancel =============
