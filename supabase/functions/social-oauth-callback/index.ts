@@ -83,6 +83,7 @@ serve(async (req) => {
 
     const supabase = getServiceClient();
 
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const callbackUrl = `${supabaseUrl}/functions/v1/social-oauth-callback`;
 
     let tokenData: TokenResponse;

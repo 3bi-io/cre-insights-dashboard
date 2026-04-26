@@ -178,20 +178,22 @@ Deno.serve(async (req) => {
       );
     }
 
+    const applicationId = application!.id as string;
+
     logger.info('Application created via Zapier', {
-      applicationId: application.id,
+      applicationId,
       client: 'R.E. Garrison',
     });
 
     // ── Auto-post to ATS (non-blocking) ──────────────────────────
     EdgeRuntime.waitUntil(
-      autoPostToATS(supabase, application.id, HAYES_ORG_ID, applicationData, {
+      autoPostToATS(supabase, applicationId, HAYES_ORG_ID, applicationData, {
         clientId: RE_GARRISON_CLIENT_ID,
       }),
     );
 
     return new Response(
-      JSON.stringify({ success: true, applicationId: application.id }),
+      JSON.stringify({ success: true, applicationId }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (err) {

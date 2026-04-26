@@ -233,7 +233,7 @@ const extractValue = (data: Record<string, unknown>, fieldNames: string[]): stri
  * Trigger webhooks for applications matching the source filter
  */
 async function triggerSourceWebhooks(
-  supabase: ReturnType<typeof createClient>, 
+  supabase: ReturnType<typeof getServiceClient>, 
   applicationId: string, 
   source: string
 ): Promise<void> {
@@ -1174,7 +1174,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Trigger webhooks for this source (non-blocking)
     try {
-      await triggerSourceWebhooks(supabase, application.id, applicationData.source || 'CDL Job Cast');
+      await triggerSourceWebhooks(supabase, application.id as string, (applicationData.source as string) || 'CDL Job Cast');
     } catch (webhookError) {
       logger.error('Webhook trigger failed (non-blocking)', { error: webhookError });
     }

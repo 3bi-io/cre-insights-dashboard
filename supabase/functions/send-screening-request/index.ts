@@ -297,6 +297,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Generate portal link
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const portalLink = `${supabaseUrl.replace('.supabase.co', '')}/screening/${screeningRequest.id}`;
 
     // Determine recipient

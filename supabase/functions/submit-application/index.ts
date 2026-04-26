@@ -530,7 +530,7 @@ async function triggerSourceWebhooks(
  * Priority: source_override -> job_id_prefix -> job_listing_id -> org_slug -> reject
  */
 async function resolveOrganizationAndJob(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof getServiceClient>,
   jobListingId?: string,
   orgSlug?: string,
   detectedSource?: string,
