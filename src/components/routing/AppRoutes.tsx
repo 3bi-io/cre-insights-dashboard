@@ -99,8 +99,6 @@ const SuperAdminFeeds = React.lazy(() => import("@/pages/SuperAdminFeeds"));
 const WebhookManagement = React.lazy(() => import("@/pages/WebhookManagement"));
 const ActiveJobIds = React.lazy(() => import("@/pages/ActiveJobIds"));
 const TenstreetSyncDashboard = React.lazy(() => import("@/pages/TenstreetSyncDashboard"));
-const DriverReachIntegration = React.lazy(() => import("@/pages/DriverReachIntegration"));
-const DriverReachSyncDashboard = React.lazy(() => import("@/pages/DriverReachSyncDashboard"));
 const EdgeFunctionsTest = React.lazy(() => import("@/pages/EdgeFunctionsTest"));
 const WebScraperPage = React.lazy(() => import("@/pages/admin/WebScraperPage"));
 const DataPopulation = React.lazy(() => import("@/pages/DataPopulation"));
