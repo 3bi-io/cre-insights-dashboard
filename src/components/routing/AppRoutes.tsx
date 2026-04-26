@@ -99,8 +99,6 @@ const SuperAdminFeeds = React.lazy(() => import("@/pages/SuperAdminFeeds"));
 const WebhookManagement = React.lazy(() => import("@/pages/WebhookManagement"));
 const ActiveJobIds = React.lazy(() => import("@/pages/ActiveJobIds"));
 const TenstreetSyncDashboard = React.lazy(() => import("@/pages/TenstreetSyncDashboard"));
-const DriverReachIntegration = React.lazy(() => import("@/pages/DriverReachIntegration"));
-const DriverReachSyncDashboard = React.lazy(() => import("@/pages/DriverReachSyncDashboard"));
 const EdgeFunctionsTest = React.lazy(() => import("@/pages/EdgeFunctionsTest"));
 const WebScraperPage = React.lazy(() => import("@/pages/admin/WebScraperPage"));
 const DataPopulation = React.lazy(() => import("@/pages/DataPopulation"));
@@ -319,8 +317,6 @@ const AppRoutes: React.FC = () => {
         <Route path="webhook-management" element={<AdminRouteWrapper><WebhookManagement /></AdminRouteWrapper>} />
         <Route path="active-job-ids" element={<AdminRouteWrapper><ActiveJobIds /></AdminRouteWrapper>} />
         <Route path="tenstreet-sync" element={<AdminRouteWrapper><TenstreetSyncDashboard /></AdminRouteWrapper>} />
-        <Route path="driverreach-integration" element={<AdminRouteWrapper><DriverReachIntegration /></AdminRouteWrapper>} />
-        <Route path="driverreach-sync" element={<AdminRouteWrapper><DriverReachSyncDashboard /></AdminRouteWrapper>} />
         <Route path="data-population" element={<AdminRouteWrapper><DataPopulation /></AdminRouteWrapper>} />
         <Route path="visitor-analytics" element={<AdminRouteWrapper><VisitorAnalytics /></AdminRouteWrapper>} />
         <Route path="edge-functions-test" element={<AdminRouteWrapper><EdgeFunctionsTest /></AdminRouteWrapper>} />

@@ -8,9 +8,6 @@ const MetaPlatformActions = React.lazy(() => import('./MetaPlatformActions'));
 const IndeedPlatformActions = React.lazy(() => import('./IndeedPlatformActions'));
 const GoogleJobsPlatformActions = React.lazy(() => import('./GoogleJobsPlatformActions'));
 const XPlatformActions = React.lazy(() => import('./XPlatformActions'));
-const ZipRecruiterPlatformActions = React.lazy(() => import('./ZipRecruiterPlatformActions'));
-const TalrooPlatformActions = React.lazy(() => import('./TalrooPlatformActions'));
-const AdzunaPlatformActions = React.lazy(() => import('./AdzunaPlatformActions'));
 const CraigslistPlatformActions = React.lazy(() => import('./CraigslistPlatformActions'));
 const GlassdoorPlatformActions = React.lazy(() => import('./GlassdoorPlatformActions'));
 const SimplyHiredPlatformActions = React.lazy(() => import('./SimplyHiredPlatformActions'));
@@ -74,15 +71,6 @@ const PlatformActionPanel: React.FC<PlatformActionPanelProps> = ({
       case 'x':
       case 'twitter':
         return <XPlatformActions platform={{ ...mockPlatform, logo_url: null, created_at: '' }} onRefresh={onRefresh} />;
-      
-      case 'ziprecruiter':
-        return <ZipRecruiterPlatformActions />;
-      
-      case 'talroo':
-        return <TalrooPlatformActions />;
-      
-      case 'adzuna':
-        return <AdzunaPlatformActions />;
       
       case 'craigslist':
         return <CraigslistPlatformActions />;

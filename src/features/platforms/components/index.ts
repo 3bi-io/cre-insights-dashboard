@@ -12,6 +12,4 @@ export { default as PlatformSetupDialog } from '@/components/platforms/PlatformS
 export { default as PlatformsHeader } from '@/components/platforms/PlatformsHeader';
 export { default as PlatformsTable } from '@/components/platforms/PlatformsTable';
 export { default as SimplyHiredPlatformActions } from '@/components/platforms/SimplyHiredPlatformActions';
-export { default as TalrooPlatformActions } from '@/components/platforms/TalrooPlatformActions';
 export { default as XPlatformActions } from '@/components/platforms/XPlatformActions';
-export { default as ZipRecruiterPlatformActions } from '@/components/platforms/ZipRecruiterPlatformActions';
