@@ -4,7 +4,8 @@
     "useUnknownInCatchVariables": false,
     "strictNullChecks": false,
     "noImplicitAny": false,
-    "lib": ["deno.ns", "deno.unstable", "dom", "dom.iterable", "esnext"]
+    "lib": ["deno.ns", "deno.unstable", "dom", "dom.iterable", "esnext"],
+    "types": ["./_shared/runtime.d.ts"]
   },
   "imports": {}
 }
