@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
       timeout: 30000
     });
 
-    const apiResp = apiResponse as { success: boolean; data?: string; error?: string };
+    const apiResp = apiResponse as unknown as { success: boolean; data?: string; error?: string };
     if (!apiResp.success) {
       logger.error('API request failed', { error: sanitizeForLogging(apiResp.error) });
       throw new Error(apiResp.error || 'Tenstreet API request failed');
