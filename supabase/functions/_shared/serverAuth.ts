@@ -162,14 +162,14 @@ export async function enforceAuth(
   const authResult = await verifyAuth(request);
 
   if (!authResult.success) {
-    const { error, status } = authResult;
+    const failure = authResult as Extract<AuthResult, { success: false }>;
     return new Response(
       JSON.stringify({
         success: false,
-        error,
+        error: failure.error,
       }),
       {
-        status,
+        status: failure.status,
         headers: { 'Content-Type': 'application/json' },
       }
     );
