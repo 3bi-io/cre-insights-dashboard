@@ -23,7 +23,7 @@ export function successResponse<T>(
   data: T,
   message?: string,
   meta?: Record<string, any>,
-  origin?: string
+  origin?: string | null
 ): Response {
   const responseData: ApiResponse<T> = {
     success: true,
@@ -48,7 +48,7 @@ export function errorResponse(
   error: string | Error,
   statusCode: number = 500,
   details?: Record<string, any>,
-  origin?: string
+  origin?: string | null
 ): Response {
   const errorMessage = error instanceof Error ? error.message : error;
   
@@ -72,7 +72,7 @@ export function errorResponse(
  */
 export function validationErrorResponse(
   errors: Array<{ field: string; message: string }> | string,
-  origin?: string
+  origin?: string | null
 ): Response {
   const errorMessage = typeof errors === 'string' 
     ? errors 
@@ -117,7 +117,7 @@ export function notFoundResponse(resource: string = 'Resource'): Response {
 /**
  * Create a rate limit error response
  */
-export function rateLimitResponse(retryAfter?: number, origin?: string): Response {
+export function rateLimitResponse(retryAfter?: number, origin?: string | null): Response {
   const responseData: ApiResponse = {
     success: false,
     error: 'Rate limit exceeded',
