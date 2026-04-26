@@ -59,9 +59,14 @@ interface SchedulingParams {
   recruiter_user_id?: string;
   driver_name?: string;
   driver_phone?: string;
+  driver_email?: string;
   selected_slot_start?: string;
   selected_slot_end?: string;
   notes?: string;
+  callback_id?: string;
+  new_slot_start?: string;
+  new_slot_end?: string;
+  reason?: string;
 }
 
 Deno.serve(async (req) => {
