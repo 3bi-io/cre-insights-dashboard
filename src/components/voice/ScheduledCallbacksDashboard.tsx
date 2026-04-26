@@ -184,8 +184,14 @@ export function ScheduledCallbacksDashboard() {
           <div className="flex items-center gap-2 mt-1">
             <Phone className="h-3 w-3 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">{cb.driver_phone || 'N/A'}</span>
+            {cb.driver_email && (
+              <>
+                <Mail className="h-3 w-3 text-muted-foreground ml-2" />
+                <span className="text-xs text-muted-foreground truncate max-w-[180px]">{cb.driver_email}</span>
+              </>
+            )}
           </div>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             <Clock className="h-3 w-3 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">{cb.duration_minutes} min · {cb.booking_source}</span>
             {cb.client_name && (
@@ -197,6 +203,23 @@ export function ScheduledCallbacksDashboard() {
             {cb.sms_confirmation_sent && (
               <Badge variant="outline" className="text-xs">SMS Sent</Badge>
             )}
+            {cb.reschedule_count > 0 && (
+              <Badge variant="outline" className="text-xs gap-1">
+                <RotateCcw className="h-3 w-3" />
+                Rescheduled {cb.reschedule_count}×
+              </Badge>
+            )}
+            {cb.conference_url && (
+              <a
+                href={cb.conference_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+              >
+                <Video className="h-3 w-3" />
+                Join meeting
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -205,9 +228,14 @@ export function ScheduledCallbacksDashboard() {
           {cb.status}
         </Badge>
         {['pending', 'confirmed'].includes(cb.status) && !isPast(new Date(cb.scheduled_start)) && (
-          <Button variant="ghost" size="sm" onClick={() => handleCancel(cb.id)}>
-            <XCircle className="h-4 w-4" />
-          </Button>
+          <>
+            <Button variant="ghost" size="sm" onClick={() => handleReschedule(cb)} title="Reschedule">
+              <CalendarClock className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => handleCancel(cb.id)} title="Cancel">
+              <XCircle className="h-4 w-4" />
+            </Button>
+          </>
         )}
         {isPast(new Date(cb.scheduled_start)) && ['pending', 'confirmed'].includes(cb.status) && (
           <div className="flex gap-1">
