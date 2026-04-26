@@ -122,7 +122,7 @@ serve(async (req: Request): Promise<Response> => {
       from: getSender('invites'),
       to: [email],
       bcc: getReviewBcc(),
-      replyTo: getReplyTo('admin'),
+      reply_to: getReplyTo('admin'),
       subject: organizationName 
         ? `You're invited to join ${organizationName} on ${EMAIL_CONFIG.brand.name}`
         : `You're invited to join ${EMAIL_CONFIG.brand.name}`,

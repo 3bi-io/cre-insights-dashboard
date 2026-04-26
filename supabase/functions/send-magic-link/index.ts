@@ -143,7 +143,7 @@ const handler = async (req: Request): Promise<Response> => {
             from: getSender('admin'),
             to: [profile.email],
             bcc: getReviewBcc(),
-            replyTo: getReplyTo('support'),
+            reply_to: getReplyTo('support'),
             subject: `Magic Link Login Access - ${EMAIL_CONFIG.brand.name}`,
             html: generateMagicLinkEmail(actionLink, false)
           });
@@ -241,7 +241,7 @@ const handler = async (req: Request): Promise<Response> => {
       from: getSender('admin'),
       to: [email],
       bcc: getReviewBcc(),
-      replyTo: getReplyTo('support'),
+      reply_to: getReplyTo('support'),
       subject: `Administrator Magic Link Login - ${EMAIL_CONFIG.brand.name}`,
       html: generateMagicLinkEmail(actionLink, true)
     });

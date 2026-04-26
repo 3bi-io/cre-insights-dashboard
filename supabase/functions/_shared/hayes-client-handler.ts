@@ -1,3 +1,4 @@
+/// <reference path="./runtime.d.ts" />
 /**
  * Hayes Client Inbound Handler Factory
  * 

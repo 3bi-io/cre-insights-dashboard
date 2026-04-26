@@ -1,3 +1,4 @@
+/// <reference path="../_shared/runtime.d.ts" />
 import { createLogger } from '../_shared/logger.ts';
 import { autoPostToATS } from '../_shared/ats-adapters/auto-post-engine.ts';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-config.ts';

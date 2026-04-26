@@ -58,7 +58,8 @@ const handler = async (req: Request): Promise<Response> => {
     const validationResult = smsRequestSchema.safeParse(rawBody);
     
     if (!validationResult.success) {
-      const errors = validationResult.error.issues.map(issue => ({
+      const zodError = (validationResult as z.SafeParseError<unknown>).error;
+      const errors = zodError.issues.map(issue => ({
         field: issue.path.join('.'),
         message: issue.message,
       }));

@@ -87,11 +87,12 @@ serve(async (req) => {
         const validationResult = JobPostingSchema.safeParse(rawJobData);
         
         if (!validationResult.success) {
-          logger.error('Validation failed', { issues: validationResult.error.issues.map(i => `${i.path.join('.')}: ${i.message}`) });
+          const zodError = (validationResult as z.SafeParseError<unknown>).error;
+          logger.error('Validation failed', { issues: zodError.issues.map(i => `${i.path.join('.')}: ${i.message}`) });
           return new Response(
             JSON.stringify({ 
               error: 'Invalid job data', 
-              details: validationResult.error.issues.map(issue => ({
+              details: zodError.issues.map(issue => ({
                 field: issue.path.join('.'),
                 message: issue.message
               }))

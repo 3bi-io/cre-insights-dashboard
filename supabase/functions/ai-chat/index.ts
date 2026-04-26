@@ -91,8 +91,9 @@ const handler = wrapHandler(async (req: Request) => {
   const validationResult = ChatRequestSchema.safeParse(rawBody);
   
   if (!validationResult.success) {
-    logger.warn('AI chat validation failed', { issues: validationResult.error.issues });
-    throw new ValidationError('Invalid chat request', validationResult.error.issues.map(issue => ({
+    const zodError = (validationResult as z.SafeParseError<unknown>).error;
+    logger.warn('AI chat validation failed', { issues: zodError.issues });
+    throw new ValidationError('Invalid chat request', zodError.issues.map(issue => ({
       field: issue.path.join('.'),
       message: issue.message
     })));

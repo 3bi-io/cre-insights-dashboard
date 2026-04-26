@@ -1,91 +1,141 @@
-## Cleanup Plan
+## Edge Function Type-Check Refactor
 
-Acting on your audit directives: remove the broken integrations and orphan files, fix the build error, sync `supabase/config.toml`, activate the new scheduling cron, and provide ElevenLabs tool JSON.
+A full Deno type-check (`deno check` against `supabase/functions/deno.json`) currently reports **145 errors** across **40 files**. They cluster into a small number of mechanical patterns plus three files with real structural problems. This plan fixes them all without changing runtime behavior.
 
----
+### Error breakdown
 
-### 1. Fix the build error
+| Code | Count | Meaning |
+|---|---|---|
+| TS2339 | 31 | Property doesn't exist (mainly `safeParse.error` on success branch + `AuthResult.error/status` on success branch) |
+| TS2304 | 25 | Cannot find name (`EdgeRuntime`, `createClient`, `supabaseUrl`, `getReplyTo`, `fullCall`, `supabaseServiceKey`) |
+| TS2322 | 23 | Type mismatch (mostly `submit-application` org/client lookups and `ParsedJob → Record<string,unknown>`) |
+| TS2300 | 21 | Duplicate identifier (whole import blocks duplicated in `tenstreet-explorer` and `tenstreet-xchange`) |
+| TS2345 | 16 | Argument type mismatch (`parseInt(unknown)`, `string\|null` passed where `string` expected) |
+| TS2561 | 10 | `replyTo` should be `reply_to` in Resend SDK v2 |
+| TS2352 | 6 | Bad type assertions in `submit-application` |
+| TS2551 | 4 | `.catch()` on Postgrest builders (same class of issue we already fixed in `admin-check`) |
+| TS2353 | 3 | Unknown property `lastmod` in sitemap object literal |
+| Other | 6 | TS2367 / TS2305 / TS2554 / TS2440 — single-site fixes |
 
-- Add `@dnd-kit/utilities` to `package.json` (used by `KanbanCard.tsx`, `KanbanColumn.tsx`).
+### Hot files
+- `submit-application/index.ts` — 44 errors (org/client `.single()` typing, ATS handler signature, `EdgeRuntime`)
+- `tenstreet-explorer/index.ts` — 29 errors (entire import block duplicated)
+- `tenstreet-xchange/index.ts` — 13 errors (entire import block duplicated)
+- `elevenlabs-outbound-call/index.ts` — 9 errors (out-of-scope `fullCall` reference, missing `supabaseServiceKey`/`supabaseUrl`)
+- `_shared/hayes-client-handler.ts` — 6 errors (parseInt on unknown, EdgeRuntime, applicationId widening)
 
-### 2. Remove broken job-board integrations
+### Fix strategy
 
-Delete edge functions (and call `delete_edge_functions` to remove deployed copies):
-- `adzuna-integration`
-- `ziprecruiter-integration`
-- `ziprecruiter-webhook`
-- `indeed-integration`
-- `driverreach-integration`
-- `talroo-integration`
+**1. Resend SDK property name (10 sites)**
+Switch every `replyTo:` to `reply_to:` (matches `npm:resend@2.0.0` `CreateEmailOptions`). Files: `contact-form`, `send-invite-email`, `send-screening-request`, `send-application-email`, `newsletter-subscribe`, `send-welcome-email`, `send-test-emails`, `send-magic-link`, `auth-email-templates`.
 
-Delete dedicated frontend surfaces tied 1:1 to those integrations:
-- `src/pages/DriverReachIntegration.tsx`
-- `src/pages/DriverReachSyncDashboard.tsx`
-- `src/components/platforms/AdzunaPlatformActions.tsx`
-- `src/components/platforms/ZipRecruiterPlatformActions.tsx`
-- `src/components/platforms/TalrooPlatformActions.tsx`
-- `src/features/platforms/services/adzunaService.ts`
-- `src/features/platforms/services/indeedService.ts` (only the integration-call portion; keep XML feed types)
-- `src/components/tracking/ZipRecruiterPixel.tsx`, `ClientZipRecruiterPixels.tsx`, `ChurchZipRecruiterPixel.tsx`
+**2. Add Deno EdgeRuntime + Resend helper types (1 ambient .d.ts)**
+Create `supabase/functions/_shared/runtime.d.ts` declaring:
+```text
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void };
+```
+This clears all 6 `EdgeRuntime` TS2304 errors without touching individual files.
 
-Update routing/wiring:
-- Remove DriverReach routes from `src/components/routing/AppRoutes.tsx`.
-- Remove the deleted lazy imports + switch cases from `src/components/platforms/PlatformActionPanel.tsx`.
-- Remove deleted exports from `src/features/platforms/components/index.ts`.
-- Remove DriverReach/Adzuna/ZipRecruiter/Talroo entries from `src/components/CommandPalette.tsx`, `src/config/navigationConfig.ts`, `src/components/common/Header.tsx` only where they link to deleted pages.
+**3. Add missing top-level imports / consts (TS2304)**
+- `domain-configuration/index.ts`: add `import { createClient } from 'npm:@supabase/supabase-js@2.50.0'`.
+- `inbound-applications/index.ts` and `job-group-xml-feed/index.ts`: hoist `supabaseUrl`/`supabaseServiceKey` to module scope (already used inside helpers but never declared in scope).
+- `send-screening-request/index.ts`: define `supabaseUrl` from `Deno.env.get('SUPABASE_URL')`.
+- `social-oauth-callback/index.ts`: same.
+- `get-shared-conversation/index.ts`: same.
+- `send-test-emails/index.ts`: import or define `getReplyTo` (currently imported from email-config but not exported there) — verify actual source.
 
-**Deferred (NOT removed) — these reference the platform names but are generic plumbing**: `Platforms.tsx`, `JobBoards.tsx`, `platformConfigs.ts`, `organizationPlatforms.config.ts`, demo content, landing content, dataQuality, `applicationFormatters`, `ATS stageConfig`, `RecentApplicantsTable`, `FilterDialog`, `JobGroupDialog`. These keep working as multi-platform views even after the dedicated integrations are gone — they just stop showing those specific platforms as "connected."
+**4. Zod safeParse narrowing (5 sites — TS2339 on `.error.issues`)**
+Convert
+```text
+const result = Schema.safeParse(raw);
+if (!result.success) { use result.error.issues }
+```
+the failing files (`ai-chat`, `contact-form`, `send-sms`, `submit-application`) are already shaped correctly — the type-check fails only because the schema infers all fields as optional. Add an explicit guard:
+```text
+if (!result.success) {
+  const issues = (result as z.SafeParseError<unknown>).error.issues;
+  ...
+}
+```
+Cleaner: bind the union once with a discriminated check:
+```text
+if (!result.success) {
+  const { error } = result; // TS narrows to SafeParseError
+  ...
+}
+```
 
-If you want a deeper purge of those, say so and I'll do a second pass.
+**5. AuthResult narrowing in `_shared/serverAuth.ts` (3 sites)**
+Same pattern — destructure inside the `if (!success)` block so TS narrows the union:
+```text
+const authResult = await verifyAuth(request);
+if (!authResult.success) {
+  const { error, status } = authResult;
+  return new Response(JSON.stringify({ success: false, error }), { status, ... });
+}
+```
 
-### 3. Sync `supabase/config.toml`
+**6. Postgrest `.catch()` (4 sites — TS2551)**
+Same fix pattern already applied to `admin-check`: replace
+```text
+supabase.from(...).insert(...).catch(...)
+```
+with
+```text
+try { await supabase.from(...).insert(...); } catch (err) { logger.error(...); }
+```
+Files: `inbound-applications`, `job-group-xml-feed`, `cdl-jobcast-inbound`, `chatbot-analytics`.
 
-- Remove entries for deleted functions (`adzuna-integration`, `ziprecruiter-integration`, `ziprecruiter-webhook`, `indeed-integration`, `driverreach-integration`, `talroo-integration`, `ai-analytics-enhanced`).
-- Add missing entries: `scheduling-reminders`, `syndication-push`, `update-elevenlabs-phones`, `verify-twilio-creds` (all `verify_jwt = true`, except `scheduling-reminders` which is cron-invoked → `verify_jwt = false`).
+**7. Duplicate import blocks (21 sites — TS2300/TS2440)**
+In `tenstreet-explorer/index.ts` (lines 30–46) and `tenstreet-xchange/index.ts` the entire import block is pasted twice. Delete the duplicate block. This single edit clears all 21 TS2300 + 1 TS2440 errors.
 
-### 4. Remove orphan pages (4)
+### Targeted per-file fixes
 
-- `src/pages/Campaigns.tsx`
-- `src/features/analytics/pages/AIImpactDashboardPage.tsx`
-- `src/features/applications/pages/AdminApplicationsPage.tsx`
-- `src/features/dashboard/pages/IndexPage.tsx`
+**`_shared/hayes-client-handler.ts`** (6 errors)
+- Line 340/341: cast before parseInt — `parseInt(String(data.months))`.
+- Line 376: covered by EdgeRuntime ambient (#2).
+- Line 377/382: `application.id` is typed `unknown` because `.single()` schema isn't inferred — assert the row type: `const application = data as { id: string }`.
 
-### 5. Remove orphan components (45)
+**`submit-application/index.ts`** (44 errors, but mostly two patterns)
+- ~12 errors are the same org/client `.single()` widening — add small typed interfaces for the inline lookups (`{ id: string; name: string; logo_url: string | null }`).
+- `autoPostToATS(...)` signature mismatch — widen the helper's `applicationData` param to `Record<string, unknown>` in `_shared/ats-handler.ts` so callers don't need a cast.
+- `EdgeRuntime` (3 sites) — covered by ambient.
+- `safeParse.error` (4 sites) — covered by #4.
+- `.catch` on impression query (1 site) — covered by #6.
 
-Delete the full list from the audit:
+**`tenstreet-explorer/index.ts` & `tenstreet-xchange/index.ts`**
+- Delete duplicated import block at top. (Single change clears both files entirely except for any remaining adapter calls — re-run type-check to confirm.)
 
-- **Admin/Dashboard:** `BudgetOverview.tsx`, `PlatformBreakdown.tsx`, `admin/AdminQuickActions.tsx`, `admin/OrganizationGrowthChart.tsx`, `admin/QuickActionsPanel.tsx`, `admin/RecentActivityFeed.tsx`, `admin/SystemHealthMonitor.tsx`, `dashboard/DashboardOverview.tsx`, `dashboard/organization/OrganizationJobManagement.tsx`
-- **Analytics & AI:** `ai/TruthContractMonitor.tsx`, `analytics/AIAnalyticsDashboard.tsx`, `analytics/FeedAnalyticsSection.tsx`
-- **Applications/CSV:** `applications/SecureApplicationView.tsx`, `applications/SecurityDemoCard.tsx`, `csv/CsvApplicationTransformer.tsx`
-- **Tenstreet UI cluster:** `tenstreet/BulkExport.tsx`, `BulkImport.tsx`, `BulkStatusUpdate.tsx`, `CredentialsManagementTable.tsx`, `CredentialsStatsCards.tsx`, `ExportDataDialog.tsx`, `SyncOperations.tsx`, `TenstreetErrorBoundary.tsx`, `XchangeStatusWidget.tsx`
-- **Landing/Marketing:** `landing/TestimonialsSection.tsx`, `landing/VoiceWorkflowIllustration.tsx`, `features/landing/components/IndustryShowcaseModal.tsx`
-- **Settings/Misc:** `settings/AdministratorsSettingsTab.tsx`, `settings/LanguageSelector.tsx`, `optimized/MemoizedComponents.tsx`, `shared/EmptyStateIllustration.tsx`, `common/LoadingScreen.tsx`, `charts/PieChart.tsx`, `design-system/ResponseiveHelpers.tsx`, `platforms/EveryTruckJobPlatformActions.tsx`, `features/admin/components/ATSReadinessIndicator.tsx`
-- **Unused shadcn primitives (9):** `aspect-ratio`, `carousel`, `hover-card`, `input-otp`, `mobile-scrollable-tabs`, `navigation-menu`, `radio-group`, `resizable`, `responsive-text`, `shimmer`
+**`elevenlabs-outbound-call/index.ts`** (9 errors)
+- The block referencing `fullCall.*` lost its outer scope — the variable is assigned inside an earlier `try` and used after. Move the SMS-followup block inside the same scope, or hoist `let fullCall: CallRow | null = null` before the `try`.
+- Add `const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''` near the top.
 
-Each will be re-verified as unreferenced before deletion; any with stragglers get noted, not silently broken.
+**`generate-sitemap/index.ts`** (3 × TS2353)
+- `lastmod` property is being added to an interface that doesn't allow it — extend the local `SitemapEntry` interface with `lastmod?: string`.
 
-### 6. Stale admin/debug edge functions — keep but document
+**`craigslist-integration/index.ts`** (3 errors)
+- Schema marks `title` as optional but `CraigslistJobData` requires it. Tighten the Zod schema (`.required({ title: true })`) or default-fill before the cast.
 
-Per your "fix as needed" — these stay deployed (no code changes), and we add their entries to `config.toml` so they're declared:
-- `update-elevenlabs-phones`, `verify-twilio-creds` (added in step 3)
-- `send-test-emails`, `test-sms`, `auth-email-templates`, `generate-founders-pass-creative`, `backfill-webhook` — already in `config.toml`, leaving as-is.
+**`background-check/index.ts`** (3 errors — TS2367/TS2339)
+- `testResult.status === 'success'` compares against impossible literal — fix the union on `TestConnectionResult` (add `'success' | 'failed'` instead of returning a different object shape from one branch).
 
-### 7. Activate the new scheduling reminders
+**`auth-email-templates/index.ts`** (3 errors)
+- `getReplyTo` import + `replyTo`→`reply_to` (covered by #1 / #3).
 
-- Run the `cron.schedule(...)` SQL via the database insert tool to register `scheduling-reminders` to fire every minute.
+**Single-site fixes** (the remaining ~10 files with 1–2 errors)
+- `meta-spend-analytics`: `getClientsAnalytics()` is being called with an arg it doesn't accept — drop the arg or add the param.
+- `x-engagement-webhook`: one TS2367 about `status === 'replied'` — widen union.
+- Misc `lastmod`, `.split('T')` on possibly-undefined dates — add `?? ''` fallbacks.
 
-### 8. ElevenLabs tool registration (manual — you do this)
+### Validation
+After edits, re-run:
+```text
+DENO_DIR=/tmp/deno-cache deno check --config supabase/functions/deno.json supabase/functions/*/index.ts
+```
+Target: **0 errors**. Then deploy the 4 already-modified functions (`admin-check`, `admin-update-password`, `anthropic-chat`, `ai-chat`) plus the larger refactored ones (`submit-application`, `tenstreet-explorer`, `tenstreet-xchange`, `elevenlabs-outbound-call`) to confirm runtime parity.
 
-Provide ready-to-paste JSON schemas for the 3 new webhook tools (`reschedule_callback`, `cancel_callback`, `get_my_callback`) pointed at the `agent-scheduling` function — output to chat after the code changes land.
-
----
-
-### Out of scope / not touching
-
-- Tenstreet **edge functions and hooks** (functional, in active use by ATSCommandCenterPage and TenstreetIntegration page) — only the unused UI components in `src/components/tenstreet/` are removed.
-- The deprecated re-export shim hooks (`useBulkOperations.tsx`, etc.) — they still have callers via the feature barrel.
-- Generic platform plumbing (`Platforms.tsx`, `JobBoards.tsx`, etc.) — see note in §2.
-
-### Risk / verification
-
-After deletions I'll run a build check (`tsc --noEmit`) to catch any missed imports and patch them before finishing.
+### Out of scope
+- No business-logic changes.
+- No schema changes.
+- No removal of additional functions (the cleanup pass is already complete from the prior round).
+- The `deno.json` strictness flags stay as-is — the goal is to make code pass under those settings, not to weaken them further.

@@ -1,3 +1,4 @@
+/// <reference path="../_shared/runtime.d.ts" />
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { getCorsHeaders } from '../_shared/cors-config.ts';

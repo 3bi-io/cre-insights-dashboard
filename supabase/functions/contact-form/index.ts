@@ -86,8 +86,9 @@ const handler = wrapHandler(async (req: Request) => {
   const validationResult = ContactFormSchema.safeParse(rawBody);
   
   if (!validationResult.success) {
-    logger.warn('Contact form validation failed', { issues: validationResult.error.issues });
-    throw new ValidationError('Validation failed', validationResult.error.issues.map(issue => ({
+    const zodError = (validationResult as z.SafeParseError<unknown>).error;
+    logger.warn('Contact form validation failed', { issues: zodError.issues });
+    throw new ValidationError('Validation failed', zodError.issues.map(issue => ({
       field: issue.path.join('.'),
       message: issue.message
     })));
@@ -138,7 +139,7 @@ const handler = wrapHandler(async (req: Request) => {
         bcc: getReviewBcc(),
         subject: `New Contact Form: ${body.subject}`,
         html: generateAdminNotificationEmail(body),
-        replyTo: body.email
+        reply_to: body.email
       });
 
       if (emailResponse.error) {

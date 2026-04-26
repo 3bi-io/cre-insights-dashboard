@@ -70,7 +70,8 @@ Deno.serve(async (req) => {
     // Validate request
     const validationResult = tenstreetRequestSchema.safeParse(rawBody);
     if (!validationResult.success) {
-      const errors = validationResult.error.issues.map(i => ({
+      const zodError = (validationResult as z.SafeParseError<unknown>).error;
+      const errors = zodError.issues.map(i => ({
         field: i.path.join('.'),
         message: i.message
       }));
