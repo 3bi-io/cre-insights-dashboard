@@ -338,8 +338,8 @@ async function processApplication(
       || (data.experience ? `${data.experience} months` : null)
       || null,
     driving_experience_years: data.driving_experience_years
-      || (data.months ? Math.floor(parseInt(data.months) / 12) : null)
-      || (data.experience ? Math.floor(parseInt(data.experience) / 12) : null)
+      || (data.months ? Math.floor(parseInt(String(data.months)) / 12) : null)
+      || (data.experience ? Math.floor(parseInt(String(data.experience)) / 12) : null)
       || parseExpToYears(data.exp
         || (data.months ? `${data.months} Months` : null)
         || (data.experience ? `${data.experience} months` : null))
@@ -367,20 +367,22 @@ async function processApplication(
     return { success: false, error: error.message };
   }
   
+  const applicationId = application!.id as string;
+
   logger.info('Application created', { 
     client: config.clientName,
-    applicationId: application.id,
+    applicationId,
     matchType: jobResult.matchType
   });
 
   // Auto-post to ATS (non-blocking) — delivers to Double Nickel, Tenstreet, etc.
   EdgeRuntime.waitUntil(
-    autoPostToATS(supabase, application.id, HAYES_ORG_ID, applicationData as Record<string, unknown>, {
+    autoPostToATS(supabase, applicationId, HAYES_ORG_ID, applicationData as Record<string, unknown>, {
       clientId: config.clientId
     })
   );
   
-  return { success: true, applicationId: application.id };
+  return { success: true, applicationId };
 }
 
 /**

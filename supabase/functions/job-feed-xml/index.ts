@@ -127,16 +127,20 @@ Deno.serve(async (req) => {
     }
 
     // Log feed access (non-blocking)
-    supabaseClient.from('feed_access_logs').insert({
-      organization_id: organizationId,
-      user_id: user_id,
-      feed_type: 'job-feed-xml',
-      platform: platform,
-      request_ip: requestIp,
-      user_agent: userAgent,
-      job_count: jobListings?.length || 0,
-      response_time_ms: responseTime
-    }).catch(err => logger.error('Failed to log feed access', err));
+    try {
+      await supabaseClient.from('feed_access_logs').insert({
+        organization_id: organizationId,
+        user_id: user_id,
+        feed_type: 'job-feed-xml',
+        platform: platform,
+        request_ip: requestIp,
+        user_agent: userAgent,
+        job_count: jobListings?.length || 0,
+        response_time_ms: responseTime
+      });
+    } catch (err) {
+      logger.error('Failed to log feed access', err);
+    }
 
     return new Response(xmlHeader + '\n' + xmlContent, {
       headers: {

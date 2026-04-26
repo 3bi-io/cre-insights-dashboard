@@ -129,14 +129,14 @@ async function handleJobsImport(
              jsonData.jobs ? jsonData.jobs : 
              jsonData.data ? jsonData.data : [jsonData];
     } else if (text.trim().startsWith('<?xml') || text.includes('<job>')) {
-      jobs = parseXMLFeed(text);
+      jobs = parseXMLFeed(text) as unknown as Record<string, unknown>[];
     } else {
       // Try JSON first, then XML
       try {
         const jsonData = JSON.parse(text);
         jobs = Array.isArray(jsonData) ? jsonData : [jsonData];
       } catch {
-        jobs = parseXMLFeed(text);
+        jobs = parseXMLFeed(text) as unknown as Record<string, unknown>[];
       }
     }
 

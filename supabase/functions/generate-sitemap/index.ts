@@ -69,7 +69,8 @@ serve(async (req) => {
     const supabase = getServiceClient();
 
     // Start with static routes
-    const allUrls = [...STATIC_ROUTES];
+    type SitemapUrl = { loc: string; lastmod?: string; changefreq?: string; priority?: number };
+    const allUrls: SitemapUrl[] = [...STATIC_ROUTES];
 
     // Get acme organization to exclude
     const { data: acmeOrg } = await supabase

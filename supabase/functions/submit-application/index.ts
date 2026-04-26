@@ -530,7 +530,7 @@ async function triggerSourceWebhooks(
  * Priority: source_override -> job_id_prefix -> job_listing_id -> org_slug -> reject
  */
 async function resolveOrganizationAndJob(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof getServiceClient>,
   jobListingId?: string,
   orgSlug?: string,
   detectedSource?: string,
@@ -605,8 +605,8 @@ async function resolveOrganizationAndJob(
       .single();
     
     if (jobListing?.organization_id) {
-      const org = jobListing.organizations as { id: string; name: string; slug: string } | null;
-      const client = jobListing.clients as { id: string; name: string; logo_url?: string } | null;
+      const org = jobListing.organizations as unknown as { id: string; name: string; slug: string } | null;
+      const client = jobListing.clients as unknown as { id: string; name: string; logo_url?: string } | null;
       logger.info('Resolved org from job_listing_id', { org_name: org?.name, client_name: client?.name, job_id: jobListing.job_id });
       return {
         organizationId: jobListing.organization_id,
@@ -620,7 +620,7 @@ async function resolveOrganizationAndJob(
     
     // Fallback: job listing has no organization_id but has a client — resolve org from client
     if (!jobListing?.organization_id && jobListing?.client_id) {
-      const client = jobListing.clients as { id: string; name: string; logo_url?: string; organization_id?: string } | null;
+      const client = jobListing.clients as unknown as { id: string; name: string; logo_url?: string; organization_id?: string } | null;
       if (client?.organization_id) {
         const { data: org } = await supabase
           .from('organizations')
@@ -1152,7 +1152,7 @@ Deno.serve(async (req) => {
 
       // Trigger webhooks for the update (non-blocking)
       try {
-        await triggerSourceWebhooks(supabase, existingAppId, detectedSource);
+        await triggerSourceWebhooks(supabase as unknown as Parameters<typeof triggerSourceWebhooks>[0], existingAppId, detectedSource);
       } catch (webhookError) {
         logger.error('Webhook trigger failed on update (non-blocking)', webhookError as Error);
       }
@@ -1194,7 +1194,7 @@ Deno.serve(async (req) => {
 
     // Trigger webhooks for the detected source (non-blocking)
     try {
-      await triggerSourceWebhooks(supabase, data.id, detectedSource);
+      await triggerSourceWebhooks(supabase as unknown as Parameters<typeof triggerSourceWebhooks>[0], data!.id as string, detectedSource);
     } catch (webhookError) {
       logger.error('Webhook trigger failed (non-blocking)', webhookError as Error);
     }
@@ -1202,7 +1202,7 @@ Deno.serve(async (req) => {
     // Send confirmation email to applicant (non-blocking background task)
     // Uses clientName for privacy - applicants see the employer brand, not the recruiting org
     EdgeRuntime.waitUntil(
-      sendConfirmationEmail(applicantEmail, firstName, lastName, jobTitle, clientName, organizationName, clientLogoUrl, data.id, data.job_listing_id)
+      sendConfirmationEmail(applicantEmail, firstName, lastName, jobTitle, clientName, organizationName, clientLogoUrl, data!.id as string, data!.job_listing_id as string)
     );
 
     // Resolve client_id from the job listing for ATS routing
@@ -1216,7 +1216,7 @@ Deno.serve(async (req) => {
     // Auto-post to ALL configured ATS systems (Tenstreet, DriverReach, etc.)
     // Uses generic ATS adapter pattern - non-blocking background task
     EdgeRuntime.waitUntil(
-      autoPostToATS(supabase, data.id, organizationId, applicationData as Record<string, unknown>, {
+      autoPostToATS(supabase, data!.id as string, organizationId, applicationData as Record<string, unknown>, {
         clientId: resolvedClientId
       })
         .then((result) => {

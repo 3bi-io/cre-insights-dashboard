@@ -99,7 +99,7 @@ serve(async (req: Request) => {
       );
     }
 
-    const typedTokenData = tokenData as TokenData;
+    const typedTokenData = tokenData as unknown as TokenData;
 
     if (!typedTokenData.is_active) {
       return new Response(
@@ -141,12 +141,16 @@ serve(async (req: Request) => {
     }
 
     // Increment impression count (fire and forget)
-    supabase
-      .from('embed_tokens')
-      .update({ impression_count: typedTokenData.impression_count + 1 })
-      .eq('id', typedTokenData.id)
-      .then(() => {})
-      .catch((err: Error) => logger.error('Failed to increment impression', err));
+    (async () => {
+      try {
+        await supabase
+          .from('embed_tokens')
+          .update({ impression_count: typedTokenData.impression_count + 1 })
+          .eq('id', typedTokenData.id);
+      } catch (err) {
+        logger.error('Failed to increment impression', err as Error);
+      }
+    })();
 
     const params = new URLSearchParams();
     params.set('job_id', typedTokenData.job_listing_id);

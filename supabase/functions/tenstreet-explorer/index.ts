@@ -15,7 +15,6 @@ import {
   escapeXML,
   getCompanyId,
   buildTenstreetXML,
-  parseXMLResponse,
   parseApplicantFromXML,
   buildPersonalDataXML
 } from '../_shared/tenstreet-xml-utils.ts'
@@ -57,10 +56,10 @@ serve(async (req) => {
 
     const validationResult = requestSchema.safeParse(await req.json())
     if (!validationResult.success) {
-      return validationErrorResponse(validationResult.error)
+      return validationErrorResponse((validationResult as z.SafeParseError<unknown>).error)
     }
 
-    const { company_id, action, ...params } = validationResult.data
+    const { company_id, action, ...params } = validationResult.data as Record<string, any>;
 
     // Create authenticated Supabase client for this user
     const supabaseClient = createAuthenticatedClient(req)
@@ -107,8 +106,7 @@ serve(async (req) => {
       sensitiveFields: ['applicant_data', 'personal_information'],
       ipAddress,
       userAgent,
-      details: sanitizeForLogging(params)
-    })
+    } as any)
 
     switch (action) {
       case 'explore_services':

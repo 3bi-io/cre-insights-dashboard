@@ -3,6 +3,8 @@ import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { createLogger } from '../_shared/logger.ts';
 import { getServiceClient } from '../_shared/supabase-client.ts';
 
+type SupabaseServiceClient = ReturnType<typeof getServiceClient>;
+
 const logger = createLogger('domain-configuration');
 
 serve(async (req) => {
@@ -87,7 +89,7 @@ serve(async (req) => {
   }
 })
 
-async function configureDomain(supabase: ReturnType<typeof createClient>, organizationId: string, domain: string) {
+async function configureDomain(supabase: SupabaseServiceClient, organizationId: string, domain: string) {
   logger.info('Configuring domain', { domain })
   
   // Generate verification token
@@ -136,7 +138,7 @@ async function configureDomain(supabase: ReturnType<typeof createClient>, organi
   }
 }
 
-async function verifyDomain(supabase: ReturnType<typeof createClient>, organizationId: string, domain: string) {
+async function verifyDomain(supabase: SupabaseServiceClient, organizationId: string, domain: string) {
   logger.info('Verifying domain', { domain })
   
   try {
@@ -181,7 +183,7 @@ async function verifyDomain(supabase: ReturnType<typeof createClient>, organizat
   }
 }
 
-async function deployDomain(supabase: ReturnType<typeof createClient>, organizationId: string, domain: string) {
+async function deployDomain(supabase: SupabaseServiceClient, organizationId: string, domain: string) {
   logger.info('Deploying domain', { domain })
   
   try {
@@ -223,7 +225,7 @@ async function deployDomain(supabase: ReturnType<typeof createClient>, organizat
   }
 }
 
-async function removeDomain(supabase: ReturnType<typeof createClient>, organizationId: string, domain: string) {
+async function removeDomain(supabase: SupabaseServiceClient, organizationId: string, domain: string) {
   logger.info('Removing domain', { domain })
   
   try {

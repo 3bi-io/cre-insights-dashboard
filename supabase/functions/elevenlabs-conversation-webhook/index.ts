@@ -87,15 +87,13 @@ async function isDuplicate(
       .from('applications')
       .select('id')
       .eq('applicant_email', email)
-      .gte('created_at', cutoff)
-      .limit(1)
-      .maybeSingle();
+      .gte('created_at', cutoff);
 
     if (jobListingId) {
       query = query.eq('job_listing_id', jobListingId);
     }
 
-    const { data } = await query;
+    const { data } = await query.limit(1).maybeSingle();
     if (data) return { isDup: true, existingId: data.id };
   }
 
@@ -104,15 +102,13 @@ async function isDuplicate(
       .from('applications')
       .select('id')
       .eq('phone', phone)
-      .gte('created_at', cutoff)
-      .limit(1)
-      .maybeSingle();
+      .gte('created_at', cutoff);
 
     if (jobListingId) {
       query = query.eq('job_listing_id', jobListingId);
     }
 
-    const { data } = await query;
+    const { data } = await query.limit(1).maybeSingle();
     if (data) return { isDup: true, existingId: data.id };
   }
 

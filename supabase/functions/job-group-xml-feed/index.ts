@@ -107,6 +107,7 @@ Deno.serve(async (req) => {
     }
 
     // Generate public URL for the feed
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const feedUrl = `${supabaseUrl}/functions/v1/job-group-xml-feed?id=${jobGroupId}`;
 
     const responseTime = Date.now() - startTime;
@@ -115,17 +116,21 @@ Deno.serve(async (req) => {
     let organizationId = jobGroup.organization_id || null;
 
     // Log feed access (non-blocking)
-    supabase.from('feed_access_logs').insert({
-      organization_id: organizationId,
-      user_id: jobGroup.user_id,
-      feed_type: 'job-group-xml-feed',
-      platform: publisherName,
-      job_group_id: jobGroupId,
-      request_ip: requestIp,
-      user_agent: userAgent,
-      job_count: jobs.length,
-      response_time_ms: responseTime
-    }).catch(err => logger.error('Failed to log feed access', err));
+    try {
+      await supabase.from('feed_access_logs').insert({
+        organization_id: organizationId,
+        user_id: jobGroup.user_id,
+        feed_type: 'job-group-xml-feed',
+        platform: publisherName,
+        job_group_id: jobGroupId,
+        request_ip: requestIp,
+        user_agent: userAgent,
+        job_count: jobs.length,
+        response_time_ms: responseTime
+      });
+    } catch (err) {
+      logger.error('Failed to log feed access', err);
+    }
 
     return new Response(
       JSON.stringify({ 

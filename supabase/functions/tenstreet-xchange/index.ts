@@ -83,19 +83,20 @@ Deno.serve(async (req) => {
       return errorResponse('Application not found', 404);
     }
 
-    const organizationId = application.job_listings.organization_id;
+    const jobListings = application.job_listings as unknown as { organization_id: string } | { organization_id: string }[] | null;
+    const organizationId = Array.isArray(jobListings) ? jobListings[0]?.organization_id : jobListings?.organization_id;
 
     // Verify user has access to this organization
     if (authContext.organizationId !== organizationId) {
-      logger.error('Unauthorized access attempt', null, { userId: authContext.user.id });
+      logger.error('Unauthorized access attempt', null, { userId: authContext.userId });
       return errorResponse('Unauthorized access to this application', 403);
     }
 
     // Fetch Tenstreet credentials using shared utility (with security checks)
     const credentials = await fetchTenstreetCredentials(supabase, {
       organizationId,
-      userId: authContext.user.id,
-      userRole: authContext.role
+      userId: authContext.userId,
+      userRole: authContext.userRole
     });
 
     if (!credentials) {
@@ -140,13 +141,14 @@ Deno.serve(async (req) => {
       timeout: 30000
     });
 
-    if (!apiResponse.success) {
-      logger.error('API request failed', { error: sanitizeForLogging(apiResponse.error) });
-      throw new Error(apiResponse.error || 'Tenstreet API request failed');
+    const apiResp = apiResponse as unknown as { success: boolean; data?: string; error?: string };
+    if (!apiResp.success) {
+      logger.error('API request failed', { error: sanitizeForLogging(apiResp.error) });
+      throw new Error(apiResp.error || 'Tenstreet API request failed');
     }
 
     // Parse response using shared utility
-    const parsedResponse = parseXMLResponse(apiResponse.data);
+    const parsedResponse = parseXMLResponse(apiResp.data || '') as { success: boolean; requestId?: string; error?: string; errors?: string[] };
 
     // Calculate cost (example pricing in cents)
     const costMap: Record<string, number> = {
@@ -170,7 +172,7 @@ Deno.serve(async (req) => {
         response_data: sanitizeForLogging(parsedResponse),
         cost_cents: costMap[actualRequestType],
         error_message: parsedResponse.error,
-        requested_by: authContext.user.id,
+        requested_by: authContext.userId,
         request_date: new Date().toISOString(),
         api_type: 'soap'
       })

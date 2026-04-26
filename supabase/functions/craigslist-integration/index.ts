@@ -104,7 +104,7 @@ serve(async (req) => {
           );
         }
         
-        const jobData: CraigslistJobData = validationResult.data;
+        const jobData = validationResult.data as CraigslistJobData;
         return handleJobPosting(username, password, accountId, jobData);
       
       case 'categories':

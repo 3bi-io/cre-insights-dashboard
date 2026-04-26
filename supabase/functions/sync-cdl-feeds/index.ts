@@ -287,7 +287,7 @@ async function syncClientFeed(
       throw new Error(`Failed to fetch existing jobs: ${fetchError.message}`);
     }
 
-    const existingJobMap = new Map(
+    const existingJobMap = new Map<string, { id: string; [key: string]: unknown }>(
       (existingJobs || []).map((j: any) => [j.job_id, j])
     );
     const feedJobIds = new Set<string>();
