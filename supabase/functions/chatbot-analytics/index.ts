@@ -325,7 +325,7 @@ serve(async (req) => {
     }
 
     if (tables.includes('clients') || tables.length === 0) {
-      analytics.clients = await getClientsAnalytics(organizationId);
+      analytics.clients = await getClientsAnalytics();
     }
 
     // Generate analytical response

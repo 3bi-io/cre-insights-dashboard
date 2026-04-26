@@ -111,8 +111,8 @@ serve(async (req) => {
         logger.info('Test connection result', { correlationId, status: testResult.status });
         
         return new Response(JSON.stringify({
-          success: testResult.status === "success",
-          message: testResult.message || (testResult.status === "success" ? "Connection successful" : "Connection failed"),
+          success: testResult.success,
+          message: testResult.error?.message || (testResult.success ? "Connection successful" : "Connection failed"),
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });

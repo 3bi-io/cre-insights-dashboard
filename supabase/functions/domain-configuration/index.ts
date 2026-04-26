@@ -3,6 +3,8 @@ import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { createLogger } from '../_shared/logger.ts';
 import { getServiceClient } from '../_shared/supabase-client.ts';
 
+type SupabaseServiceClient = ReturnType<typeof getServiceClient>;
+
 const logger = createLogger('domain-configuration');
 
 serve(async (req) => {
