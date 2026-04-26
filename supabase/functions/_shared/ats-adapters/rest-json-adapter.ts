@@ -189,7 +189,7 @@ export class RESTJSONAdapter extends BaseATSAdapter {
     }
   }
 
-  async getJobs(): Promise<ATSResponse> {
+  override async getJobs(): Promise<ATSResponse> {
     const startTime = Date.now();
     
     try {
@@ -233,7 +233,7 @@ export class RESTJSONAdapter extends BaseATSAdapter {
     }
   }
 
-  async syncStatus(externalId: string): Promise<ATSResponse> {
+  override async syncStatus(externalId: string): Promise<ATSResponse> {
     const startTime = Date.now();
     
     try {

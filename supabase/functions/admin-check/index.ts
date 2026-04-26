@@ -105,12 +105,16 @@ serve(async (req) => {
     const isAuthorized = allowedRoles[requiredRole]?.includes(userRole) ?? false;
 
     if (!isAuthorized) {
-      await supabase.from('audit_logs').insert({
-        user_id: user.id,
-        table_name: 'authorization',
-        action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
-        sensitive_fields: ['role_check'],
-      }).catch((err: unknown) => logger.error('Audit log failed', err));
+      try {
+        await supabase.from('audit_logs').insert({
+          user_id: user.id,
+          table_name: 'authorization',
+          action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
+          sensitive_fields: ['role_check'],
+        });
+      } catch (err) {
+        logger.error('Audit log failed', err);
+      }
 
       return new Response(
         JSON.stringify({ 

@@ -98,7 +98,7 @@ serve(async (req) => {
           }
         }
       } catch (e) {
-        logger.warn('listUsers lookup failed', e);
+        logger.warn('listUsers lookup failed', { error: e instanceof Error ? e.message : String(e) });
       }
 
       // Fallback: Look up user id via profiles table
