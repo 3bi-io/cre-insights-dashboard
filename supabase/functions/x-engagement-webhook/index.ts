@@ -13,7 +13,7 @@ import { createLogger } from '../_shared/logger.ts';
 import { hybridClassify } from '../_shared/engagement-classifier.ts';
 import { generateEngagementResponse, saveResponse } from '../_shared/engagement-responder.ts';
 import { recordInteractionMetrics } from '../_shared/social-ai-service.ts';
-import { createHmac } from 'https://deno.land/std@0.168.0/crypto/mod.ts';
+import { createHmac } from 'node:crypto';
 
 const logger = createLogger('x-engagement-webhook');
 
