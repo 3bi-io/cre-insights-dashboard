@@ -206,7 +206,7 @@ Message to classify: "${content}"${contextInfo}${previousContext}`;
       extractedEntities: result.extractedEntities || {},
     };
   } catch (error) {
-    logger.error('Classification failed', { error: error.message });
+    logger.error('Classification failed', { error: error instanceof Error ? error.message : String(error) });
     
     // Fallback classification based on keywords
     return fallbackClassification(content);
@@ -351,7 +351,7 @@ Keep it under ${Math.min(config.maxLength, 500)} characters for readability.`;
       tokensUsed: data?.usage?.totalTokens || 0,
     };
   } catch (anthropicError) {
-    logger.warn('Anthropic failed, trying OpenAI', { error: anthropicError.message });
+    logger.warn('Anthropic failed, trying OpenAI', { error: anthropicError instanceof Error ? anthropicError.message : String(anthropicError) });
     
     try {
       // Fallback to OpenAI
@@ -524,6 +524,6 @@ export async function recordInteractionMetrics(
     });
   
   if (error) {
-    logger.error('Failed to record metrics', { error: error.message });
+    logger.error('Failed to record metrics', { error: error instanceof Error ? error.message : String(error) });
   }
 }
