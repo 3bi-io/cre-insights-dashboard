@@ -1,0 +1,52 @@
+name: Edge Functions Type Check
+
+on:
+  push:
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/edge-functions-typecheck.yml'
+  pull_request:
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/edge-functions-typecheck.yml'
+  workflow_dispatch:
+
+jobs:
+  typecheck:
+    name: Deno type-check Supabase Edge Functions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Type-check all Edge Functions
+        working-directory: supabase/functions
+        run: |
+          set -euo pipefail
+
+          # Collect every entry point: index.ts in each function dir,
+          # plus any *.test.ts files (for shared utilities and per-function tests).
+          mapfile -t ENTRY_FILES < <(
+            { find . -mindepth 2 -maxdepth 2 -name 'index.ts' -type f;
+              find . -name '*.test.ts' -type f;
+              find . -name '*_test.ts' -type f;
+            } | sort -u
+          )
+
+          if [ ${#ENTRY_FILES[@]} -eq 0 ]; then
+            echo "No edge function entry files found."
+            exit 0
+          fi
+
+          echo "Type-checking ${#ENTRY_FILES[@]} file(s):"
+          printf '  %s\n' "${ENTRY_FILES[@]}"
+
+          # `deno check` reads compilerOptions from supabase/functions/deno.json
+          # (CWD) and fails the job on any TypeScript error.
+          deno check --config=deno.json "${ENTRY_FILES[@]}"
