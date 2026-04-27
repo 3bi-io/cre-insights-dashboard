@@ -153,7 +153,7 @@ serve(async (req) => {
   } catch (error) {
     logger.error('Tenstreet Explorer error', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -264,7 +264,7 @@ async function testService(credentials: any, serviceName: string, customPayload?
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         service: serviceName
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -415,7 +415,7 @@ async function makeRequest(xmlPayload: string, actionName: string, corsHeaders?:
         return new Response(
           JSON.stringify({
             success: false,
-            error: error.message,
+            error: error instanceof Error ? error.message : String(error),
             action: actionName,
             attempts: maxRetries
           }),
@@ -481,7 +481,7 @@ function parseXMLResponse(xml: string): any {
       rawXml: xml
     };
   } catch (error) {
-    return { parseError: error.message, rawXml: xml };
+    return { parseError: error instanceof Error ? error.message : String(error), rawXml: xml };
   }
 }
 
