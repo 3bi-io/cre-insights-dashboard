@@ -230,7 +230,7 @@ async function processTweetMention(
     .single();
   
   if (error) {
-    logger.error('Failed to store tweet interaction', { error: error.message });
+    logger.error('Failed to store tweet interaction', { error: error instanceof Error ? error.message : String(error) });
     return;
   }
   
@@ -321,7 +321,7 @@ async function processDM(
     .single();
   
   if (error) {
-    logger.error('Failed to store DM interaction', { error: error.message });
+    logger.error('Failed to store DM interaction', { error: error instanceof Error ? error.message : String(error) });
     return;
   }
   
@@ -526,7 +526,7 @@ async function sendTweetReply(text: string, inReplyToId: string): Promise<boolea
     
     return true;
   } catch (error) {
-    logger.error('X API error', { error: error.message });
+    logger.error('X API error', { error: error instanceof Error ? error.message : String(error) });
     return false;
   }
 }
@@ -571,7 +571,7 @@ async function sendDirectMessage(recipientId: string, text: string): Promise<boo
     
     return true;
   } catch (error) {
-    logger.error('X DM API error', { error: error.message });
+    logger.error('X DM API error', { error: error instanceof Error ? error.message : String(error) });
     return false;
   }
 }
@@ -630,7 +630,7 @@ serve(async (req: Request) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } catch (error) {
-      logger.error('X webhook processing error', { error: error.message });
+      logger.error('X webhook processing error', { error: error instanceof Error ? error.message : String(error) });
       
       return new Response(JSON.stringify({ success: false }), {
         status: 200,

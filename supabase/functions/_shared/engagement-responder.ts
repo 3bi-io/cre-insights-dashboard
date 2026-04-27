@@ -134,7 +134,7 @@ export async function generateEngagementResponse(
       requiresApproval: context.sentiment === 'negative' || context.intent === 'complaint',
     };
   } catch (error) {
-    logger.error('AI response generation failed', { error: error.message });
+    logger.error('AI response generation failed', { error: error instanceof Error ? error.message : String(error) });
     
     // Step 3: Use fallback response
     const fallback = getFallbackResponse(context);
@@ -251,7 +251,7 @@ export async function saveResponse(
     .single();
   
   if (error) {
-    logger.error('Failed to save response', { error: error.message });
+    logger.error('Failed to save response', { error: error instanceof Error ? error.message : String(error) });
     return null;
   }
   
