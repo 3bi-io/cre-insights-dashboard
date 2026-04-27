@@ -58,7 +58,7 @@ export async function fetchTenstreetCredentials(
     // Regular users can only access credentials from their organization
     if (organizationId) {
       const orgCredentials = credentialsList.find(
-        cred => cred.organization_id === organizationId
+        (cred: TenstreetCredentials) => cred.organization_id === organizationId
       );
       
       if (orgCredentials) {
