@@ -570,10 +570,27 @@ const handler = wrapHandler(async (req: Request) => {
   const defaultCategoryId = categories[0].id;
   const superAdminId = profiles[0].id;
 
-  // Sync all feeds
+  // Optional clientId filter from request body (POST) — sync a single client
+  let onlyClientId: string | null = null;
+  if (req.method === 'POST') {
+    try {
+      const body = await req.json();
+      if (body && typeof body.clientId === 'string') {
+        onlyClientId = body.clientId;
+      }
+    } catch {
+      // ignore body parse errors
+    }
+  }
+
+  const feedsToSync = onlyClientId
+    ? CDL_FEEDS.filter(f => f.clientId === onlyClientId)
+    : CDL_FEEDS;
+
+  // Sync feeds
   const results: SyncResult[] = [];
-  
-  for (const feed of CDL_FEEDS) {
+
+  for (const feed of feedsToSync) {
     const result = await syncClientFeed(supabase, feed, defaultCategoryId, superAdminId);
     results.push(result);
 
@@ -590,7 +607,7 @@ const handler = wrapHandler(async (req: Request) => {
         jobs_deactivated: result.jobsDeactivated,
         sync_duration_ms: result.durationMs,
         error: result.error || null,
-        sync_type: 'scheduled'
+        sync_type: onlyClientId ? 'manual' : 'scheduled'
       });
   }
 
