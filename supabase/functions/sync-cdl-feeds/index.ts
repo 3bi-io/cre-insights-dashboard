@@ -47,6 +47,11 @@ const CDL_FEEDS = [
     clientId: '53d7dd20-d743-4d34-93e9-eb7175c39da1',
     clientName: 'Admiral Merchants',
     feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=admiral_merchants&board=AIRecruiter'
+  },
+  {
+    clientId: 'dfef4b27-311a-4eee-91cc-4bf57694268e',
+    clientName: 'RG Transport',
+    feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=rg_transport&board=AIRecruiter'
   }
 ];
 
@@ -439,7 +444,7 @@ async function syncClientFeed(
             .single();
 
           if (insertError) {
-            logger.error('Failed to insert job', insertError, { clientName: feed.clientName, jobId });
+            logger.error('Failed to insert job', new Error(JSON.stringify(insertError)), { clientName: feed.clientName, jobId });
           } else if (newJob) {
             // Update with UTM-enriched apply URL now that we have the ID
             const applyUrl = generateApplyUrl(newJob.id, feed.clientName);
@@ -565,10 +570,27 @@ const handler = wrapHandler(async (req: Request) => {
   const defaultCategoryId = categories[0].id;
   const superAdminId = profiles[0].id;
 
-  // Sync all feeds
+  // Optional clientId filter from request body (POST) — sync a single client
+  let onlyClientId: string | null = null;
+  if (req.method === 'POST') {
+    try {
+      const body = await req.json();
+      if (body && typeof body.clientId === 'string') {
+        onlyClientId = body.clientId;
+      }
+    } catch {
+      // ignore body parse errors
+    }
+  }
+
+  const feedsToSync = onlyClientId
+    ? CDL_FEEDS.filter(f => f.clientId === onlyClientId)
+    : CDL_FEEDS;
+
+  // Sync feeds
   const results: SyncResult[] = [];
-  
-  for (const feed of CDL_FEEDS) {
+
+  for (const feed of feedsToSync) {
     const result = await syncClientFeed(supabase, feed, defaultCategoryId, superAdminId);
     results.push(result);
 
@@ -585,7 +607,7 @@ const handler = wrapHandler(async (req: Request) => {
         jobs_deactivated: result.jobsDeactivated,
         sync_duration_ms: result.durationMs,
         error: result.error || null,
-        sync_type: 'scheduled'
+        sync_type: onlyClientId ? 'manual' : 'scheduled'
       });
   }
 
