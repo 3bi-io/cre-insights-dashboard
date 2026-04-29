@@ -47,6 +47,11 @@ const CDL_FEEDS = [
     clientId: '53d7dd20-d743-4d34-93e9-eb7175c39da1',
     clientName: 'Admiral Merchants',
     feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=admiral_merchants&board=AIRecruiter'
+  },
+  {
+    clientId: 'dfef4b27-311a-4eee-91cc-4bf57694268e',
+    clientName: 'RG Transport',
+    feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=rg_transport&board=AIRecruiter'
   }
 ];
 
