@@ -444,7 +444,7 @@ async function syncClientFeed(
             .single();
 
           if (insertError) {
-            logger.error('Failed to insert job', insertError, { clientName: feed.clientName, jobId });
+            logger.error('Failed to insert job', new Error(JSON.stringify(insertError)), { clientName: feed.clientName, jobId });
           } else if (newJob) {
             // Update with UTM-enriched apply URL now that we have the ID
             const applyUrl = generateApplyUrl(newJob.id, feed.clientName);
