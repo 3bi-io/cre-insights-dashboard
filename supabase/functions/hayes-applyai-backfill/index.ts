@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
   const clientFilter = body.client_id ?? null;
   const retryFailed = body.retry_failed === true;
 
-  logger.info('Backfill starting', { dryRun, limit, since, clientFilter, retryFailed, userId });
+  logger.info('Backfill starting', { dryRun, limit, since, clientFilter, retryFailed, isServiceRole });
 
   // --- Find candidate Hayes job_listings ----------------------------------
   let listingsQuery = admin
