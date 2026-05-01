@@ -69,9 +69,11 @@ Deno.serve(async (req) => {
 
   const admin = createClient(supabaseUrl, serviceKey);
 
+  const publishableKey = Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ?? '';
   const isServiceRole = token === serviceKey;
   const isAnonKey = token === anonKey;
-  const isOperatorBypass = isServiceRole || isAnonKey;
+  const isPublishable = !!publishableKey && token === publishableKey;
+  const isOperatorBypass = isServiceRole || isAnonKey || isPublishable;
 
   if (!isOperatorBypass) {
     const userClient = createClient(supabaseUrl, anonKey, {
