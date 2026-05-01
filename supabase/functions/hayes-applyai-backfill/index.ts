@@ -69,9 +69,9 @@ Deno.serve(async (req) => {
 
   const admin = createClient(supabaseUrl, serviceKey);
 
-  const isServiceRole = token === serviceKey;
+  const isOperatorBypass = token === serviceKey;
   const isAnonKey = token === anonKey;
-  const isOperatorBypass = isServiceRole || isAnonKey;
+  const isOperatorBypass = isOperatorBypass || isAnonKey;
 
   if (!isOperatorBypass) {
     const userClient = createClient(supabaseUrl, anonKey, {
@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
   const clientFilter = body.client_id ?? null;
   const retryFailed = body.retry_failed === true;
 
-  logger.info('Backfill starting', { dryRun, limit, since, clientFilter, retryFailed, isServiceRole });
+  logger.info('Backfill starting', { dryRun, limit, since, clientFilter, retryFailed, isOperatorBypass });
 
   // --- Find candidate Hayes job_listings ----------------------------------
   let listingsQuery = admin
