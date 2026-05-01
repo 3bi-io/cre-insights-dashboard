@@ -523,4 +523,25 @@ export const HAYES_CLIENT_CONFIGS: Record<string, HayesClientConfig> = {
     feedUserCode: 'TBD', // Awaiting CDL Job Cast feed user code
     feedBoard: 'AIRecruiter',
   },
+  'admiral-merchants': {
+    clientId: '53d7dd20-d743-4d34-93e9-eb7175c39da1',
+    clientName: 'Admiral Merchants',
+    clientSlug: 'admiral-merchants',
+    feedUserCode: 'TBD', // Awaiting CDL Job Cast feed user code
+    feedBoard: 'AIRecruiter',
+  },
+  'trucks-for-you': {
+    clientId: 'cc4a05e9-2c87-4e71-b7f5-49d8bd709540',
+    clientName: 'Trucks For You Inc',
+    clientSlug: 'trucks-for-you',
+    feedUserCode: 'TBD', // Awaiting CDL Job Cast feed user code
+    feedBoard: 'AIRecruiter',
+  },
+  'rg-transport': {
+    clientId: 'dfef4b27-311a-4eee-91cc-4bf57694268e',
+    clientName: 'RG Transport',
+    clientSlug: 'rg-transport',
+    feedUserCode: 'TBD', // Awaiting CDL Job Cast feed user code
+    feedBoard: 'AIRecruiter',
+  },
 };
