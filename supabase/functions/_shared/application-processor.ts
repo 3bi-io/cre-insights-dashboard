@@ -1,5 +1,6 @@
 import { SupabaseClient } from "npm:@supabase/supabase-js@2.50.0";
 import { createLogger } from './logger.ts';
+import { maybeDispatchHayesToApplyAI } from './hayes-dispatch.ts';
 
 const logger = createLogger('application-processor');
 
@@ -472,6 +473,24 @@ export const insertApplication = async (
     .insert(applicationData)
     .select()
     .single();
+
+  // Fire-and-forget Hayes → ApplyAI dispatch. Never blocks the caller and
+  // never throws. Skipped if the row isn't a Hayes application.
+  if (data && !error) {
+    try {
+      const dispatch = maybeDispatchHayesToApplyAI(supabase, data as Parameters<typeof maybeDispatchHayesToApplyAI>[1]);
+      // Use EdgeRuntime.waitUntil if available so it survives after we return.
+      const er = (globalThis as unknown as { EdgeRuntime?: { waitUntil: (p: Promise<unknown>) => void } }).EdgeRuntime;
+      if (er?.waitUntil) {
+        er.waitUntil(dispatch);
+      } else {
+        // Best-effort: swallow errors so we never break the insert response.
+        dispatch.catch(() => undefined);
+      }
+    } catch {
+      // Defensive: never let dispatch wiring break the insert path.
+    }
+  }
 
   return { data, error };
 };
