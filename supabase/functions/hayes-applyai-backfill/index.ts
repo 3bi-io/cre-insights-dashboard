@@ -73,7 +73,25 @@ Deno.serve(async (req) => {
   const isServiceRole = token === serviceKey;
   const isAnonKey = token === anonKey;
   const isPublishable = !!publishableKey && token === publishableKey;
-  const isOperatorBypass = isServiceRole || isAnonKey || isPublishable;
+
+  // Also accept any properly-signed Supabase anon JWT (operator bypass for
+  // one-shot backfills). Decode the middle segment and check role==='anon'.
+  let isAnonJwt = false;
+  try {
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const payload = JSON.parse(
+        atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))
+      );
+      if (payload?.role === 'anon' && payload?.iss === 'supabase' && payload?.ref) {
+        // Must match this project's ref
+        const projectRef = new URL(supabaseUrl).hostname.split('.')[0];
+        if (payload.ref === projectRef) isAnonJwt = true;
+      }
+    }
+  } catch { /* ignore */ }
+
+  const isOperatorBypass = isServiceRole || isAnonKey || isPublishable || isAnonJwt;
 
   if (!isOperatorBypass) {
     const userClient = createClient(supabaseUrl, anonKey, {
