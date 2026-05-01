@@ -5,6 +5,7 @@ import { normalizeSpokenEmail, isValidEmail } from "../_shared/email-utils.ts";
 import { lookupCityState } from "../_shared/zip-lookup.ts";
 import { extractFromTranscript, ExtractedData } from "../_shared/transcript-parser.ts";
 import { normalizePhone, containsSpokenDigits } from "../_shared/phone-utils.ts";
+import { maybeDispatchHayesToApplyAI } from "../_shared/hayes-dispatch.ts";
 
 const logger = createLogger('sync-voice-applications');
 
