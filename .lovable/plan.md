@@ -1,71 +1,77 @@
-# Hayes → ApplyAI Outbound Webhook: Coverage Fix
+# Unified CDL Job Cast Inbound URLs for Hayes Clients
 
-## Confirmation (current state)
+## Goal
+Provide working `hayes-inbound?client=<key>` URLs (matching the proven `re-garrison` pattern) for all 7 requested clients so CDL Job Cast can post applications into our system.
 
-**Hayes outbound webhook is NOT firing for the vast majority of applications.**
+## Current State
+`HAYES_CLIENT_CONFIGS` in `supabase/functions/_shared/hayes-client-handler.ts` already has entries for:
+- `pemberton`, `danny-herman`, `james-burg`, `harpers-hotshot` (and `re-garrison`, `dayross`, `novco`)
 
-Database evidence (org `84214b48-…-466c`):
+Missing entries: **Admiral Merchants**, **Trucks For You Inc**, **RG Transport**.
 
-| Scope | Total apps | `sent` | `failed` | `null` (never attempted) |
-|---|---|---|---|---|
-| All time | 1,096 | 0 | 0 | **1,096** |
-| Last 14 days | ~250 | 0 | 0 | ~250 |
+## Changes
 
-Sources currently bypassing ApplyAI dispatch: `TheTruckersReportJobs` (137), `Adzuna` (43), `ZipRecruiter` (39), `Direct Application` (9), `ElevenLabs` (5), `Meta` (5), `LevelUp` (4), `Indeed` (3), `JobCast` (2), `Embed Form` (1), etc.
+### 1. Add 3 new client configs to `HAYES_CLIENT_CONFIGS`
+Append to `supabase/functions/_shared/hayes-client-handler.ts`:
 
-### Why
+```ts
+'admiral-merchants': {
+  clientId: '53d7dd20-d743-4d34-93e9-eb7175c39da1',
+  clientName: 'Admiral Merchants',
+  clientSlug: 'admiral-merchants',
+  feedUserCode: 'TBD', // Request from CDL Job Cast
+  feedBoard: 'AIRecruiter',
+},
+'trucks-for-you': {
+  clientId: 'cc4a05e9-2c87-4e71-b7f5-49d8bd709540',
+  clientName: 'Trucks For You Inc',
+  clientSlug: 'trucks-for-you',
+  feedUserCode: 'TBD',
+  feedBoard: 'AIRecruiter',
+},
+'rg-transport': {
+  clientId: 'dfef4b27-311a-4eee-91cc-4bf57694268e',
+  clientName: 'RG Transport',
+  clientSlug: 'rg-transport',
+  feedUserCode: 'TBD',
+  feedBoard: 'AIRecruiter',
+},
+```
 
-`sendToApplyAI()` is wired into **only one** code path:
+Note: `feedUserCode` is only used for outbound job sync (GET `?action=jobs`). Inbound application POSTs from CDL Job Cast do NOT require it, so the URLs work immediately for receiving applications. Pull/sync needs the codes filled in later.
 
-- `_shared/hayes-client-handler.ts` — used by the dedicated `hayes-pemberton-inbound`, `hayes-harpers-hotshot-inbound`, etc. endpoints.
+### 2. Redeploy `hayes-inbound`
+Deploy so the new client keys are recognized by the parameterized endpoint.
 
-It is **not** called from the paths real traffic actually uses:
+### 3. Verify
+Smoke-test each new URL with a GET to confirm the client key is accepted (expect proper response, not "Unknown client").
 
-- `submit-application` — main public apply form (Adzuna, ZipRecruiter, TruckersReport, Direct, Embed all flow here)
-- `inbound-applications` — generic inbound (used by CDL Job Cast `inbound-applications?client_name=…`)
-- `cdl-jobcast-inbound` — CDL Job Cast direct
-- `hayes-garrison-zapier` — R.E. Garrison Zapier path
-- ElevenLabs voice-app insertion paths
+## Final URLs (give to CDL Job Cast)
 
-Result: every application created through these routes for a Hayes job listing is silently skipped.
+```
+Admiral Merchants:
+https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-inbound?client=admiral-merchants
 
-## Plan
+Pemberton Truck Lines:
+https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-inbound?client=pemberton
 
-### 1. Centralize dispatch in the application processor
-Add a `dispatchToApplyAIIfHayes()` helper in `_shared/application-processor.ts` (or a new `_shared/hayes-dispatch.ts`) that:
-- Loads the resolved `job_listings` row to confirm `organization_id === HAYES_ORG_ID`.
-- Calls `sendToApplyAI()` with all needed fields from the freshly created application.
-- Runs inside `EdgeRuntime.waitUntil(...)` so it never blocks the caller response.
-- Is idempotent: skips rows already marked `applyai_webhook_status = 'sent'`.
+Danny Herman Trucking:
+https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-inbound?client=danny-herman
 
-### 2. Wire it into every Hayes-capable entry point
-Add a call right after the `applications` insert succeeds in:
+Trucks For You Inc:
+https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-inbound?client=trucks-for-you
 
-- `supabase/functions/submit-application/index.ts`
-- `supabase/functions/inbound-applications/index.ts`
-- `supabase/functions/cdl-jobcast-inbound/index.ts`
-- `supabase/functions/hayes-garrison-zapier/index.ts`
-- Any ElevenLabs sync path that inserts Hayes applications (`sync-voice-applications`, etc. — verify during implementation)
+Harpers Hotshot:
+https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-inbound?client=harpers-hotshot
 
-The existing `hayes-client-handler.ts` already calls it; leave it as-is.
+RG Transport:
+https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-inbound?client=rg-transport
 
-### 3. Backfill the 1,096 historical Hayes applications
-Use the existing `hayes-applyai-backfill` function:
-- First a dry run to confirm count.
-- Then `dry_run: false, limit: 2000` (the function caps internally), repeated in pages until drained.
+James Burg Trucking Company:
+https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-inbound?client=james-burg
+```
 
-### 4. Add a lightweight monitor
-Extend `monitor-feed-quality` (or add to morning digest) to flag when Hayes apps from the last 24h have `applyai_webhook_status IS NULL` — surfaces silent drops if a new entry point is added later.
+All applications routed through these URLs will be tagged to the correct `clientId`, get UTM `utm_campaign=<slug>`, and (for the Hayes org) automatically dispatched to the ApplyAI outbound webhook via the centralized helper added previously.
 
-## Technical notes
-
-- `sendToApplyAI()` already records outcome on `applications` (`applyai_webhook_status`, `applyai_webhook_sent_at`, `applyai_webhook_last_error`) and writes to `webhook_logs`.
-- Hayes detection: `job_listings.organization_id === '84214b48-7b51-45bc-ad7f-723bcf50466c'`. We already have `getOrganizationFromJobId()` for cases where the listing isn't joined yet.
-- Use service-role client (`getServiceClient()`) for the dispatch lookup to avoid RLS surprises.
-- All edge functions retain `verify_jwt` settings as currently configured in `config.toml`.
-
-## Out of scope
-
-- Schema changes — none needed; columns already exist.
-- ApplyAI endpoint or secret rotation — `APPLYAI_WEBHOOK_SECRET` already in use.
-- Retrying failed rows — covered by `hayes-applyai-backfill` with `retry_failed: true`.
+## Follow-up (not blocking)
+Request CDL Job Cast `feedUserCode` values for Admiral Merchants, Trucks For You, RG Transport, and Harpers Hotshot to enable outbound job pulls.
