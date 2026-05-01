@@ -319,7 +319,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.hayes-applyai-backfill]
-verify_jwt = true
+verify_jwt = false
 
 [functions.hayes-harpers-hotshot-inbound]
 verify_jwt = false
