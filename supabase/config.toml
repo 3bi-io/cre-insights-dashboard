@@ -321,6 +321,9 @@ verify_jwt = false
 [functions.hayes-applyai-backfill]
 verify_jwt = true
 
+[functions.hayes-harpers-hotshot-inbound]
+verify_jwt = false
+
 [functions.sms-webhook]
 verify_jwt = false
 

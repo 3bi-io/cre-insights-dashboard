@@ -535,4 +535,11 @@ export const HAYES_CLIENT_CONFIGS: Record<string, HayesClientConfig> = {
     feedUserCode: 'RE-Garrison-Trucking-1760000000',
     feedBoard: 'AIRecruiter',
   },
+  'harpers-hotshot': {
+    clientId: '489f7166-f56d-4067-bbd6-673ef5117e33',
+    clientName: 'Harpers Hotshot',
+    clientSlug: 'harpers-hotshot',
+    feedUserCode: 'TBD', // Awaiting CDL Job Cast feed user code
+    feedBoard: 'AIRecruiter',
+  },
 };
