@@ -144,10 +144,12 @@ Deno.serve(async (req) => {
     return successResponse({ scanned: 0, sent: 0, failed: 0, skipped: 0 }, 'No Hayes listings found', undefined, origin);
   }
 
-  // --- Pull candidate applications, batched in chunks of 500 listing ids --
+  // --- Pull candidate applications, batched in chunks of 150 listing ids --
+  // (Supabase PostgREST URL limit ~8KB; 150 UUIDs keeps us comfortably under.)
+  const CHUNK = 150;
   const candidates: Array<Record<string, unknown>> = [];
-  for (let i = 0; i < listingIds.length && candidates.length < limit; i += 500) {
-    const chunk = listingIds.slice(i, i + 500);
+  for (let i = 0; i < listingIds.length && candidates.length < limit; i += CHUNK) {
+    const chunk = listingIds.slice(i, i + CHUNK);
     let q = admin
       .from('applications')
       .select(
