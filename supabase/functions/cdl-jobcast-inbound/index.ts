@@ -456,18 +456,20 @@ const handler = wrapHandler(async (req: Request) => {
     campaign: queryParams.get('utm_campaign') || (body.utm_campaign as string) || undefined,
   };
 
-  // Extract client info
-  const clientName = queryParams.get('client_name') || 
-                     queryParams.get('user') || 
-                     (body.client_name as string) || 
-                     (body.company as string) || 
-                     'Unknown Client';
+  // Extract client info (raw, then normalized through the alias table)
+  const rawClientName = queryParams.get('client_name') ||
+                        queryParams.get('user') ||
+                        (body.client_name as string) ||
+                        (body.company as string) ||
+                        'Unknown Client';
+  const clientName = normalizeClientName(rawClientName);
 
   // Detect or use explicit action
   const action = detectAction(body, queryParams);
 
   logger.info('CDL Job Cast inbound request', {
     action,
+    rawClientName,
     clientName,
     utmParams,
     method: req.method,
