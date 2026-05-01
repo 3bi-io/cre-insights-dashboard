@@ -37,6 +37,48 @@ const DEFAULT_UTM = {
 };
 
 /**
+ * Aliases for CDL Job Cast client names → canonical clients.name in DB.
+ * CDL sometimes posts a shortened or punctuation-stripped name; map them here
+ * so the lookup hits the right client_id every time.
+ */
+const CLIENT_NAME_ALIASES: Record<string, string> = {
+  'novco': 'Novco, Inc.',
+  'novco inc': 'Novco, Inc.',
+  'novco, inc': 'Novco, Inc.',
+  'pemberton': 'Pemberton Truck Lines Inc',
+  'pemberton truck lines': 'Pemberton Truck Lines Inc',
+  'day and ross': 'Day and Ross',
+  'dayross': 'Day and Ross',
+  'james burg': 'James Burg Trucking Company',
+  'james burg trucking': 'James Burg Trucking Company',
+  'danny herman': 'Danny Herman Trucking',
+  're garrison': 'R.E. Garrison Trucking',
+  're-garrison': 'R.E. Garrison Trucking',
+  're.garrison': 'R.E. Garrison Trucking',
+  're garrison trucking': 'R.E. Garrison Trucking',
+  'admiral': 'Admiral Merchants',
+  'admiral merchants': 'Admiral Merchants',
+  'rg transport': 'RG Transport',
+  'harpers hotshot': 'Harpers Hotshot',
+  'harper hotshot': 'Harpers Hotshot',
+  'trucks for you': 'Trucks For You Inc',
+  'trucks for you inc': 'Trucks For You Inc',
+};
+
+/**
+ * Normalize an inbound client name: trim, collapse whitespace, lowercase,
+ * strip trailing punctuation, then resolve through the alias table.
+ */
+function normalizeClientName(raw: string): string {
+  const cleaned = raw
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/[.,]+$/g, '')
+    .toLowerCase();
+  return CLIENT_NAME_ALIASES[cleaned] || raw.trim();
+}
+
+/**
  * Generate internal apply URL with UTM parameters
  */
 function generateApplyUrl(jobListingId: string, clientName: string, utmParams: {
@@ -414,18 +456,20 @@ const handler = wrapHandler(async (req: Request) => {
     campaign: queryParams.get('utm_campaign') || (body.utm_campaign as string) || undefined,
   };
 
-  // Extract client info
-  const clientName = queryParams.get('client_name') || 
-                     queryParams.get('user') || 
-                     (body.client_name as string) || 
-                     (body.company as string) || 
-                     'Unknown Client';
+  // Extract client info (raw, then normalized through the alias table)
+  const rawClientName = queryParams.get('client_name') ||
+                        queryParams.get('user') ||
+                        (body.client_name as string) ||
+                        (body.company as string) ||
+                        'Unknown Client';
+  const clientName = normalizeClientName(rawClientName);
 
   // Detect or use explicit action
   const action = detectAction(body, queryParams);
 
   logger.info('CDL Job Cast inbound request', {
     action,
+    rawClientName,
     clientName,
     utmParams,
     method: req.method,
@@ -444,17 +488,27 @@ const handler = wrapHandler(async (req: Request) => {
       throw new ValidationError('Feed URL is required for job import. Provide feed_url parameter or user/board combination.');
     }
 
-    // Find client by name if possible
+    // Find client by name: try exact match first (post-normalization), then fuzzy
     let clientId: string | null = null;
-    const { data: clients } = await supabase
+    const { data: exactClients } = await supabase
       .from('clients')
       .select('id')
       .eq('organization_id', HAYES_ORG_ID)
-      .ilike('name', `%${clientName}%`)
+      .eq('name', clientName)
       .limit(1);
 
-    if (clients && clients.length > 0) {
-      clientId = clients[0].id;
+    if (exactClients && exactClients.length > 0) {
+      clientId = exactClients[0].id;
+    } else {
+      const { data: fuzzyClients } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('organization_id', HAYES_ORG_ID)
+        .ilike('name', `%${clientName}%`)
+        .limit(1);
+      if (fuzzyClients && fuzzyClients.length > 0) {
+        clientId = fuzzyClients[0].id;
+      }
     }
 
     // Generate campaign name if not provided

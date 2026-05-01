@@ -467,25 +467,31 @@ async function syncClientFeed(
 
     if (jobsToDeactivate.length > 0) {
       logger.info('Deactivating stale jobs', { clientName: feed.clientName, count: jobsToDeactivate.length });
-      
+
       // Deactivate in smaller batches to avoid issues with large updates
       const BATCH_SIZE = 50;
       for (let i = 0; i < jobsToDeactivate.length; i += BATCH_SIZE) {
         const batch = jobsToDeactivate.slice(i, i + BATCH_SIZE);
+        if (batch.length === 0) continue;
+
         const { error: deactivateError } = await supabase
           .from('job_listings')
-          .update({ 
-            status: 'inactive', 
-            updated_at: new Date().toISOString() 
+          .update({
+            status: 'inactive',
+            updated_at: new Date().toISOString()
           })
           .in('id', batch);
 
         if (deactivateError) {
-          logger.error('Failed to deactivate jobs batch', { 
+          // logger.error signature: (message, error, context) — pass the real PG error so message/code/details surface
+          logger.error('Failed to deactivate jobs batch', deactivateError, {
             clientName: feed.clientName,
-            errorMessage: deactivateError.message,
+            errorMessage: (deactivateError as { message?: string }).message,
+            errorCode: (deactivateError as { code?: string }).code,
+            errorDetails: (deactivateError as { details?: string }).details,
+            errorHint: (deactivateError as { hint?: string }).hint,
             batchStart: i,
-            batchSize: batch.length
+            batchSize: batch.length,
           });
         } else {
           result.jobsDeactivated += batch.length;
