@@ -15,6 +15,7 @@ import { wrapHandler } from './error-handler.ts';
 import { findOrCreateJobListing, normalizePhone, insertApplication } from './application-processor.ts';
 import { autoPostToATS } from './ats-adapters/auto-post-engine.ts';
 import { normalizeState, sanitizeZip } from './geo-normalize.ts';
+import { sendToApplyAI } from './applyai-webhook.ts';
 
 // Hayes organization ID
 const HAYES_ORG_ID = '84214b48-7b51-45bc-ad7f-723bcf50466c';
@@ -381,7 +382,30 @@ async function processApplication(
       clientId: config.clientId
     })
   );
-  
+
+  // Forward to ApplyAI external ingest (non-blocking)
+  EdgeRuntime.waitUntil(
+    sendToApplyAI(supabase, {
+      applicationId,
+      jobExternalId: data.job_id ?? null,
+      jobListingId: jobResult.id,
+      firstName: applicationData.first_name,
+      lastName: applicationData.last_name,
+      email: applicationData.applicant_email,
+      phone: applicationData.phone,
+      city: applicationData.city,
+      state: applicationData.state,
+      zip: applicationData.zip,
+      cdl: applicationData.cdl,
+      cdlClass: applicationData.cdl_class,
+      exp: applicationData.exp,
+      drivingExperienceYears: applicationData.driving_experience_years,
+      utmSource: applicationData.utm_source,
+      utmMedium: applicationData.utm_medium,
+      utmCampaign: applicationData.utm_campaign,
+    })
+  );
+
   return { success: true, applicationId };
 }
 
