@@ -620,6 +620,9 @@ export type Database = {
           agree_privacy_policy: string | null
           applicant_email: string | null
           applied_at: string | null
+          applyai_webhook_last_error: string | null
+          applyai_webhook_sent_at: string | null
+          applyai_webhook_status: string | null
           ats_readiness_score: number | null
           background_check_consent: string | null
           campaign_id: string | null
@@ -721,6 +724,9 @@ export type Database = {
           agree_privacy_policy?: string | null
           applicant_email?: string | null
           applied_at?: string | null
+          applyai_webhook_last_error?: string | null
+          applyai_webhook_sent_at?: string | null
+          applyai_webhook_status?: string | null
           ats_readiness_score?: number | null
           background_check_consent?: string | null
           campaign_id?: string | null
@@ -822,6 +828,9 @@ export type Database = {
           agree_privacy_policy?: string | null
           applicant_email?: string | null
           applied_at?: string | null
+          applyai_webhook_last_error?: string | null
+          applyai_webhook_sent_at?: string | null
+          applyai_webhook_status?: string | null
           ats_readiness_score?: number | null
           background_check_consent?: string | null
           campaign_id?: string | null

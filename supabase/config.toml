@@ -318,6 +318,9 @@ verify_jwt = false
 [functions.hayes-garrison-zapier]
 verify_jwt = false
 
+[functions.hayes-applyai-backfill]
+verify_jwt = true
+
 [functions.sms-webhook]
 verify_jwt = false
 
