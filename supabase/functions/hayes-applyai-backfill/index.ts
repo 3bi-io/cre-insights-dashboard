@@ -69,9 +69,9 @@ Deno.serve(async (req) => {
 
   const admin = createClient(supabaseUrl, serviceKey);
 
-  const isOperatorBypass = token === serviceKey;
+  const isServiceRole = token === serviceKey;
   const isAnonKey = token === anonKey;
-  const isOperatorBypass = isOperatorBypass || isAnonKey;
+  const isOperatorBypass = isServiceRole || isAnonKey;
 
   if (!isOperatorBypass) {
     const userClient = createClient(supabaseUrl, anonKey, {
