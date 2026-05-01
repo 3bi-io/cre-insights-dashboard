@@ -37,6 +37,48 @@ const DEFAULT_UTM = {
 };
 
 /**
+ * Aliases for CDL Job Cast client names → canonical clients.name in DB.
+ * CDL sometimes posts a shortened or punctuation-stripped name; map them here
+ * so the lookup hits the right client_id every time.
+ */
+const CLIENT_NAME_ALIASES: Record<string, string> = {
+  'novco': 'Novco, Inc.',
+  'novco inc': 'Novco, Inc.',
+  'novco, inc': 'Novco, Inc.',
+  'pemberton': 'Pemberton Truck Lines Inc',
+  'pemberton truck lines': 'Pemberton Truck Lines Inc',
+  'day and ross': 'Day and Ross',
+  'dayross': 'Day and Ross',
+  'james burg': 'James Burg Trucking Company',
+  'james burg trucking': 'James Burg Trucking Company',
+  'danny herman': 'Danny Herman Trucking',
+  're garrison': 'R.E. Garrison Trucking',
+  're-garrison': 'R.E. Garrison Trucking',
+  're.garrison': 'R.E. Garrison Trucking',
+  're garrison trucking': 'R.E. Garrison Trucking',
+  'admiral': 'Admiral Merchants',
+  'admiral merchants': 'Admiral Merchants',
+  'rg transport': 'RG Transport',
+  'harpers hotshot': 'Harpers Hotshot',
+  'harper hotshot': 'Harpers Hotshot',
+  'trucks for you': 'Trucks For You Inc',
+  'trucks for you inc': 'Trucks For You Inc',
+};
+
+/**
+ * Normalize an inbound client name: trim, collapse whitespace, lowercase,
+ * strip trailing punctuation, then resolve through the alias table.
+ */
+function normalizeClientName(raw: string): string {
+  const cleaned = raw
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/[.,]+$/g, '')
+    .toLowerCase();
+  return CLIENT_NAME_ALIASES[cleaned] || raw.trim();
+}
+
+/**
  * Generate internal apply URL with UTM parameters
  */
 function generateApplyUrl(jobListingId: string, clientName: string, utmParams: {
