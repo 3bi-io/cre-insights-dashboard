@@ -1,5 +1,6 @@
 import { SupabaseClient } from "npm:@supabase/supabase-js@2.50.0";
 import { createLogger } from './logger.ts';
+import { maybeDispatchHayesToApplyAI } from './hayes-dispatch.ts';
 
 const logger = createLogger('application-processor');
 
