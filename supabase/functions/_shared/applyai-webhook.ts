@@ -57,8 +57,11 @@ function buildPayload(input: ApplyAIDispatchInput) {
     if (answers[k] === undefined || answers[k] === null) delete answers[k];
   }
 
+  // Prefer the internal UUID for `job_id` (ApplyAI ingest validates it as UUID).
+  // Carry the external feed code separately so Hayes can still reconcile.
   return {
-    job_id: input.jobExternalId || input.jobListingId || null,
+    job_id: input.jobListingId || input.jobExternalId || null,
+    external_job_id: input.jobExternalId ?? null,
     application_id: input.applicationId,
     first_name: input.firstName ?? null,
     last_name: input.lastName ?? null,
