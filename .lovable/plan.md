@@ -1,77 +1,74 @@
-# Unified CDL Job Cast Inbound URLs for Hayes Clients
-
 ## Goal
-Provide working `hayes-inbound?client=<key>` URLs (matching the proven `re-garrison` pattern) for all 7 requested clients so CDL Job Cast can post applications into our system.
 
-## Current State
-`HAYES_CLIENT_CONFIGS` in `supabase/functions/_shared/hayes-client-handler.ts` already has entries for:
-- `pemberton`, `danny-herman`, `james-burg`, `harpers-hotshot` (and `re-garrison`, `dayross`, `novco`)
+Resend every recent CDL Job Cast application from our system to ApplyAI (which routes into hayesrecruitinghub.com) so we can verify the connection is working end-to-end.
 
-Missing entries: **Admiral Merchants**, **Trucks For You Inc**, **RG Transport**.
+## What I found while investigating
 
-## Changes
+I queried the database for Hayes-org applications since April 1:
 
-### 1. Add 3 new client configs to `HAYES_CLIENT_CONFIGS`
-Append to `supabase/functions/_shared/hayes-client-handler.ts`:
+| applyai_webhook_status | count | window |
+|---|---|---|
+| `NULL` (never attempted) | **718** | 2026-04-01 → 2026-04-30 |
+| `failed` | **8** | all today, 2026-05-01 |
+| `sent` | 0 | — |
+
+So the existing Hayes → ApplyAI dispatch path has not actually been delivering anything. Even worse, the 8 most-recent attempts all failed with the same error from ApplyAI:
+
+```
+HTTP 400: {"error":"Invalid payload","details":{"job_id":["Invalid uuid"]}}
+```
+
+### Root cause
+
+In `supabase/functions/_shared/applyai-webhook.ts` the payload is built as:
 
 ```ts
-'admiral-merchants': {
-  clientId: '53d7dd20-d743-4d34-93e9-eb7175c39da1',
-  clientName: 'Admiral Merchants',
-  clientSlug: 'admiral-merchants',
-  feedUserCode: 'TBD', // Request from CDL Job Cast
-  feedBoard: 'AIRecruiter',
-},
-'trucks-for-you': {
-  clientId: 'cc4a05e9-2c87-4e71-b7f5-49d8bd709540',
-  clientName: 'Trucks For You Inc',
-  clientSlug: 'trucks-for-you',
-  feedUserCode: 'TBD',
-  feedBoard: 'AIRecruiter',
-},
-'rg-transport': {
-  clientId: 'dfef4b27-311a-4eee-91cc-4bf57694268e',
-  clientName: 'RG Transport',
-  clientSlug: 'rg-transport',
-  feedUserCode: 'TBD',
-  feedBoard: 'AIRecruiter',
-},
+job_id: input.jobExternalId || input.jobListingId || null,
 ```
 
-Note: `feedUserCode` is only used for outbound job sync (GET `?action=jobs`). Inbound application POSTs from CDL Job Cast do NOT require it, so the URLs work immediately for receiving applications. Pull/sync needs the codes filled in later.
+`jobExternalId` is `applications.job_id`, which for CDL Job Cast feed listings is an external feed code like `14235J19129` — not a UUID. ApplyAI's ingest endpoint requires a UUID, so every CDL Job Cast application is rejected.
 
-### 2. Redeploy `hayes-inbound`
-Deploy so the new client keys are recognized by the parameterized endpoint.
+We need to flip the priority so the internal `job_listings.id` (a real UUID) is sent first, with the external code carried as a separate field.
 
-### 3. Verify
-Smoke-test each new URL with a GET to confirm the client key is accepted (expect proper response, not "Unknown client").
+## Plan
 
-## Final URLs (give to CDL Job Cast)
+### 1. Fix the payload (`_shared/applyai-webhook.ts`)
 
-```
-Admiral Merchants:
-https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-inbound?client=admiral-merchants
+- Send `job_id = jobListingId` (UUID) as the primary identifier.
+- Add an `external_job_id` field carrying the feed code (e.g. `14235J19129`) so ApplyAI / Hayes can still reconcile against their source system.
+- Keep the `null` fallback so non-Hayes callers don't break.
 
-Pemberton Truck Lines:
-https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-inbound?client=pemberton
-
-Danny Herman Trucking:
-https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-inbound?client=danny-herman
-
-Trucks For You Inc:
-https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-inbound?client=trucks-for-you
-
-Harpers Hotshot:
-https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-inbound?client=harpers-hotshot
-
-RG Transport:
-https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-inbound?client=rg-transport
-
-James Burg Trucking Company:
-https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-inbound?client=james-burg
+```text
+payload.job_id           = jobListingId (UUID)
+payload.external_job_id  = jobExternalId (feed code, e.g. 14235J19129)
 ```
 
-All applications routed through these URLs will be tagged to the correct `clientId`, get UTM `utm_campaign=<slug>`, and (for the Hayes org) automatically dispatched to the ApplyAI outbound webhook via the centralized helper added previously.
+### 2. Verify with a single live send
 
-## Follow-up (not blocking)
-Request CDL Job Cast `feedUserCode` values for Admiral Merchants, Trucks For You, RG Transport, and Harpers Hotshot to enable outbound job pulls.
+- Call `hayes-applyai-backfill` with `dry_run: true, limit: 5, retry_failed: true` to confirm the candidate set.
+- Then send one application live (`dry_run: false, limit: 1, retry_failed: true`) and confirm a `200` response from ApplyAI plus a `sent` row in `applications.applyai_webhook_status`.
+
+### 3. Resend everything
+
+Once the single send succeeds, run the backfill in batches:
+
+```text
+POST /functions/v1/hayes-applyai-backfill
+{ "dry_run": false, "limit": 2000, "retry_failed": true, "since": "2026-04-01" }
+```
+
+`retry_failed: true` re-sends both the 718 never-attempted rows and the 8 `failed` ones. The function already paces 100ms between sends and is idempotent (skips anything marked `sent`).
+
+### 4. Report results
+
+Return a summary of `scanned / sent / failed` plus a SQL count grouped by `applyai_webhook_status` so we can confirm everything is in `sent` state.
+
+## Out of scope
+
+- The unrelated `job_listings_status_check` constraint errors visible in `sync-cdl-feeds` logs (a job-deactivation issue, not an application-delivery issue). I'll flag this separately if you want it fixed in the same pass.
+- No schema/migration changes are needed for this task.
+
+## Files to change
+
+- `supabase/functions/_shared/applyai-webhook.ts` — swap job_id priority, add `external_job_id`.
+- (Deploy) `hayes-applyai-backfill`, plus all functions importing `applyai-webhook.ts` so the new payload shape ships everywhere.
