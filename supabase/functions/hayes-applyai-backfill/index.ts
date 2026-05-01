@@ -57,25 +57,32 @@ Deno.serve(async (req) => {
   if (!token) {
     return errorResponse('Missing Authorization header', 401, undefined, origin);
   }
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
-  });
-  const { data: userData, error: userErr } = await userClient.auth.getUser();
-  if (userErr || !userData?.user) {
-    return errorResponse('Invalid auth token', 401, undefined, origin);
-  }
-  const userId = userData.user.id;
 
   const admin = createClient(supabaseUrl, serviceKey);
 
-  const { data: roleRows } = await admin
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', userId);
-  const roles = (roleRows ?? []).map((r: { role: string }) => r.role);
-  const isAllowed = roles.includes('admin') || roles.includes('super_admin');
-  if (!isAllowed) {
-    return errorResponse('Forbidden: admin role required', 403, undefined, origin);
+  // Allow service-role bypass (used for operator-triggered backfills from
+  // trusted environments where no admin user JWT is available).
+  const isServiceRole = token === serviceKey;
+
+  if (!isServiceRole) {
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      return errorResponse('Invalid auth token', 401, undefined, origin);
+    }
+    const userId = userData.user.id;
+
+    const { data: roleRows } = await admin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+    const roles = (roleRows ?? []).map((r: { role: string }) => r.role);
+    const isAllowed = roles.includes('admin') || roles.includes('super_admin');
+    if (!isAllowed) {
+      return errorResponse('Forbidden: admin role required', 403, undefined, origin);
+    }
   }
 
   // --- Parse body ----------------------------------------------------------
