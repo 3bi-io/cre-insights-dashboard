@@ -373,9 +373,11 @@ serve(async (req) => {
               applied_at: convData.start_time || new Date().toISOString(),
             };
 
-            const { error: insertError } = await supabase
+            const { data: insertedApp, error: insertError } = await supabase
               .from('applications')
-              .insert(applicationData);
+              .insert(applicationData)
+              .select()
+              .single();
 
             if (!insertError) {
               agentResult.applications++;
@@ -385,6 +387,20 @@ serve(async (req) => {
                 agentName: agent.agent_name,
                 contact: finalEmail || normalizedPhone 
               });
+
+              // Fire-and-forget Hayes → ApplyAI dispatch
+              if (insertedApp) {
+                const dispatch = maybeDispatchHayesToApplyAI(
+                  supabase,
+                  insertedApp as Parameters<typeof maybeDispatchHayesToApplyAI>[1],
+                );
+                const er = (globalThis as unknown as { EdgeRuntime?: { waitUntil: (p: Promise<unknown>) => void } }).EdgeRuntime;
+                if (er?.waitUntil) {
+                  er.waitUntil(dispatch);
+                } else {
+                  dispatch.catch(() => undefined);
+                }
+              }
             }
 
           } catch (err) {
