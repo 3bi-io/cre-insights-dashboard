@@ -109,7 +109,6 @@ Deno.serve(async (req) => {
   }
 
   // --- Pull candidate applications, batched in chunks of 500 listing ids --
-  const allowedStatuses = retryFailed ? ['sent'] : ['sent'];
   const candidates: Array<Record<string, unknown>> = [];
   for (let i = 0; i < listingIds.length && candidates.length < limit; i += 500) {
     const chunk = listingIds.slice(i, i + 500);
@@ -121,8 +120,14 @@ Deno.serve(async (req) => {
       .in('job_listing_id', chunk)
       .order('created_at', { ascending: true })
       .limit(limit - candidates.length);
-    // Skip already-sent (and optionally also already-failed)
-    q = q.not('applyai_webhook_status', 'in', `(${allowedStatuses.map((s) => `"${s}"`).join(',')})`);
+    // Skip already-sent. By default also skip 'failed'; include them when retry_failed=true.
+    if (retryFailed) {
+      // Send anything that's not already 'sent' (NULL, 'failed', 'pending' all eligible)
+      q = q.or('applyai_webhook_status.is.null,applyai_webhook_status.neq.sent');
+    } else {
+      // Only send rows that have never been attempted successfully or at all
+      q = q.or('applyai_webhook_status.is.null,applyai_webhook_status.eq.pending');
+    }
     if (since) q = q.gte('created_at', since);
     const { data, error } = await q;
     if (error) {
