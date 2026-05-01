@@ -488,17 +488,27 @@ const handler = wrapHandler(async (req: Request) => {
       throw new ValidationError('Feed URL is required for job import. Provide feed_url parameter or user/board combination.');
     }
 
-    // Find client by name if possible
+    // Find client by name: try exact match first (post-normalization), then fuzzy
     let clientId: string | null = null;
-    const { data: clients } = await supabase
+    const { data: exactClients } = await supabase
       .from('clients')
       .select('id')
       .eq('organization_id', HAYES_ORG_ID)
-      .ilike('name', `%${clientName}%`)
+      .eq('name', clientName)
       .limit(1);
 
-    if (clients && clients.length > 0) {
-      clientId = clients[0].id;
+    if (exactClients && exactClients.length > 0) {
+      clientId = exactClients[0].id;
+    } else {
+      const { data: fuzzyClients } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('organization_id', HAYES_ORG_ID)
+        .ilike('name', `%${clientName}%`)
+        .limit(1);
+      if (fuzzyClients && fuzzyClients.length > 0) {
+        clientId = fuzzyClients[0].id;
+      }
     }
 
     // Generate campaign name if not provided
