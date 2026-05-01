@@ -15,7 +15,7 @@ import { wrapHandler } from './error-handler.ts';
 import { findOrCreateJobListing, normalizePhone, insertApplication } from './application-processor.ts';
 import { autoPostToATS } from './ats-adapters/auto-post-engine.ts';
 import { normalizeState, sanitizeZip } from './geo-normalize.ts';
-import { sendToApplyAI } from './applyai-webhook.ts';
+// sendToApplyAI dispatch is now handled centrally inside insertApplication().
 
 // Hayes organization ID
 const HAYES_ORG_ID = '84214b48-7b51-45bc-ad7f-723bcf50466c';
